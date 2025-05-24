@@ -1,12 +1,53 @@
-# Flex GovDoc Scanner
+# GEMI Document Scanner
 
-The goal of this project is to develop the Flex GovDoc Scanner, an application that leverages the Node.js stack, AI tools, and cloud services to transform public incorporation documents from Greece's business portal (ΓΕΜΗ, https://publicity.businessportal.gr/) into structured, searchable data. This project aims to facilitate access to essential company information, such as legal representatives, board members, and incorporation history, by offering advanced discovery capabilities through a REST service.
+A test Node.js tool for processing Greek company documents (GEMI) to extract metadata and create historical timelines.
 
-Project Overview:
 
-- Crawl and Index Public Documents: 
-  Develop a robust crawling mechanism to gather all relevant PDF documents from the ΓΕΜΗ portal while ensuring compliance with legal standards.
-- Extract and Structure Metadata: 
-  Utilize AI and OCR technologies to extract key metadata from these documents and store them in a structured format.
-- REST Service for Metadata Search: 
-  Create an efficient REST API to provide users with search functionalities on the extracted metadata, enabling easy access and analysis.
+## Setup
+
+1. Install dependencies:
+
+```sh
+npm install
+```
+
+2. Create a .env file in the project root:
+
+```sh
+GEMINI_API_KEY=your_api_key_here
+```
+
+3. Create folder structure:
+
+```
+data_src/
+  {GEMI_ID}/     # Place source documents here
+    doc1.pdf
+    doc2.docx
+data/            # Output folder (created automatically)
+```
+
+## Usage
+
+1. Place your PDF/DOCX documents in a folder named with the GEMI ID under data_src
+2. Run the processor:
+
+```sh
+node src/main.mjs
+```
+
+3. Enter the GEMI ID when prompted
+4. The tool will:
+   - Process each document in parallel
+   - Extract company metadata
+   - Generate JSON metadata files
+   - Create a contextual history timeline
+
+## Output
+
+The tool generates two types of files in the `data/{GEMI_ID}/` folder:
+
+- Individual metadata JSON files for each processed document
+- A consolidated history file named `{GEMI_ID}_contextual_document_histories.json`
+
+
