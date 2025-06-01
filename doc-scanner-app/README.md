@@ -5,6 +5,7 @@ A test Node.js tool for processing Greek company documents (GEMI) to extract met
 ## Setup
 
 1. Install dependencies:
+   Navigate to the project directory `doc-scanner-app`
 
 ```sh
 npm install
@@ -32,7 +33,7 @@ data/            # Output folder (created automatically)
 2. Run the processor:
 
 ```sh
-node src/main.mjs
+node start
 ```
 
 3. Enter the GEMI ID when prompted
