@@ -25,12 +25,12 @@ async function main() {
       );
     });
 
-    const outputFolder = path.resolve("../data", userInputGemiId);
+    const outputFolder = path.resolve("./data", userInputGemiId);
     if (!fs.existsSync(outputFolder)) {
       fs.mkdirSync(outputFolder, { recursive: true });
     }
 
-    const sourceFolder = path.resolve("../data_src", userInputGemiId);
+    const sourceFolder = path.resolve("./data_src", userInputGemiId);
     if (!fs.existsSync(sourceFolder)) {
       throw new Error(`Source folder ${sourceFolder} does not exist.`);
     }

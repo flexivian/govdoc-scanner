@@ -1,4 +1,4 @@
-import fs from "fs";
+import fs from "fs/promises";
 import path from "path";
 import mammoth from "mammoth";
 import {
@@ -25,7 +25,7 @@ export async function processSingleFile(
     if (file.endsWith(".docx")) {
       try {
         // Read .docx file and convert to plain text using Mammoth
-        const docxBuffer = fs.readFileSync(filePath);
+        const docxBuffer = await fs.readFile(filePath);
         const { value: plainText } = await mammoth.extractRawText({
           buffer: docxBuffer,
         });
@@ -46,7 +46,7 @@ export async function processSingleFile(
       }
     } else if (file.endsWith(".pdf")) {
       // Read .pdf file directly as a buffer
-      const fileBuffer = fs.readFileSync(filePath);
+      const fileBuffer = await fs.readFile(filePath);
       fileBase64 = fileBuffer.toString("base64");
       mimeType = MIME_TYPE_PDF;
     } else {
@@ -104,10 +104,10 @@ Ensure results are in Greek. Make sure to use only the choices from the enums wh
 
       // Create the pdf_metadata directory if it doesn't exist
       const metadataDir = path.join(outputFolder, "pdf_metadata");
-      fs.mkdirSync(metadataDir, { recursive: true });
+      await fs.mkdir(metadataDir, { recursive: true });
 
       // Save the extracted metadata to a JSON file
-      fs.writeFileSync(
+      await fs.writeFile(
         metadataJsonFilePath,
         JSON.stringify(metadataJsonContent, null, 4),
         "utf-8"
@@ -240,7 +240,7 @@ export async function generateContextualHistories(
           `${userInputGemiId}_contextual_document_histories.json`
         );
         // Save the generated history segments to a JSON file
-        fs.writeFileSync(
+        await fs.writeFile(
           historyJsonFilePath,
           JSON.stringify(historyJsonContent, null, 4),
           "utf-8"

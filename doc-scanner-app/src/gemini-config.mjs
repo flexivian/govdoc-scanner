@@ -2,13 +2,13 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import dotenv from "dotenv";
 import path from "path";
 
-dotenv.config({ path: path.resolve(process.cwd(), "../.env") });
+dotenv.config({ path: path.resolve(process.cwd(), "./.env") });
 
 export const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 export const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
-export const GEMINI_METADATA_MODEL_NAME = "gemini-2.0-flash";
+export const GEMINI_METADATA_MODEL_NAME = "gemini-2.0-flash-lite";
 export const GEMINI_HISTORY_MODEL_NAME = "gemini-2.0-flash";
 
 export const MIME_TYPE_JSON = "application/json";

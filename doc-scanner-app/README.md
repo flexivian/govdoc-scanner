@@ -2,7 +2,6 @@
 
 A test Node.js tool for processing Greek company documents (GEMI) to extract metadata and create historical timelines.
 
-
 ## Setup
 
 1. Install dependencies:
@@ -49,5 +48,3 @@ The tool generates two types of files in the `data/{GEMI_ID}/` folder:
 
 - Individual metadata JSON files for each processed document
 - A consolidated history file named `{GEMI_ID}_contextual_document_histories.json`
-
-

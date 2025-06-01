@@ -1,0 +1,40 @@
+{
+  "name": "doc-scanner-app",
+  "version": "1.0.0",
+  "description": "Application for scanning documents (PDF, DOCX), extracting metadata via Google Gemini, and generating contextual document histories.",
+  "main": "src/main.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/main.mjs"
+  },
+  "keywords": [
+    "document-scanner",
+    "pdf",
+    "docx",
+    "metadata-extraction",
+    "gemini",
+    "google-ai",
+    "generative-ai",
+    "nlp",
+    "text-extraction",
+    "document-processing"
+  ],
+  "author": "Eftihis Drakakis eftihisdrakakis@gmail.com",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+hhttps://github.com/flexivian/govdoc-scanner.git"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.24.0",
+    "@opensearch-project/opensearch": "^3.5.1",
+    "archiver": "^7.0.1",
+    "dotenv": "^16.4.7",
+    "mammoth": "^1.9.0",
+    "p-limit": "^6.2.0"
+  },
+  "devDependencies": {}
+}
