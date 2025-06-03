@@ -33,7 +33,7 @@ data/            # Output folder (created automatically)
 2. Run the processor:
 
 ```sh
-node start
+npm start
 ```
 
 3. Enter the GEMI ID when prompted

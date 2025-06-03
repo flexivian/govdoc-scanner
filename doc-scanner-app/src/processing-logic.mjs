@@ -10,178 +10,118 @@ import { callGeminiWithRetry } from "./gemini-config.mjs";
 const MIME_TYPE_TEXT_PLAIN = "text/plain";
 const MIME_TYPE_PDF = "application/pdf";
 
+// === Single file processing ===
+
+// Read any file as base64
+async function readFileAsBase64(filePath) {
+  const buffer = await fs.readFile(filePath);
+  return buffer.toString("base64");
+}
+
+// Convert DOCX to plain-text base64
+async function convertDocxToBase64(filePath) {
+  const buffer = await fs.readFile(filePath);
+  const { value: text } = await mammoth.extractRawText({ buffer });
+  return Buffer.from(text, "utf-8").toString("base64");
+}
+
+// Prepare file data (base64 + mimeType)
+async function prepareFileData(filePath, fileName) {
+  if (fileName.endsWith(".docx")) {
+    const data = await convertDocxToBase64(filePath);
+    return { data, mimeType: MIME_TYPE_TEXT_PLAIN };
+  }
+  if (fileName.endsWith(".pdf")) {
+    const data = await readFileAsBase64(filePath);
+    return { data, mimeType: MIME_TYPE_PDF };
+  }
+  throw new Error("unsupported_type");
+}
+
+// Call Gemini to extract metadata JSON
+async function extractMetadata(filePart, fileName, modelInstance) {
+  const prompt = `Analyze the attached document and extract essential company metadata.
+  Strictly follow the provided JSON schema. For fields where information is not found or you are not 100% certain, use null.
+  Ensure results are in Greek. Make sure to use only the choices from the enums where applicable.`;
+
+  const config = {
+    responseMimeType: "application/json",
+    responseSchema: CompanyEssentialMetadata,
+  };
+  const response = await callGeminiWithRetry(
+    modelInstance,
+    [prompt, filePart],
+    fileName,
+    config
+  );
+  return JSON.parse(response);
+}
+
+// Save JSON file
+async function saveJson(data, dir, fileName) {
+  await fs.mkdir(dir, { recursive: true });
+  const outPath = path.join(dir, fileName);
+  await fs.writeFile(outPath, JSON.stringify(data, null, 2), "utf-8");
+  return outPath;
+}
+
 export async function processSingleFile(
   filePath,
   outputFolder,
-  file,
-  metadataModelInstance
+  fileName,
+  metadataModel
 ) {
-  let fileBase64;
-  let mimeType;
-
-  console.log(`Processing ${file}...`);
-
+  console.log(`Processing ${fileName}...`);
   try {
-    if (file.endsWith(".docx")) {
-      try {
-        // Read .docx file and convert to plain text using Mammoth
-        const docxBuffer = await fs.readFile(filePath);
-        const { value: plainText } = await mammoth.extractRawText({
-          buffer: docxBuffer,
-        });
-        fileBase64 = Buffer.from(plainText, "utf-8").toString("base64");
-        mimeType = MIME_TYPE_TEXT_PLAIN;
-        console.log(`Converted ${file} to plain text.`);
-      } catch (conversionError) {
-        console.error(
-          `Error converting ${file} to plain text:`,
-          conversionError
-        );
-        return {
-          status: "error",
-          file,
-          reason: "conversion_error",
-          error: conversionError,
-        };
-      }
-    } else if (file.endsWith(".pdf")) {
-      // Read .pdf file directly as a buffer
-      const fileBuffer = await fs.readFile(filePath);
-      fileBase64 = fileBuffer.toString("base64");
-      mimeType = MIME_TYPE_PDF;
-    } else {
-      console.warn(
-        `Skipping unsupported file type in processing function: ${file}`
-      );
-      return {
-        status: "skipped",
-        file,
-        reason: "unsupported_type_in_processing",
-      };
-    }
+    const { data, mimeType } = await prepareFileData(filePath, fileName);
+    const filePart = { inlineData: { data, mimeType } };
 
-    // Prepare file data for Gemini API
-    const filePart = {
-      inlineData: { data: fileBase64, mimeType: mimeType },
-    };
-    // Construct the prompt for Gemini. The schema is now passed in generationConfig.
-    const metadataPrompt = `Analyze the attached document and extract essential company metadata.
-Strictly follow the provided JSON schema. For fields where information is not found or you are not 100% certain, use null.
-Ensure results are in Greek. Make sure to use only the choices from the enums where applicable.`;
+    const metadataJson = await extractMetadata(
+      filePart,
+      fileName,
+      metadataModel
+    );
 
-    const generationConfigForMetadata = {
-      responseMimeType: "application/json",
-      responseSchema: CompanyEssentialMetadata,
-    };
+    const metadataDir = path.join(outputFolder, "pdf_metadata");
+    const jsonName = fileName.replace(/\.(pdf|docx)$/, ".json");
+    const savedPath = await saveJson(metadataJson, metadataDir, jsonName);
 
-    let metadataTextResponse;
-    try {
-      // Call Gemini API to extract metadata, now passing generationConfig
-      metadataTextResponse = await callGeminiWithRetry(
-        metadataModelInstance,
-        [metadataPrompt, filePart],
-        file,
-        generationConfigForMetadata // Pass the generation config
-      );
-    } catch (genError) {
-      return {
-        status: "error",
-        file,
-        reason: genError.isRateLimitExhaustion
-          ? "gemini_max_retries_exceeded"
-          : "gemini_metadata_error",
-        error: genError,
-      };
-    }
-
-    try {
-      let metadataJsonContent = JSON.parse(metadataTextResponse);
-      const metadataJsonFilePath = path.join(
-        outputFolder,
-        "pdf_metadata",
-        file.replace(/\.(pdf|docx)$/, ".json")
-      );
-
-      // Create the pdf_metadata directory if it doesn't exist
-      const metadataDir = path.join(outputFolder, "pdf_metadata");
-      await fs.mkdir(metadataDir, { recursive: true });
-
-      // Save the extracted metadata to a JSON file
-      await fs.writeFile(
-        metadataJsonFilePath,
-        JSON.stringify(metadataJsonContent, null, 4),
-        "utf-8"
-      );
-      console.log(`Metadata written to ${metadataJsonFilePath}`);
-
-      return {
-        status: "success",
-        file,
-        data: { sourceFile: file, metadata: metadataJsonContent },
-      };
-    } catch (jsonError) {
-      console.error(
-        `Error parsing JSON response for metadata of ${file}:`,
-        jsonError
-      );
-      console.log("Raw response from Gemini:", metadataTextResponse);
-      return {
-        status: "error",
-        file,
-        reason: "json_parse_error",
-        error: jsonError,
-        rawResponse: metadataTextResponse,
-      };
-    }
-  } catch (fileProcessingError) {
-    console.error(`Unexpected error processing ${file}:`, fileProcessingError);
+    console.log(`Saved metadata: ${savedPath}`);
     return {
-      status: "error",
-      file,
-      reason: "unknown_processing_error",
-      error: fileProcessingError,
+      status: "success",
+      file: fileName,
+      data: { sourceFile: fileName, metadata: metadataJson },
     };
+  } catch (err) {
+    console.error(`Error with ${fileName}:`, err);
+    const reason =
+      err.message === "unsupported_type"
+        ? "unsupported_type"
+        : "processing_error";
+    return { status: "error", file: fileName, reason, error: err };
   }
 }
 
-export async function generateContextualHistories(
-  allExtractedMetadata,
-  outputFolder,
-  userInputGemiId,
-  historyModelInstance
-) {
-  console.log(
-    `\nRequesting contextual history segments for ${allExtractedMetadata.length} documents under GEMI_ID: ${userInputGemiId}...`
-  );
+// === Contextual history ===
 
-  // Sort metadata by document date to provide chronological context to Gemini
-  allExtractedMetadata.sort((a, b) => {
-    const dateA = a.metadata?.document_date
+function sortByDate(metadataList) {
+  return metadataList.slice().sort((a, b) => {
+    const da = a.metadata?.document_date
       ? new Date(a.metadata.document_date)
       : null;
-    const dateB = b.metadata?.document_date
+    const db = b.metadata?.document_date
       ? new Date(b.metadata.document_date)
       : null;
-
-    if (dateA && dateB) return dateA - dateB;
-    if (dateA) return -1; // Documents with dates come before those without
-    if (dateB) return 1;
-    return 0; // Keep original order if both lack dates or dates are equal
+    if (da && db) return da - db;
+    if (da) return -1;
+    if (db) return 1;
+    return 0;
   });
+}
 
-  console.log(
-    "\nSorted metadata by document_date (oldest first, errors/missing last):"
-  );
-  allExtractedMetadata.forEach((item) => {
-    console.log(
-      `  - ${item.sourceFile}: ${item.metadata?.document_date || "No Date"}`
-    );
-  });
-
-  // Construct a detailed prompt for Gemini to generate history segments
-  // The schema is now passed in generationConfig.
+function buildHistoryPrompt(sortedMetadata, gemiId) {
   const historyPromptParts = [
-    `You are provided with a collection of metadata extracted from multiple documents related to a company (or entities under the GEMI_ID: ${userInputGemiId}). The collection is sorted by the document's date, where available, from oldest to newest.`,
+    `You are provided with a collection of metadata extracted from multiple documents related to a company (or entities under the GEMI_ID: ${gemiId}). The collection is sorted by the document's date, where available, from oldest to newest.`,
     `Your task is to generate a specific "historySegment" for EACH document's metadata provided in the 'CollectedMetadata' array.`,
     `When generating the 'historySegment' for a particular document, you MUST consider the information from ALL other documents in the collection (especially those chronologically preceding it) to:`,
     `  - Create a coherent narrative piece for that document reflecting its place in the timeline.`,
@@ -195,108 +135,54 @@ export async function generateContextualHistories(
     `Always start by specifying the document's date in the history segment, if available. For example: "Στις 2020-01-01, το έγγραφο αναφέρει..."`,
     `If, for a specific document, no meaningful history segment can be inferred even with the context of others, provide a brief statement in Greek for its "historySegment" indicating this (e.g., "Δεν εντοπίστηκαν συγκεκριμένες ιστορικές πληροφορίες για αυτό το έγγραφο στο παρόν σύνολο δεδομένων.").`,
     `\nCollected Metadata (Array of objects, each with 'sourceFile' and 'metadata', sorted by document_date where available):\n${JSON.stringify(
-      allExtractedMetadata,
+      sortedMetadata,
       null,
       2
     )}`,
     `\nStrictly follow the provided JSON schema for your response.`,
   ];
-  const historyPrompt = historyPromptParts.join("\n");
+  return historyPromptParts.join("\n");
+}
 
-  const generationConfigForHistory = {
+export async function generateContextualHistories(
+  metadataList,
+  outputFolder,
+  gemiId,
+  historyModel
+) {
+  console.log(
+    `Generating histories for ${metadataList.length} docs (GEMI_ID: ${gemiId})`
+  );
+  const sorted = sortByDate(metadataList);
+  const prompt = buildHistoryPrompt(sorted, gemiId);
+  const config = {
     responseMimeType: "application/json",
     responseSchema: DocumentHistoriesSchema,
   };
 
-  let aggregatedHistoryTextResponse;
-
   try {
-    // Call Gemini API to generate contextual history segments
-    aggregatedHistoryTextResponse = await callGeminiWithRetry(
-      historyModelInstance,
-      historyPrompt,
-      `aggregated history for GEMI_ID ${userInputGemiId}`,
-      generationConfigForHistory
+    const raw = await callGeminiWithRetry(
+      historyModel,
+      prompt,
+      `history-${gemiId}`,
+      config
     );
-
-    try {
-      const historyJsonContent = JSON.parse(aggregatedHistoryTextResponse);
-
-      // Validate the structure of Gemini's response
-      if (
-        historyJsonContent.documentHistories &&
-        Array.isArray(historyJsonContent.documentHistories)
-      ) {
-        if (
-          historyJsonContent.documentHistories.length !==
-          allExtractedMetadata.length
-        ) {
-          console.warn(
-            `Warning: The number of history segments (${historyJsonContent.documentHistories.length}) does not match input documents (${allExtractedMetadata.length}). This might indicate an issue with the LLM's adherence to the prompt.`
-          );
-        }
-        const historyJsonFilePath = path.join(
-          outputFolder,
-          `${userInputGemiId}_contextual_document_histories.json`
-        );
-        // Save the generated history segments to a JSON file
-        await fs.writeFile(
-          historyJsonFilePath,
-          JSON.stringify(historyJsonContent, null, 4),
-          "utf-8"
-        );
-        console.log(
-          `Contextual document histories written to ${historyJsonFilePath}`
-        );
-      } else {
-        console.error(
-          "Error: The 'documentHistories' field is missing or not an array in the Gemini response for aggregated history."
-        );
-        console.error(
-          "Raw response:",
-          aggregatedHistoryTextResponse.substring(0, 500) +
-            (aggregatedHistoryTextResponse.length > 500 ? "..." : "")
-        );
-      }
-    } catch (historyJsonParseError) {
-      console.error(
-        "Error parsing JSON response for contextual document histories:",
-        historyJsonParseError
+    const json = JSON.parse(raw);
+    if (Array.isArray(json.documentHistories)) {
+      const outPath = path.join(
+        outputFolder,
+        `${gemiId}_contextual_document_histories.json`
       );
-      console.error(
-        "Raw response from Gemini:",
-        aggregatedHistoryTextResponse.substring(0, 500) +
-          (aggregatedHistoryTextResponse.length > 500 ? "..." : "")
+      await saveJson(
+        json,
+        outputFolder,
+        `${gemiId}_contextual_document_histories.json`
       );
-    }
-  } catch (historyGenError) {
-    console.error(
-      `Failed to generate contextual document histories for GEMI_ID ${userInputGemiId}.`
-    );
-    // Provide more specific error messages based on the error type
-    if (historyGenError.isRateLimitExhaustion) {
-      console.error(
-        "This was due to persistent rate limiting after multiple retries."
-      );
-    } else if (historyGenError.message?.includes("SAFETY")) {
-      console.error(
-        "Safety settings might have blocked the response. Check the prompt and content. Full error:",
-        historyGenError.message
-      );
-    } else if (
-      historyGenError.message?.includes("token") ||
-      historyGenError.message?.includes("size") ||
-      historyGenError.message?.includes("length")
-    ) {
-      console.error(
-        "The history prompt might be too long or the response too large. Error:",
-        historyGenError.message
-      );
+      console.log(`Histories saved: ${outPath}`);
     } else {
-      console.error(
-        "An unexpected error occurred during history generation:",
-        historyGenError.message
-      );
+      console.error("Invalid response format", json);
     }
+  } catch (err) {
+    console.error("History generation failed:", err);
   }
 }
