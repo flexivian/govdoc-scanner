@@ -1,0 +1,12 @@
+{
+  "$schema": "./node_modules/nx/schemas/nx-schema.json",
+  "targetDefaults": {
+    "doc": {
+      "outputs": [
+        "{projectRoot}/data"
+      ],
+      "cache": true
+    }
+  },
+  "nxCloudId": "683f3ee2e6cc301ac6e3b787"
+}
