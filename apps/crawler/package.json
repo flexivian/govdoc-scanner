@@ -1,0 +1,19 @@
+{
+  "name": "crawler",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/main.mjs",
+  "scripts": {
+    "start": "node src/id_crawler.mjs",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.9.0",
+    "cheerio": "^1.0.0",
+    "puppeteer": "^24.10.0",
+    "readline-sync": "^1.4.10"
+  }
+}
