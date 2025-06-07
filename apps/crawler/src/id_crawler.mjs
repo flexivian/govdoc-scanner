@@ -1,6 +1,5 @@
 import puppeteer from "puppeteer";
 import * as cheerio from "cheerio";
-import readlineSync from "readline-sync";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -47,40 +46,6 @@ async function downloadPdfWithAxios(pdfUrl, outputPath) {
     if (fs.existsSync(outputPath)) fs.unlinkSync(outputPath);
     throw error;
   }
-}
-
-// Initializes Puppeteer and returns the page instance
-async function launchBrowserAndNavigate(url) {
-  const browser = await puppeteer.launch({
-    headless: "new",
-    args: [
-      "--no-sandbox",
-      "--disable-setuid-sandbox",
-      "--disable-dev-shm-usage",
-      "--disable-accelerated-2d-canvas",
-      "--disable-gpu",
-      "--no-zygote",
-      "--disable-extensions",
-    ],
-  });
-
-  const page = await browser.newPage();
-  await page.setUserAgent(
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-  );
-  await page.goto(url, {
-    waitUntil: "networkidle2",
-    timeout: PAGE_LOAD_TIMEOUT_PUPPETEER,
-  });
-
-  try {
-    await page.waitForSelector("div#ModificationHistory", { timeout: 15000 });
-  } catch {
-    // Continue if selector is not found
-  }
-
-  await new Promise((resolve) => setTimeout(resolve, 1000));
-  return { browser, page };
 }
 
 // Parses the HTML and extracts valid PDF download links
@@ -153,21 +118,39 @@ async function downloadAllPdfs(pdfLinks) {
 }
 
 // Main workflow to handle a GEMI ID's PDF extraction
-async function fetchCompanyPdfs(gemiId) {
+async function fetchCompanyPdfs(browser, gemiId) {
   const companyPageUrl = `${BASE_URL}/company/${gemiId}`;
-  let browser = null;
+  let page = null; // Use a single page for this company
 
   try {
+    // Open a new page (tab) for this company
+    page = await browser.newPage();
+    await page.setUserAgent(
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+    );
+
     console.log(`Navigating to company page: ${companyPageUrl}`);
-    const result = await launchBrowserAndNavigate(companyPageUrl);
-    browser = result.browser;
+    await page.goto(companyPageUrl, {
+      waitUntil: "networkidle2",
+      timeout: PAGE_LOAD_TIMEOUT_PUPPETEER,
+    });
+
+    try {
+      // Wait for the page to load and the modification history to appear
+      await page.waitForSelector("div#ModificationHistory", { timeout: 2000 });
+    } catch {
+      // If the modification history doesn't load:
+      // No pdfs are available, so we can continue and find 0 or
+      // pdfs exist but not under modification history
+      // so we continue nonetheless
+    }
 
     console.log("Extracting PDF links...");
-    const html = await result.page.content();
+    const html = await page.content();
     const { pdfLinks, downloadDir } = extractPdfLinks(html, gemiId);
 
-    console.log(`Found ${pdfLinks.length} PDF(s) to download.`);
     if (pdfLinks.length > 0) {
+      console.log(`Found ${pdfLinks.length} PDF(s) to download.`);
       console.log(`Saving PDFs to: ${downloadDir}`);
       console.log("Starting downloads...");
 
@@ -181,23 +164,94 @@ async function fetchCompanyPdfs(gemiId) {
   } catch (error) {
     console.error(`Error processing GEMI ID ${gemiId}: ${error.message}`);
   } finally {
-    if (browser) {
-      if (browser) await browser.close();
+    // Close the page after processing, but leave the browser open.
+    if (page) {
+      await page.close();
     }
   }
 }
 
-// CLI entry point
 async function main() {
-  const gemiIdInput = readlineSync.question("Enter GEMI ID: ");
-  const gemiId = gemiIdInput ? gemiIdInput.trim() : "";
+  const args = process.argv.slice(2);
+  const idIndex = args.indexOf("--id");
+  const fileIndex = args.indexOf("--file");
 
-  if (!/^\d+$/.test(gemiId)) {
-    console.error("Invalid GEMI ID format. Please enter numbers only.");
+  let gemiIds = [];
+
+  // Argument parsing
+  if (idIndex !== -1 && args[idIndex + 1]) {
+    const gemiId = args[idIndex + 1].trim();
+    if (!/^\d+$/.test(gemiId)) {
+      console.error("Invalid GEMI ID format. Please enter numbers only.");
+      return;
+    }
+    gemiIds.push(gemiId);
+  } else if (fileIndex !== -1 && args[fileIndex + 1]) {
+    const filePath = args[fileIndex + 1];
+    if (!fs.existsSync(filePath)) {
+      console.error(`Error: File not found at ${filePath}`);
+      return;
+    }
+    try {
+      const fileContent = fs.readFileSync(filePath, "utf-8");
+      const idsFromFile = JSON.parse(fileContent);
+      if (!Array.isArray(idsFromFile)) {
+        throw new Error("JSON file must contain an array of GEMI numbers.");
+      }
+      gemiIds = idsFromFile
+        .map((id) => String(id).trim())
+        .filter((id) => /^\d+$/.test(id));
+      console.log(`Loaded ${gemiIds.length} valid GEMI IDs from ${filePath}`);
+    } catch (e) {
+      console.error(`Error reading or parsing ${filePath}:`, e.message);
+      return;
+    }
+  } else {
+    console.log(
+      "This script should be run via the terminal_ui.mjs controller."
+    );
     return;
   }
 
-  await fetchCompanyPdfs(gemiId);
+  if (gemiIds.length === 0) {
+    console.log("No valid GEMI IDs to process.");
+    return;
+  }
+
+  // --- Browser Management Logic ---
+  let browser = null;
+  try {
+    browser = await puppeteer.launch({
+      headless: "new",
+      args: [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+        "--disable-accelerated-2d-canvas",
+        "--disable-gpu",
+      ],
+    });
+
+    console.log(`\nStarting crawl for ${gemiIds.length} company/companies...`);
+    for (const [index, gemiId] of gemiIds.entries()) {
+      console.log(
+        `\n--- Processing ${index + 1} of ${gemiIds.length}: ${gemiId} ---`
+      );
+      // Pass the single browser instance to the worker function
+      await fetchCompanyPdfs(browser, gemiId);
+    }
+  } catch (error) {
+    console.error(
+      "A critical error occurred during the browser session:",
+      error
+    );
+  } finally {
+    // Ensure the browser is closed at the very end, no matter what.
+    if (browser) {
+      console.log("\n--- All processing complete. Closing browser. ---");
+      await browser.close();
+    }
+  }
 }
 
 // Run main function and handle unexpected errors
