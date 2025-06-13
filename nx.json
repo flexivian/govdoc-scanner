@@ -2,11 +2,8 @@
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
   "targetDefaults": {
     "doc": {
-      "outputs": [
-        "{projectRoot}/data"
-      ],
+      "outputs": ["{projectRoot}/src/data/output"],
       "cache": true
     }
-  },
-  "nxCloudId": "683f3ee2e6cc301ac6e3b787"
+  }
 }

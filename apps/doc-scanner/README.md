@@ -29,7 +29,7 @@ output/          # Output folder (created automatically)
 
 ## Usage
 
-1. Place your PDF/DOCX documents in a folder named with the GEMI ID under data_src
+1. Place your PDF/DOCX documents in a folder named with the GEMI ID under input folder as seen above.
 2. Run the processor:
 
 ```sh
