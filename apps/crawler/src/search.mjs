@@ -46,7 +46,7 @@ async function main() {
   }
 
   // Launch browser with custom viewport and user agent
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch({ headless: false });
   const context = await browser.newContext({
     userAgent:
       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36",
@@ -82,6 +82,7 @@ async function main() {
     console.log("Results written to results.json");
   } catch (e) {
     console.error(`An error occurred in the script: ${e}`);
+    process.exit(1);
   } finally {
     console.log("Closing browser.");
     await browser.close();

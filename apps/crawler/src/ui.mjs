@@ -3,6 +3,17 @@ import { spawn } from "child_process";
 import fs from "fs";
 import path from "path";
 
+import { findAndConfirmMatch } from "./filter_correction.mjs";
+import {
+  legal_types,
+  companyStatuses,
+  suspension_choices,
+  special_types,
+  competent_gemi_offices,
+  Places,
+  economicActivities,
+} from "./filter_choices.mjs";
+
 const RESULTS_FILE = "results.json";
 
 /* Runs a script in a child process and streams its output.
@@ -141,19 +152,64 @@ async function promptForSearch() {
     },
   ]);
 
+  // Use the imported function to process inputs with fuzzy matching
+  const matchedFilters = {
+    legal_type: await findAndConfirmMatch(
+      answers.legal_type,
+      legal_types,
+      "Legal Type"
+    ),
+    status: await findAndConfirmMatch(
+      answers.status,
+      companyStatuses,
+      "Status"
+    ),
+    competent_office: await findAndConfirmMatch(
+      answers.competent_office,
+      competent_gemi_offices,
+      "Competent Office"
+    ),
+    suspension: await findAndConfirmMatch(
+      answers.suspension,
+      suspension_choices,
+      "Suspension"
+    ),
+    special: await findAndConfirmMatch(
+      answers.special,
+      special_types,
+      "Special Characteristic"
+    ),
+    activity: await findAndConfirmMatch(
+      answers.activity,
+      economicActivities,
+      "Activity"
+    ),
+    place: await findAndConfirmMatch(answers.place, Places, "Place"),
+  };
+
   const scriptArgs = [];
   if (answers.searchTerm) scriptArgs.push("--term", answers.searchTerm);
 
-  if (answers.legal_type)
-    scriptArgs.push("--filter.legal_type", answers.legal_type);
-  if (answers.status) scriptArgs.push("--filter.status", answers.status);
-  if (answers.competent_office)
-    scriptArgs.push("--filter.competent_office", answers.competent_office);
-  if (answers.suspension)
-    scriptArgs.push("--filter.suspension", answers.suspension);
-  if (answers.special) scriptArgs.push("--filter.special", answers.special);
-  if (answers.activity) scriptArgs.push("--filter.activity", answers.activity);
-  if (answers.place) scriptArgs.push("--filter.place", answers.place);
+  // Use the processed (matched) filter values
+  if (matchedFilters.legal_type)
+    scriptArgs.push("--filter.legal_type", matchedFilters.legal_type);
+  if (matchedFilters.status)
+    scriptArgs.push("--filter.status", matchedFilters.status);
+  if (matchedFilters.competent_office)
+    scriptArgs.push(
+      "--filter.competent_office",
+      matchedFilters.competent_office
+    );
+  if (matchedFilters.suspension)
+    scriptArgs.push("--filter.suspension", matchedFilters.suspension);
+  if (matchedFilters.special)
+    scriptArgs.push("--filter.special", matchedFilters.special);
+  if (matchedFilters.activity)
+    scriptArgs.push("--filter.activity", matchedFilters.activity);
+  if (matchedFilters.place)
+    scriptArgs.push("--filter.place", matchedFilters.place);
+
+  // These filters don't have predefined lists, so we pass them directly
   if (answers.incorporation_start)
     scriptArgs.push(
       "--filter.incorporation_start",
