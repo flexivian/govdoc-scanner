@@ -1,0 +1,9 @@
+{
+  "$schema": "./node_modules/nx/schemas/nx-schema.json",
+  "targetDefaults": {
+    "doc": {
+      "outputs": ["{projectRoot}/src/data/output"],
+      "cache": true
+    }
+  }
+}

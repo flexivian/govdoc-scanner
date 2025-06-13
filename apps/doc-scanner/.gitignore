@@ -1,0 +1,6 @@
+# Input and output data
+src/data/*
+
+# Temporary
+opensearch/
+src/opensearch-config.mjs
