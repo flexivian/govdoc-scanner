@@ -14,7 +14,7 @@ import {
   economicActivities,
 } from "./filter_choices.mjs";
 
-const RESULTS_FILE = "results.json";
+const RESULTS_FILE = "ids.txt";
 
 /* Runs a script in a child process and streams its output.
 scriptPath - Path to the Node.js script.

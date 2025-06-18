@@ -1,6 +1,7 @@
 import { chromium } from "playwright";
 import { existsSync, rmSync } from "fs";
-import { writeFileSync } from "fs";
+import fs from "fs";
+import path from "path";
 
 // Configs
 const USER_DATA_DIR = "./playwright_profile";
@@ -46,7 +47,7 @@ async function main() {
   }
 
   // Launch browser with custom viewport and user agent
-  const browser = await chromium.launch({ headless: false });
+  const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({
     userAgent:
       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36",
@@ -75,11 +76,12 @@ async function main() {
       `\nSuccessfully scraped a total of ${allResults.length} companies from all pages.`
     );
 
-    // Write results to results.json
-    // Clear the file before writing
-    writeFileSync("results.json", "", "utf-8");
-    writeFileSync("results.json", JSON.stringify(allResults, null, 2), "utf-8");
-    console.log("Results written to results.json");
+    // Write results to ids.txt
+    const filePath = path.resolve("ids.txt");
+
+    fs.writeFileSync(filePath, "", "utf-8"); // Clear file first
+    fs.writeFileSync(filePath, allResults.join("\n"), "utf-8");
+    console.log("Results written to ids.txt");
   } catch (e) {
     console.error(`An error occurred in the script: ${e}`);
     process.exit(1);

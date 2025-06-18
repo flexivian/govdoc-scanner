@@ -194,12 +194,9 @@ async function main() {
     }
     try {
       const fileContent = fs.readFileSync(filePath, "utf-8");
-      const idsFromFile = JSON.parse(fileContent);
-      if (!Array.isArray(idsFromFile)) {
-        throw new Error("JSON file must contain an array of GEMI numbers.");
-      }
-      gemiIds = idsFromFile
-        .map((id) => String(id).trim())
+      gemiIds = fileContent
+        .split("\n")
+        .map((id) => id.trim())
         .filter((id) => /^\d+$/.test(id));
       console.log(`Loaded ${gemiIds.length} valid GEMI IDs from ${filePath}`);
     } catch (e) {
