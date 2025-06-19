@@ -309,7 +309,7 @@ async function mainMenu() {
         message: "What would you like to do?",
         choices: [
           { name: "1. Search for companies", value: "search" },
-          { name: "2. Download PDFs for companies (Crawl)", value: "crawl" },
+          { name: "2. Download PDFs for companies", value: "crawl" },
           new inquirer.Separator(),
           { name: "3. Exit", value: "exit" },
         ],

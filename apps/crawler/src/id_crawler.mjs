@@ -155,10 +155,8 @@ async function fetchCompanyPdfs(context, gemiId, downloadPath) {
   }
 }
 
-/**
- * It takes an array of GEMI IDs, launches a browser, processes each ID,
- * and returns a map of GEMI IDs to their download folder paths.
- */
+// It takes an array of GEMI IDs, launches a browser, processes each ID,
+// and returns a map of GEMI IDs to their download folder paths.
 export async function runCrawlerForGemiIds(gemiIds, outputBaseDir) {
   const finalDownloadPaths = {};
   let browser = null;
@@ -249,7 +247,6 @@ async function main() {
     return;
   }
 
-  // Use the new reusable function
   await runCrawlerForGemiIds(gemiIds, path.join(__dirname, "downloads"));
 }
 
