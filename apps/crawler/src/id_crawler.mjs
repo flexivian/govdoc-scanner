@@ -1,4 +1,4 @@
-import puppeteer from "puppeteer";
+import { chromium } from "playwright";
 import * as cheerio from "cheerio";
 import fs from "fs";
 import path from "path";
@@ -13,7 +13,7 @@ const BASE_URL = "https://publicity.businessportal.gr";
 const PAGE_LOAD_TIMEOUT_PUPPETEER = 60000;
 const PDF_DOWNLOAD_TIMEOUT_AXIOS = 120000;
 
-// Downloads a PDF file using Axios with proper headers and error handling
+// Downloads a PDF file using Axios
 async function downloadPdfWithAxios(pdfUrl, outputPath) {
   try {
     const response = await axios({
@@ -49,9 +49,8 @@ async function downloadPdfWithAxios(pdfUrl, outputPath) {
 }
 
 // Parses the HTML and extracts valid PDF download links
-function extractPdfLinks(html, gemiId) {
+function extractPdfLinks(html, downloadDir) {
   const $ = cheerio.load(html);
-  const downloadDir = path.join(__dirname, "downloads", `${gemiId}`);
   if (!fs.existsSync(downloadDir)) {
     fs.mkdirSync(downloadDir, { recursive: true });
   }
@@ -75,7 +74,6 @@ function extractPdfLinks(html, gemiId) {
       originalFilename += ".pdf";
     }
 
-    // Minimal sanitization
     originalFilename = originalFilename.replace(/[\/\\:*?"<>|]/g, "_");
 
     let basePath = path.join(downloadDir, originalFilename);
@@ -96,6 +94,7 @@ function extractPdfLinks(html, gemiId) {
     });
   });
 
+  // Return pdfLinks and the confirmed downloadDir
   return { pdfLinks, downloadDir };
 }
 
@@ -117,21 +116,15 @@ async function downloadAllPdfs(pdfLinks) {
   return downloadedCount;
 }
 
-// Main workflow to handle a GEMI ID's PDF extraction
-async function fetchCompanyPdfs(browser, gemiId) {
+// Main workflow for a single ID
+async function fetchCompanyPdfs(context, gemiId, downloadPath) {
   const companyPageUrl = `${BASE_URL}/company/${gemiId}`;
-  let page = null; // Use a single page for this company
+  let page = null;
 
   try {
-    // Open a new page (tab) for this company
-    page = await browser.newPage();
-    await page.setUserAgent(
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-    );
-
-    console.log(`Navigating to company page: ${companyPageUrl}`);
+    page = await context.newPage();
     await page.goto(companyPageUrl, {
-      waitUntil: "networkidle2",
+      waitUntil: "networkidle",
       timeout: PAGE_LOAD_TIMEOUT_PUPPETEER,
     });
 
@@ -145,32 +138,76 @@ async function fetchCompanyPdfs(browser, gemiId) {
       // so we continue nonetheless
     }
 
-    console.log("Extracting PDF links...");
     const html = await page.content();
-    const { pdfLinks, downloadDir } = extractPdfLinks(html, gemiId);
+    // Pass the final, desired download path directly to the extractor
+    const { pdfLinks, downloadDir } = extractPdfLinks(html, downloadPath);
 
     if (pdfLinks.length > 0) {
-      console.log(`Found ${pdfLinks.length} PDF(s) to download.`);
-      console.log(`Saving PDFs to: ${downloadDir}`);
-      console.log("Starting downloads...");
-
-      const downloadedCount = await downloadAllPdfs(pdfLinks);
-      console.log(
-        `Downloaded ${downloadedCount} PDF(s) out of ${pdfLinks.length}.`
-      );
+      console.log(`Found ${pdfLinks.length} PDF(s). Saving to: ${downloadDir}`);
+      await downloadAllPdfs(pdfLinks);
     } else {
       console.log("No PDF files found to download.");
     }
   } catch (error) {
     console.error(`Error processing GEMI ID ${gemiId}: ${error.message}`);
   } finally {
-    // Close the page after processing, but leave the browser open.
-    if (page) {
-      await page.close();
-    }
+    if (page) await page.close();
   }
 }
 
+/**
+ * It takes an array of GEMI IDs, launches a browser, processes each ID,
+ * and returns a map of GEMI IDs to their download folder paths.
+ */
+export async function runCrawlerForGemiIds(gemiIds, outputBaseDir) {
+  const finalDownloadPaths = {};
+  let browser = null;
+
+  try {
+    browser = await chromium.launch({
+      headless: true,
+      args: [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+        "--disable-accelerated-2d-canvas",
+        "--disable-gpu",
+      ],
+    });
+
+    const context = await browser.newContext({
+      userAgent:
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+    });
+
+    for (const [index, gemiId] of gemiIds.entries()) {
+      console.log(
+        `\n--- CRAWLER: Processing ${index + 1}/${
+          gemiIds.length
+        }: ${gemiId} ---`
+      );
+
+      // Construct the final, desired download path
+      const gemiDownloadPath = path.join(
+        outputBaseDir,
+        gemiId,
+        "pdf_downloads"
+      );
+      await fs.promises.mkdir(gemiDownloadPath, { recursive: true });
+
+      // Pass the final path to the fetcher
+      await fetchCompanyPdfs(context, gemiId, gemiDownloadPath);
+      finalDownloadPaths[gemiId] = gemiDownloadPath;
+    }
+  } catch (error) {
+    console.error("A critical error occurred during crawling:", error);
+  } finally {
+    if (browser) await browser.close();
+  }
+  return finalDownloadPaths;
+}
+
+// Main function to allow this script to be run standalone
 async function main() {
   const args = process.argv.slice(2);
   const idIndex = args.indexOf("--id");
@@ -178,7 +215,6 @@ async function main() {
 
   let gemiIds = [];
 
-  // Argument parsing
   if (idIndex !== -1 && args[idIndex + 1]) {
     const gemiId = args[idIndex + 1].trim();
     if (!/^\d+$/.test(gemiId)) {
@@ -204,9 +240,7 @@ async function main() {
       return;
     }
   } else {
-    console.log(
-      "This script should be run via the terminal_ui.mjs controller."
-    );
+    console.log("This script should be run via npm start.");
     return;
   }
 
@@ -215,43 +249,13 @@ async function main() {
     return;
   }
 
-  // --- Browser Management Logic ---
-  let browser = null;
-  try {
-    browser = await puppeteer.launch({
-      headless: "new",
-      args: [
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--disable-dev-shm-usage",
-        "--disable-accelerated-2d-canvas",
-        "--disable-gpu",
-      ],
-    });
-
-    console.log(`\nStarting crawl for ${gemiIds.length} company/companies...`);
-    for (const [index, gemiId] of gemiIds.entries()) {
-      console.log(
-        `\n--- Processing ${index + 1} of ${gemiIds.length}: ${gemiId} ---`
-      );
-      // Pass the single browser instance to the worker function
-      await fetchCompanyPdfs(browser, gemiId);
-    }
-  } catch (error) {
-    console.error(
-      "A critical error occurred during the browser session:",
-      error
-    );
-  } finally {
-    // Ensure the browser is closed at the very end, no matter what.
-    if (browser) {
-      console.log("\n--- All processing complete. Closing browser. ---");
-      await browser.close();
-    }
-  }
+  // Use the new reusable function
+  await runCrawlerForGemiIds(gemiIds, path.join(__dirname, "downloads"));
 }
 
-// Run main function and handle unexpected errors
-main().catch((err) => {
-  console.error("An unexpected error occurred in main:", err.message);
-});
+// Check if the script is being run directly
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  main().catch((err) => {
+    console.error("An unexpected error occurred in main:", err.message);
+  });
+}
