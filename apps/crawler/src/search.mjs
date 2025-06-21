@@ -165,7 +165,7 @@ async function equipFilters(page, filters) {
   }
 
   // Activity
-  var selector = 'input[type="text"][placeholder="Δραστηριότητα"]';
+  let selector = 'input[type="text"][placeholder="Δραστηριότητα"]';
   if (filters.activity && filters.activity !== "") {
     await page.click(selector);
     await page.fill(selector, filters.activity, { timeout: 5000 });

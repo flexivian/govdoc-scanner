@@ -10,7 +10,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const BASE_URL = "https://publicity.businessportal.gr";
-const PAGE_LOAD_TIMEOUT_PUPPETEER = 60000;
+const PAGE_LOAD_TIMEOUT_IN_MILLISECONDS = 60000;
 const PDF_DOWNLOAD_TIMEOUT_AXIOS = 120000;
 
 // Downloads a PDF file using Axios
@@ -125,7 +125,7 @@ async function fetchCompanyPdfs(context, gemiId, downloadPath) {
     page = await context.newPage();
     await page.goto(companyPageUrl, {
       waitUntil: "networkidle",
-      timeout: PAGE_LOAD_TIMEOUT_PUPPETEER,
+      timeout: PAGE_LOAD_TIMEOUT_IN_MILLISECONDS,
     });
 
     try {
