@@ -15,6 +15,7 @@
   },
   "nx": {},
   "dependencies": {
-    "chokidar": "^4.0.3"
+    "chokidar": "^4.0.3",
+    "cli-progress": "^3.12.0"
   }
 }
