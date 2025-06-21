@@ -2,6 +2,7 @@ import inquirer from "inquirer";
 import { spawn } from "child_process";
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
 
 import { findAndConfirmMatch } from "./filter_correction.mjs";
 import {
@@ -15,6 +16,9 @@ import {
 } from "./filter_choices.mjs";
 
 const RESULTS_FILE = "ids.txt";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /* Runs a script in a child process and streams its output.
 scriptPath - Path to the Node.js script.
@@ -232,7 +236,7 @@ async function promptForSearch() {
   if (answers.tk) scriptArgs.push("--filter.tk", answers.tk);
 
   try {
-    await runScript("src/search.mjs", scriptArgs);
+    await runScript(path.join(__dirname, "search.mjs"), scriptArgs);
     console.log(`\nResults are saved in ${RESULTS_FILE}.`);
   } catch (error) {
     console.error("\nAn error occurred during the search process.");
@@ -274,7 +278,7 @@ async function promptForCrawl() {
       },
     ]);
     try {
-      await runScript("src/id_crawler.mjs", ["--id", gemiId]);
+      await runScript(path.join(__dirname, "id_crawler.mjs"), ["--id", gemiId]);
     } catch (error) {
       console.error("\nAn error occurred during the crawl process.");
     }
@@ -285,7 +289,10 @@ async function promptForCrawl() {
       return;
     }
     try {
-      await runScript("src/id_crawler.mjs", ["--file", RESULTS_FILE]);
+      await runScript(path.join(__dirname, "id_crawler.mjs"), [
+        "--file",
+        RESULTS_FILE,
+      ]);
     } catch (error) {
       console.error(
         "\nAn error occurred while crawling from the results file."

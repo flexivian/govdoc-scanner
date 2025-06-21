@@ -2,6 +2,7 @@
   "name": "govdoc-scanner",
   "private": true,
   "scripts": {
+    "postinstall": "npx playwright install chromium",
     "doc": "node apps/doc-scanner/src/main.mjs",
     "crawler": "node apps/crawler/src/ui.mjs"
   },
