@@ -9,6 +9,7 @@ import {
   processSingleFile,
   generateContextualHistories,
 } from "./processing-logic.mjs";
+import { exit } from "process";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -26,14 +27,17 @@ async function promptForGemiId(rl) {
 
 // Validate and prepare input/output folders
 function prepareFolders(gemiId) {
+  const inputFolder = path.resolve(__dirname, "data/input", gemiId);
+  if (!fs.existsSync(inputFolder)) {
+    console.log(
+      `Input folder ${inputFolder} does not exist. Please ensure the folder is created and contains the files to process.`
+    );
+    exit(1);
+  }
+
   const outputFolder = path.resolve(__dirname, "data/output", gemiId);
   if (!fs.existsSync(outputFolder)) {
     fs.mkdirSync(outputFolder, { recursive: true });
-  }
-
-  const inputFolder = path.resolve(__dirname, "data/input", gemiId);
-  if (!fs.existsSync(inputFolder)) {
-    throw new Error(`Source folder ${inputFolder} does not exist.`);
   }
 
   return { inputFolder, outputFolder };
