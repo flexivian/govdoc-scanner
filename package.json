@@ -2,8 +2,12 @@
   "name": "govdoc-scanner",
   "private": true,
   "scripts": {
-    "doc": "node apps/doc-scanner/src/main.mjs"
+    "doc": "node apps/doc-scanner/src/main.mjs",
+    "crawler": "node apps/crawler/src/ui.mjs"
   },
+  "workspaces": [
+    "apps/*"
+  ],
   "devDependencies": {
     "nx": "21.1.2"
   },

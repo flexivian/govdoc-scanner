@@ -5,3 +5,6 @@ node_modules/
 **/.env
 
 .nx/
+
+output/*
+ids.txt
