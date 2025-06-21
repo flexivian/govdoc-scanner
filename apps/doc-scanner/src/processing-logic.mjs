@@ -72,7 +72,6 @@ export async function processSingleFile(
   fileName,
   metadataModel
 ) {
-  console.log(`Processing ${fileName}...`);
   try {
     const { data, mimeType } = await prepareFileData(filePath, fileName);
     const filePart = { inlineData: { data, mimeType } };
@@ -87,7 +86,6 @@ export async function processSingleFile(
     const jsonName = fileName.replace(/\.(pdf|docx)$/, ".json");
     const savedPath = await saveJson(metadataJson, metadataDir, jsonName);
 
-    console.log(`Saved metadata: ${savedPath}`);
     return {
       status: "success",
       file: fileName,

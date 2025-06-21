@@ -51,9 +51,6 @@ async function downloadPdfWithAxios(pdfUrl, outputPath) {
 // Parses the HTML and extracts valid PDF download links
 function extractPdfLinks(html, downloadDir) {
   const $ = cheerio.load(html);
-  if (!fs.existsSync(downloadDir)) {
-    fs.mkdirSync(downloadDir, { recursive: true });
-  }
 
   const pdfLinks = [];
   const foundUrls = new Set();
@@ -128,6 +125,15 @@ async function fetchCompanyPdfs(context, gemiId, downloadPath) {
       timeout: PAGE_LOAD_TIMEOUT_IN_MILLISECONDS,
     });
 
+    const html = await page.content();
+
+    // Check for "Not found" in the page content
+    if (html.includes("Not found")) {
+      throw new Error(
+        `Company with GEMI ID ${gemiId} not found. Please check the ID or try again later.`
+      );
+    }
+
     try {
       // Wait for the page to load and the modification history to appear
       await page.waitForSelector("div#ModificationHistory", { timeout: 2000 });
@@ -138,11 +144,13 @@ async function fetchCompanyPdfs(context, gemiId, downloadPath) {
       // so we continue nonetheless
     }
 
-    const html = await page.content();
     // Pass the final, desired download path directly to the extractor
     const { pdfLinks, downloadDir } = extractPdfLinks(html, downloadPath);
 
     if (pdfLinks.length > 0) {
+      if (!fs.existsSync(downloadDir)) {
+        fs.mkdirSync(downloadDir, { recursive: true });
+      }
       console.log(`Found ${pdfLinks.length} PDF(s). Saving to: ${downloadDir}`);
       await downloadAllPdfs(pdfLinks);
     } else {
@@ -191,7 +199,6 @@ export async function runCrawlerForGemiIds(gemiIds, outputBaseDir) {
         gemiId,
         "pdf_downloads"
       );
-      await fs.promises.mkdir(gemiDownloadPath, { recursive: true });
 
       // Pass the final path to the fetcher
       await fetchCompanyPdfs(context, gemiId, gemiDownloadPath);
