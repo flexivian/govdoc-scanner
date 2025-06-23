@@ -34,6 +34,7 @@
     "archiver": "^7.0.1",
     "dotenv": "^16.4.7",
     "mammoth": "^1.9.0",
-    "p-limit": "^6.2.0"
+    "p-limit": "^6.2.0",
+    "word-extractor": "^1.0.4"
   }
 }

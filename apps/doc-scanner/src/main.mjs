@@ -47,10 +47,13 @@ function prepareFolders(gemiId) {
 function getFilesToProcess(inputFolder) {
   const files = fs
     .readdirSync(inputFolder)
-    .filter((file) => file.endsWith(".pdf") || file.endsWith(".docx"));
+    .filter(
+      (file) =>
+        file.endsWith(".pdf") || file.endsWith(".docx") || file.endsWith(".doc")
+    );
 
   if (files.length === 0) {
-    throw new Error(`No PDF or DOCX files found in ${inputFolder}.`);
+    throw new Error(`No documents found in ${inputFolder}.`);
   }
 
   return files;
