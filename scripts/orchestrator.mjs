@@ -29,13 +29,14 @@ async function silentCrawl(ids, outputRoot) {
 }
 
 /**
- * Scan all PDFs in a directory and count successes.
+ * Scan all PDFs, DOC, and DOCX files in a directory and count successes.
  */
 async function runDocScannerForGemiId(id, inputDir) {
   let files;
   try {
+    // Include .pdf, .doc, .docx
     files = (await fs.readdir(inputDir)).filter((f) =>
-      f.toLowerCase().endsWith(".pdf")
+      /\.(pdf|docx?)$/i.test(f)
     );
   } catch {
     return { found: 0, scanned: 0 };
@@ -47,7 +48,7 @@ async function runDocScannerForGemiId(id, inputDir) {
 
   const limit = pLimit(GEMINI_CONCURRENCY_LIMIT);
   const model = getMetadataModel();
-  const outputDir = path.join(projectRoot, "output", id); // no nested pdf_metadata here
+  const outputDir = path.join(projectRoot, "output", id);
   const tasks = files.map((f) =>
     limit(() => processSingleFile(path.join(inputDir, f), outputDir, f, model))
   );
@@ -119,11 +120,11 @@ async function runOrchestration() {
       continue;
     }
 
-    // 2) List PDFs
+    // 2) List document files
     let files;
     try {
       files = (await fs.readdir(downloadDir)).filter((f) =>
-        f.toLowerCase().endsWith(".pdf")
+        /\.(pdf|docx?)$/i.test(f)
       );
     } catch {
       stats[id] = { found: 0, scanned: 0 };

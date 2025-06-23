@@ -4,6 +4,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import axios from "axios";
+import mime from "mime-types";
 
 // ES Module compatible __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -11,21 +12,21 @@ const __dirname = path.dirname(__filename);
 
 const BASE_URL = "https://publicity.businessportal.gr";
 const PAGE_LOAD_TIMEOUT_IN_MILLISECONDS = 60000;
-const PDF_DOWNLOAD_TIMEOUT_AXIOS = 120000;
+const DOWNLOAD_TIMEOUT_AXIOS = 120000;
 
-// Downloads a PDF file using Axios
-async function downloadPdfWithAxios(pdfUrl, outputPath) {
+// Downloads a document using Axios
+async function downloadWithAxios(documentUrl, outputPath) {
   try {
     const response = await axios({
       method: "GET",
-      url: pdfUrl,
+      url: documentUrl,
       responseType: "stream",
       headers: {
         "User-Agent":
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
         Referer: BASE_URL,
       },
-      timeout: PDF_DOWNLOAD_TIMEOUT_AXIOS,
+      timeout: DOWNLOAD_TIMEOUT_AXIOS,
     });
 
     const writer = fs.createWriteStream(outputPath);
@@ -48,64 +49,93 @@ async function downloadPdfWithAxios(pdfUrl, outputPath) {
   }
 }
 
-// Parses the HTML and extracts valid PDF download links
-function extractPdfLinks(html, downloadDir) {
+// Parses the HTML and extracts download links (.pdf, .doc, .docx)
+async function extractDownloadLinks(html, downloadDir) {
   const $ = cheerio.load(html);
+  const selector = 'a[href^="/api/download/"]';
+  const seen = new Set();
+  const downloadLinks = [];
 
-  const pdfLinks = [];
-  const foundUrls = new Set();
-  const linkSelector = 'a[href^="/api/download/"]';
+  for (const el of $(selector).toArray()) {
+    const rel = $(el).attr("href");
+    if (!rel || seen.has(rel)) continue;
+    seen.add(rel);
 
-  $(linkSelector).each((i, el) => {
-    const $link = $(el);
-    const relativePdfUrl = $link.attr("href");
+    const fullUrl = BASE_URL + rel;
+    let name = rel.split("/").pop().split("?")[0] || `file_${seen.size}`;
+    let ext = path.extname(name).toLowerCase();
 
-    if (!relativePdfUrl || foundUrls.has(relativePdfUrl)) return;
-    foundUrls.add(relativePdfUrl);
+    if (!ext) {
+      // do a byte‐range GET to get headers
+      let headers = {};
+      try {
+        const resp = await axios.get(fullUrl, {
+          responseType: "stream",
+          headers: {
+            "User-Agent": "...",
+            Referer: BASE_URL,
+            Range: "bytes=0-0",
+          },
+          timeout: DOWNLOAD_TIMEOUT_AXIOS,
+        });
+        headers = resp.headers;
+        resp.data.destroy();
+      } catch (err) {
+        console.error(`Could not fetch headers for ${fullUrl}: ${err.message}`);
+      }
 
-    const fullPdfUrl = BASE_URL + relativePdfUrl;
-    let originalFilename =
-      relativePdfUrl.split("/").pop().split("?")[0] ||
-      `document_${foundUrls.size}`;
-    if (!originalFilename.toLowerCase().endsWith(".pdf")) {
-      originalFilename += ".pdf";
+      // Try Content-Disposition
+      const cd = headers["content-disposition"];
+      if (cd) {
+        const m = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/.exec(cd);
+        if (m) {
+          ext = path.extname(m[1]).toLowerCase();
+        }
+      }
+
+      // Fallback to Content-Type
+      if (!ext && headers["content-type"]) {
+        const ctype = headers["content-type"].toLowerCase();
+        if (ctype.includes("pdf")) {
+          ext = ".pdf";
+        } else if (ctype.includes("msword")) {
+          ext = ".doc";
+        } else if (ctype.includes("openxmlformats")) {
+          ext = ".docx";
+        } else {
+          const guess = mime.extension(ctype);
+          if (guess) ext = "." + guess;
+        }
+      }
+
+      name += ext;
     }
 
-    originalFilename = originalFilename.replace(/[\/\\:*?"<>|]/g, "_");
-
-    let basePath = path.join(downloadDir, originalFilename);
-    let outputPath = basePath;
-    let count = 1;
-
-    while (fs.existsSync(outputPath)) {
-      const ext = path.extname(originalFilename);
-      const base = path.basename(originalFilename, ext);
-      outputPath = path.join(downloadDir, `${base}_(${count})${ext}`);
-      count++;
+    // avoid overwrites
+    let out = path.join(downloadDir, name);
+    let i = 1;
+    while (fs.existsSync(out)) {
+      const base = path.basename(name, ext);
+      out = path.join(downloadDir, `${base}_(${i++})${ext}`);
     }
 
-    pdfLinks.push({
-      url: fullPdfUrl,
-      path: outputPath,
-      sourceUrl: relativePdfUrl,
-    });
-  });
+    downloadLinks.push({ url: fullUrl, path: out, sourceUrl: rel });
+  }
 
-  // Return pdfLinks and the confirmed downloadDir
-  return { pdfLinks, downloadDir };
+  return { downloadLinks, downloadDir };
 }
 
-// Downloads all the extracted PDF links
-async function downloadAllPdfs(pdfLinks) {
+// Downloads all the extracted document links
+async function downloadAll(documentLinks) {
   let downloadedCount = 0;
 
-  for (const pdfInfo of pdfLinks) {
+  for (const documentInfo of documentLinks) {
     try {
-      await downloadPdfWithAxios(pdfInfo.url, pdfInfo.path);
+      await downloadWithAxios(documentInfo.url, documentInfo.path);
       downloadedCount++;
     } catch (err) {
       console.error(
-        `Failed to download PDF from ${pdfInfo.sourceUrl}: ${err.message}`
+        `Failed to download document from ${documentInfo.sourceUrl}: ${err.message}`
       );
     }
   }
@@ -114,7 +144,7 @@ async function downloadAllPdfs(pdfLinks) {
 }
 
 // Main workflow for a single ID
-async function fetchCompanyPdfs(context, gemiId, downloadPath) {
+async function fetchCompanyDocuments(context, gemiId, downloadPath) {
   const companyPageUrl = `${BASE_URL}/company/${gemiId}`;
   let page = null;
 
@@ -145,16 +175,21 @@ async function fetchCompanyPdfs(context, gemiId, downloadPath) {
     }
 
     // Pass the final, desired download path directly to the extractor
-    const { pdfLinks, downloadDir } = extractPdfLinks(html, downloadPath);
+    const { downloadLinks, downloadDir } = await extractDownloadLinks(
+      html,
+      downloadPath
+    );
 
-    if (pdfLinks.length > 0) {
+    if (downloadLinks.length > 0) {
       if (!fs.existsSync(downloadDir)) {
         fs.mkdirSync(downloadDir, { recursive: true });
       }
-      console.log(`Found ${pdfLinks.length} PDF(s). Saving to: ${downloadDir}`);
-      await downloadAllPdfs(pdfLinks);
+      console.log(
+        `Found ${downloadLinks.length} Document(s). Saving to: ${downloadDir}`
+      );
+      await downloadAll(downloadLinks);
     } else {
-      console.log("No PDF files found to download.");
+      console.log("No Documents found to download.");
     }
   } catch (error) {
     console.error(`Error processing GEMI ID ${gemiId}: ${error.message}`);
@@ -197,11 +232,11 @@ export async function runCrawlerForGemiIds(gemiIds, outputBaseDir) {
       const gemiDownloadPath = path.join(
         outputBaseDir,
         gemiId,
-        "pdf_downloads"
+        "document_downloads"
       );
 
       // Pass the final path to the fetcher
-      await fetchCompanyPdfs(context, gemiId, gemiDownloadPath);
+      await fetchCompanyDocuments(context, gemiId, gemiDownloadPath);
       finalDownloadPaths[gemiId] = gemiDownloadPath;
     }
   } catch (error) {
