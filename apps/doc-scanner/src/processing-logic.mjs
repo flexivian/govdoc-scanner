@@ -1,6 +1,7 @@
 import fs from "fs/promises";
 import path from "path";
 import mammoth from "mammoth";
+import WordExtractor from "word-extractor";
 
 import {
   CompanyEssentialMetadata,
@@ -26,16 +27,33 @@ async function convertDocxToBase64(filePath) {
   return Buffer.from(text, "utf-8").toString("base64");
 }
 
+// Convert DOC (binary) to plain-text base64 using word-extractor
+async function convertDocToBase64(filePath) {
+  const extractor = new WordExtractor();
+  const doc = await extractor.extract(filePath);
+  const text = doc.getBody();
+  return Buffer.from(text, "utf-8").toString("base64");
+}
+
 // Prepare file data (base64 + mimeType)
 async function prepareFileData(filePath, fileName) {
-  if (fileName.endsWith(".docx")) {
+  const ext = path.extname(fileName).toLowerCase();
+
+  if (ext === ".doc") {
+    const data = await convertDocToBase64(filePath);
+    return { data, mimeType: MIME_TYPE_TEXT_PLAIN };
+  }
+
+  if (ext === ".docx") {
     const data = await convertDocxToBase64(filePath);
     return { data, mimeType: MIME_TYPE_TEXT_PLAIN };
   }
-  if (fileName.endsWith(".pdf")) {
+
+  if (ext === ".pdf") {
     const data = await readFileAsBase64(filePath);
     return { data, mimeType: MIME_TYPE_PDF };
   }
+
   throw new Error("unsupported_type");
 }
 
@@ -72,7 +90,6 @@ export async function processSingleFile(
   fileName,
   metadataModel
 ) {
-  console.log(`Processing ${fileName}...`);
   try {
     const { data, mimeType } = await prepareFileData(filePath, fileName);
     const filePart = { inlineData: { data, mimeType } };
@@ -83,11 +100,10 @@ export async function processSingleFile(
       metadataModel
     );
 
-    const metadataDir = path.join(outputFolder, "pdf_metadata");
-    const jsonName = fileName.replace(/\.(pdf|docx)$/, ".json");
+    const metadataDir = path.join(outputFolder, "document_metadata");
+    const jsonName = fileName.replace(/\.(pdf|docx|doc)$/, ".json");
     const savedPath = await saveJson(metadataJson, metadataDir, jsonName);
 
-    console.log(`Saved metadata: ${savedPath}`);
     return {
       status: "success",
       file: fileName,

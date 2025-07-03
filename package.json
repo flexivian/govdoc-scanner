@@ -4,7 +4,8 @@
   "scripts": {
     "postinstall": "npx playwright install chromium",
     "doc": "node apps/doc-scanner/src/main.mjs",
-    "crawler": "node apps/crawler/src/ui.mjs"
+    "crawler": "node apps/crawler/src/ui.mjs",
+    "main": "node scripts/orchestrator.mjs"
   },
   "workspaces": [
     "apps/*"
@@ -12,5 +13,9 @@
   "devDependencies": {
     "nx": "21.1.2"
   },
-  "nx": {}
+  "nx": {},
+  "dependencies": {
+    "chokidar": "^4.0.3",
+    "cli-progress": "^3.12.0"
+  }
 }
