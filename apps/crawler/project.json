@@ -1,0 +1,15 @@
+{
+  "name": "crawler",
+  "root": "apps/crawler",
+  "sourceRoot": "apps/crawler/src",
+  "projectType": "application",
+  "targets": {
+    "start": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node src/ui.mjs"
+      }
+    }
+  },
+  "tags": []
+}
