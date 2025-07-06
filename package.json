@@ -5,7 +5,11 @@
     "postinstall": "npx playwright install chromium",
     "doc": "node apps/doc-scanner/src/main.mjs",
     "crawler": "node apps/crawler/src/ui.mjs",
-    "main": "node scripts/orchestrator.mjs"
+    "main": "node scripts/orchestrator.mjs",
+    "docs:dev": "cd docs-site && npm run start",
+    "docs:build": "cd docs-site && npm run build",
+    "docs:serve": "cd docs-site && npm run serve",
+    "docs:deploy": "cd docs-site && npm run deploy"
   },
   "workspaces": [
     "apps/*"
