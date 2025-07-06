@@ -4,36 +4,36 @@ sidebar_position: 1
 
 # What is GovDoc Scanner?
 
-GovDoc Scanner is an open-source tool for transforming unstructured Greek GEMI portal PDFs into a structured, searchable database. It automates the extraction of metadata and document histories, making corporate information more accessible and useful for a wide range of users.
+## Project Overview
 
-## Getting Started
+### Problem Statement:
 
-Get started by **cloning the GovDoc Scanner repository** and following the installation instructions.
+In Greece, vital public company data is often locked in unstructured PDF files, making it challenging for citizens,
+researchers, and policymakers to access and analyze this information. The current state of these documents limits
+transparency and hinders efficient data use. The Flexible GovDoc Scanner project seeks to bridge this gap by
+transforming these PDFs into a structured, searchable database, thereby democratizing access to important corporate
+information.
 
-### What you'll need
+### What I am Making:
 
-- [Node.js](https://nodejs.org/en/download/) version 18.0 or above
-- A Gemini API key (for document processing)
+The Flexible GovDoc Scanner is an open-source tool designed to convert unstructured GEMI portal PDFs into a fully
+searchable database accessible via a REST API. The solution comprises the following steps:
 
-## Installation
+- **Fetch**: Systematically retrieve documents from Greece’s official Open Data Portal, ensuring full compliance
+  with legal and ethical standards.
+- **Extract**: Leverage Google Gemini's generative AI capabilities to accurately extract metadata and text from the documents, eliminating the need for traditional OCR.
+- **Organize**: Index and store the extracted data in OpenSearch, taking advantage of its built-in language
+  analyzers for Greek text and fast querying capabilities.
+- **Share**: Develop a robust REST API that allows users to query the database by various parameters such as
+  company name, incorporation date, and key individuals, with features like pagination, filtering, and rate
+  limiting.
 
-Clone the repository and install dependencies:
+## Tools Used
 
-```bash
-git clone https://github.com/your-org/govdoc-scanner.git
-cd govdoc-scanner
-npm install
-```
+- **Node.js**: The runtime environment for all scripts and applications.
+- **Nx**: A smart, extensible build framework for monorepo management.
+- **Google Gemini**: Used for its generative AI capabilities in document processing and metadata extraction.
 
-## Start the Documentation Site
+## Something Missing? {#something-missing}
 
-From the `docs-site` directory, run:
-
-```bash
-npm install
-npm run start
-```
-
-This will launch the GovDoc Scanner documentation at http://localhost:3000/.
-
-Open `docs/intro.md` (this page) and edit some lines: the site **reloads automatically** and displays your changes.
+If something is missing in the documentation or if you found some part confusing, please click on **edit this Page** and create a PR for improvement. We love your contribution!
