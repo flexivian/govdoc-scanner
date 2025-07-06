@@ -20,7 +20,7 @@ const config = {
   },
 
   // Set the production url of your site here
-  url: "https://your-org.github.io",
+  url: "https://flexivian.github.io",
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
   baseUrl: "/govdoc-scanner/",
@@ -51,7 +51,7 @@ const config = {
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           editUrl:
-            "https://github.com/your-org/govdoc-scanner/edit/main/docs-site/",
+            "https://github.com/flexivian/govdoc-scanner/edit/main/docs-site/",
         },
         theme: {
           customCss: "./src/css/custom.css",
