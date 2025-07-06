@@ -6,6 +6,12 @@ In Greece, vital public company data is often locked in unstructured PDF files, 
 
 The govdoc-scanner is an open-source tool designed to convert unstructured GEMI portal PDFs into a fully searchable database accessible via a REST API. It automates the extraction of metadata and document histories, making corporate information more accessible and useful for a wide range of users.
 
+## Documentation
+
+For detailed documentation, including setup, usage, and contribution guidelines, please visit our documentation site:
+
+[**https://flexivian.github.io/govdoc-scanner/**](https://flexivian.github.io/govdoc-scanner/)
+
 ## Current Functionality/Implementation
 
 The repository currently includes two main applications:
