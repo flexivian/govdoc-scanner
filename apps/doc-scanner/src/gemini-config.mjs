@@ -3,10 +3,11 @@ import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
 
-// Load environment variables
+// Always load .env from the project root
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-dotenv.config({ path: path.resolve(__dirname, "../.env") });
+const projectRoot = path.resolve(__dirname, "../../../");
+dotenv.config({ path: path.resolve(projectRoot, ".env") });
 
 export const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 export const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);

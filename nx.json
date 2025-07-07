@@ -4,6 +4,26 @@
     "doc": {
       "outputs": ["{projectRoot}/src/data/output"],
       "cache": true
+    },
+    "start": {
+      "cache": false
+    }
+  },
+  "projects": {
+    "doc-scanner": {
+      "root": "apps/doc-scanner",
+      "sourceRoot": "apps/doc-scanner/src",
+      "projectType": "application"
+    },
+    "crawler": {
+      "root": "apps/crawler",
+      "sourceRoot": "apps/crawler/src",
+      "projectType": "application"
+    },
+    "orchestrator": {
+      "root": "scripts",
+      "sourceRoot": "scripts",
+      "projectType": "application"
     }
   },
   "tui": { "enabled": false }
