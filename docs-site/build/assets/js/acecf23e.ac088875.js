@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkdocs_site=self.webpackChunkdocs_site||[]).push([[903],{1912:s=>{s.exports=JSON.parse('{"blogBasePath":"/govdoc-scanner/blog","blogTitle":"Blog","authorsListPath":"/govdoc-scanner/blog/authors"}')}}]);

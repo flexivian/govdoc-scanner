@@ -1,0 +1,27 @@
+{
+  "id": "installation/Getting Started",
+  "title": "Getting Started",
+  "description": "This page provides instructions for setting up and running the GovDoc Scanner project.",
+  "source": "@site/docs/installation/Getting Started.md",
+  "sourceDirName": "installation",
+  "slug": "/installation/Getting Started",
+  "permalink": "/govdoc-scanner/docs/installation/Getting Started",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/flexivian/govdoc-scanner/edit/main/docs-site/docs/installation/Getting Started.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 1,
+  "frontMatter": {
+    "sidebar_position": 1
+  },
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "What is GovDoc Scanner?",
+    "permalink": "/govdoc-scanner/docs/intro"
+  },
+  "next": {
+    "title": "Development",
+    "permalink": "/govdoc-scanner/docs/installation/Development"
+  }
+}

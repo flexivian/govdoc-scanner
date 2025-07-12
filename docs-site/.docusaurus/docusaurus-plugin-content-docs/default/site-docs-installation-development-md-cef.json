@@ -1,0 +1,24 @@
+{
+  "id": "installation/development",
+  "title": "development",
+  "description": "",
+  "source": "@site/docs/installation/development.md",
+  "sourceDirName": "installation",
+  "slug": "/installation/development",
+  "permalink": "/govdoc-scanner/docs/installation/development",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/your-org/govdoc-scanner/edit/main/docs-site/docs/installation/development.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "getting-started",
+    "permalink": "/govdoc-scanner/docs/installation/getting-started"
+  },
+  "next": {
+    "title": "production",
+    "permalink": "/govdoc-scanner/docs/installation/production"
+  }
+}

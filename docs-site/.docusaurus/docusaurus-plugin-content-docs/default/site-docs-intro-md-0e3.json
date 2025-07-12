@@ -1,0 +1,23 @@
+{
+  "id": "intro",
+  "title": "What is GovDoc Scanner?",
+  "description": "Project Overview",
+  "source": "@site/docs/intro.md",
+  "sourceDirName": ".",
+  "slug": "/intro",
+  "permalink": "/govdoc-scanner/docs/intro",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/flexivian/govdoc-scanner/edit/main/docs-site/docs/intro.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 1,
+  "frontMatter": {
+    "sidebar_position": 1
+  },
+  "sidebar": "docsSidebar",
+  "next": {
+    "title": "Getting Started",
+    "permalink": "/govdoc-scanner/docs/installation/Getting Started"
+  }
+}

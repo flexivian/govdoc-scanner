@@ -1,0 +1,24 @@
+{
+  "id": "usage",
+  "title": "usage",
+  "description": "",
+  "source": "@site/docs/usage.md",
+  "sourceDirName": ".",
+  "slug": "/usage",
+  "permalink": "/docs/usage",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/docs/usage.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "production",
+    "permalink": "/docs/installation/production"
+  },
+  "next": {
+    "title": "architecture",
+    "permalink": "/docs/architecture"
+  }
+}

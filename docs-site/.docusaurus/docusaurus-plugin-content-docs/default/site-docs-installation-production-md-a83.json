@@ -1,0 +1,24 @@
+{
+  "id": "installation/Production",
+  "title": "Production",
+  "description": "",
+  "source": "@site/docs/installation/Production.md",
+  "sourceDirName": "installation",
+  "slug": "/installation/Production",
+  "permalink": "/govdoc-scanner/docs/installation/Production",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/flexivian/govdoc-scanner/edit/main/docs-site/docs/installation/Production.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "Development",
+    "permalink": "/govdoc-scanner/docs/installation/Development"
+  },
+  "next": {
+    "title": "Code Examples",
+    "permalink": "/govdoc-scanner/docs/code-examples/overview"
+  }
+}
