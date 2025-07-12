@@ -201,12 +201,7 @@ export async function processCompanyFiles(
             metadataModel
           );
 
-          if (cumulativeMetadata.company_name && !companyName) {
-            companyName = cumulativeMetadata.company_name;
-          }
-          if (cumulativeMetadata.company_tax_id && !companyTaxId) {
-            companyTaxId = cumulativeMetadata.company_tax_id;
-          }
+          companyName = cumulativeMetadata.company_name; // Company name may change
         }
 
         console.log(`Successfully processed: ${fileName}`);

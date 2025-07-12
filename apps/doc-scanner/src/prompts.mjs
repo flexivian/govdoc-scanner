@@ -36,6 +36,8 @@ CRITICAL INSTRUCTIONS FOR REPRESENTATIVES:
    - "Μέλος ΔΣ" (Board member)
    - "Πρόεδρος" (President)
    - "Διευθύνων Σύμβουλος" (Managing Director)
+   - A person can have multiple roles (e.g., both partner and manager).
+
 
 4. For partnership documents, pay attention to:
    - Who is transferring shares and leaving vs staying
@@ -98,14 +100,14 @@ CRITICAL REPRESENTATIVE UPDATE RULES:
    - "Ομόρρυθμος εταίρος" = General partner (active in management)
    - "Ετερόρρυθμος εταίρος" = Limited partner (passive investor)
    - "Διαχειριστής" = Manager/Administrator
-   - For O.E. (Ομόρρυθμη Εταιρία), partners are typically also managers
+   - A person can have multiple roles (e.g., both partner and manager).
 
 4. SHARE OWNERSHIP RULE:
    - Look for mentions of share percentages or εταιρικό κεφάλαιο amounts
    - Examples: "μετέχει στο εταιρικό κεφάλαιο με... ποσοστό στα κέρδη και στις ζημίες 49,00%"
    - People with current share ownership are ACTIVE representatives
-   - People who transferred all shares and have no remaining ownership are INACTIVE
-   - EXTRACT the specific percentage or amount for the capital_share field
+   - People who transferred all shares and have no remaining ownership are INACTIVE and their share ownership should be set to null
+   - EXTRACT the specific percentage and/or amount for the capital_share field
 
 5. DUPLICATE PREVENTION & MERGING:
    - MERGE representatives by name - do NOT create duplicates

@@ -125,7 +125,7 @@ export const CompanyEssentialMetadata = {
           role: {
             type: "string",
             description:
-              "Specific representative role in Greek. Common roles: 'Διαχειριστής', 'Ομόρρυθμος εταίρος', 'Ετερόρρυθμος εταίρος', 'Μέλος ΔΣ', 'Πρόεδρος ΔΣ', 'Αντιπρόεδρος ΔΣ', 'Διευθύνων Σύμβουλος', 'Γενικός Διευθυντής'. Use exact Greek terminology from document.",
+              "Specific representative role in Greek. Common roles: 'Διαχειριστής', 'Ομόρρυθμος εταίρος', 'Ετερόρρυθμος εταίρος', 'Μέλος ΔΣ', 'Πρόεδρος ΔΣ', 'Αντιπρόεδρος ΔΣ', 'Διευθύνων Σύμβουλος', 'Γενικός Διευθυντής'. Use exact Greek terminology from document. A person can have multiple roles (e.g., both partner and manager)",
             nullable: true,
           },
           is_active: {
@@ -143,7 +143,7 @@ export const CompanyEssentialMetadata = {
           capital_share: {
             type: "string",
             description:
-              "Share percentage or capital amount owned by this representative in the company. Examples: '49%', '51%', '20%', or specific amounts like '9.800,00 ευρώ'. Extract from phrases like 'μετέχει στο εταιρικό κεφάλαιο με... ποσοστό στα κέρδη και στις ζημίες X%' or 'με ποσοστό X%'. Only include if explicitly mentioned.",
+              "Share percentage and/or capital amount owned by this representative in the company. Examples: '9.800,00 Ευρώ / 49%', '51%', '20%'. Extract from phrases like 'μετέχει στο εταιρικό κεφάλαιο με... ποσοστό στα κέρδη και στις ζημίες X%' or 'με ποσοστό X%'. Only include if explicitly mentioned.",
             nullable: true,
           },
         },
