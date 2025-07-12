@@ -1,0 +1,58 @@
+{
+  "docusaurus-plugin-content-docs": {
+    "default": {
+      "path": "/govdoc-scanner/docs",
+      "versions": [
+        {
+          "name": "current",
+          "label": "Next",
+          "isLast": true,
+          "path": "/govdoc-scanner/docs",
+          "mainDocId": "intro",
+          "docs": [
+            {
+              "id": "code-examples/overview",
+              "path": "/govdoc-scanner/docs/code-examples/overview",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "gsoc/2025/overview",
+              "path": "/govdoc-scanner/docs/gsoc/2025/overview",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "installation/Development",
+              "path": "/govdoc-scanner/docs/installation/Development",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "installation/Getting Started",
+              "path": "/govdoc-scanner/docs/installation/Getting Started",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "installation/Production",
+              "path": "/govdoc-scanner/docs/installation/Production",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "intro",
+              "path": "/govdoc-scanner/docs/intro",
+              "sidebar": "docsSidebar"
+            }
+          ],
+          "draftIds": [],
+          "sidebars": {
+            "docsSidebar": {
+              "link": {
+                "path": "/govdoc-scanner/docs/intro",
+                "label": "intro"
+              }
+            }
+          }
+        }
+      ],
+      "breadcrumbs": true
+    }
+  }
+}

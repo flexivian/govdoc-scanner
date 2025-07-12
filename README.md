@@ -1,5 +1,14 @@
 # govdoc-scanner
 
+[![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://flexivian.github.io/govdoc-scanner/)
+[![GitHub](https://img.shields.io/badge/GitHub-govdoc--scanner-green)](https://github.com/flexivian/govdoc-scanner)
+
+## 📚 Documentation
+
+**📖 [View Complete Documentation →](https://flexivian.github.io/govdoc-scanner/)**
+
+For detailed documentation, including setup guides, API references, contribution guidelines, and GSoC 2025 information, visit our comprehensive documentation site.
+
 ## Project Overview
 
 In Greece, vital public company data is often locked in behind multiple custom templated PDF files, making it challenging for citizens, researchers, and policymakers to access and analyze this information. The current state of these documents limits transparency and hinders efficient data use. The govdoc-scanner project seeks to bridge this gap by transforming these PDFs into a structured, searchable database, thereby democratizing access to important corporate information.
