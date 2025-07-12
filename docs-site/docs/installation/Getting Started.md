@@ -9,7 +9,19 @@ This page provides instructions for setting up and running the GovDoc Scanner pr
 ## Requirements
 
 - **Node.js**: v18.x or newer (recommended: v20.x)
-- **.env file**: You must create a `.env` file in the project root with your Gemini API key:
+  Check your version with:
+
+```sh
+node --version
+```
+
+- **.env file**: Copy the example environment file and update it with your Gemini API key:
+
+```sh
+cp .env.example .env
+```
+
+Then, open `.env` and set:
 
 ```
 GEMINI_API_KEY=your_gemini_api_key_here
@@ -57,6 +69,6 @@ To run the end-to-end workflow of crawling and scanning for multiple companies, 
 npx nx run orchestrator:start
 ```
 
-- Follows prompts to select IDs (single or from file).
+- Follow prompts to select IDs (single or from file).
 - Downloads and processes documents, showing progress and summary.
 - Output is saved in the `output/` directory at the project root.
