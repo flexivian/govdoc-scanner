@@ -65,6 +65,21 @@ async function extractDownloadLinks(html, downloadDir) {
     let name = rel.split("/").pop().split("?")[0] || `file_${seen.size}`;
     let ext = path.extname(name).toLowerCase();
 
+    // Extract date from the table row containing this download link
+    let datePrefix = "";
+    const $row = $(el).closest("tr");
+    if ($row.length > 0) {
+      const $firstCell = $row.find("td").first();
+      const dateText = $firstCell.text().trim();
+      // Check if it matches DD/MM/YYYY format
+      const dateMatch = dateText.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+      if (dateMatch) {
+        // Convert DD/MM/YYYY to YYYY-MM-DD format for filename
+        const [, day, month, year] = dateMatch;
+        datePrefix = `${year}-${month}-${day}_`;
+      }
+    }
+
     if (!ext) {
       // do a byte‐range GET to get headers
       let headers = {};
@@ -111,11 +126,14 @@ async function extractDownloadLinks(html, downloadDir) {
       name += ext;
     }
 
+    // Add date prefix to the filename if we found a date
+    const baseFileName = datePrefix + name;
+
     // avoid overwrites
-    let out = path.join(downloadDir, name);
+    let out = path.join(downloadDir, baseFileName);
     let i = 1;
     while (fs.existsSync(out)) {
-      const base = path.basename(name, ext);
+      const base = path.basename(baseFileName, ext);
       out = path.join(downloadDir, `${base}_(${i++})${ext}`);
     }
 
