@@ -95,134 +95,133 @@ export const CompanyEssentialMetadata = {
   properties: {
     gemi_id: {
       type: "string",
-      description: "General Commercial Registry (GEMI) number",
+      description:
+        "General Commercial Registry (GEMI) identification number - a 12-digit number uniquely identifying the company in the Greek registry system",
+      nullable: true,
+    },
+    company_tax_id: {
+      type: "string",
+      description:
+        "Greek Tax Identification Number (ΑΦΜ) - a 9-digit number assigned by the tax authorities",
       nullable: true,
     },
     company_name: {
       type: "string",
-      description: "Official registered name of the company",
+      description:
+        "Official registered company name in Greek (all caps), exactly as it appears in GEMI registry. Include legal form if part of the name (e.g., 'ΠΑΡΑΔΕΙΓΜΑ ΕΤΑΙΡΙΑ Α.Ε.')",
       nullable: true,
     },
     representatives: {
       type: "array",
-      items: { type: "string" },
+      items: {
+        type: "object",
+        properties: {
+          name: {
+            type: "string",
+            description:
+              "Full name of the company representative in Greek, format: 'SURNAME FIRSTNAME' (all caps). Examples: 'ΠΑΠΑΔΟΠΟΥΛΟΣ ΙΩΑΝΝΗΣ', 'ΚΩΝΣΤΑΝΤΙΝΟΥ ΜΑΡΙΑ'. Do NOT include father's name, mother's name, or titles. Only include if person has explicit representative role.",
+            nullable: true,
+          },
+          role: {
+            type: "string",
+            description:
+              "Specific representative role in Greek. Common roles: 'Διαχειριστής', 'Ομόρρυθμος εταίρος', 'Ετερόρρυθμος εταίρος', 'Μέλος ΔΣ', 'Πρόεδρος ΔΣ', 'Αντιπρόεδρος ΔΣ', 'Διευθύνων Σύμβουλος', 'Γενικός Διευθυντής'. Use exact Greek terminology from document.",
+            nullable: true,
+          },
+          is_active: {
+            type: "boolean",
+            description:
+              "Current status in the company based on document action: TRUE if being elected/appointed/confirmed in role, FALSE if resigning/removed/replaced. For board election documents, newly elected members are TRUE.",
+            nullable: true,
+          },
+          tax_id: {
+            type: "string",
+            description:
+              "Greek Tax ID (ΑΦΜ, Α.Φ.Μ.) of the representative - a 9-digit number. Only include if explicitly mentioned in the document.",
+            nullable: true,
+          },
+          capital_share: {
+            type: "string",
+            description:
+              "Share percentage or capital amount owned by this representative in the company. Examples: '49%', '51%', '20%', or specific amounts like '9.800,00 ευρώ'. Extract from phrases like 'μετέχει στο εταιρικό κεφάλαιο με... ποσοστό στα κέρδη και στις ζημίες X%' or 'με ποσοστό X%'. Only include if explicitly mentioned.",
+            nullable: true,
+          },
+        },
+        required: ["name", "role", "is_active", "tax_id", "capital_share"],
+      },
       description:
-        "List of representatives of the company, last name first, all caps. Do not add father,mother names or any special characters. (e.g. 'ΣΜΙΤΣΗΣ ΑΝΔΡΕΑΣ'). Make sure to add people who 100% represent the company. Do not add other people.",
-      nullable: true,
-    },
-    creation_date: {
-      type: "string",
-      description: "Date of company creation in YYYY-MM-DD format",
+        "Array of company representatives/officers with their roles and current status. ONLY include people with explicit representative roles (Διαχειριστής, Ομόρρυθμος/Ετερόρρυθμος εταίρος, ΔΣ members, etc.). DO NOT include lawyers, accountants, witnesses, or service providers mentioned in documents. Focus on accuracy over completeness.",
       nullable: true,
     },
     registered_address: {
       type: "string",
       description:
-        "Official registered address of the company, all caps, no δημος and no ταχυδρομικός κώδικας and no region (e.g. 'MYKONOU 1'). Do not add the city or region if that's the only thing available.",
+        "Official registered company address in Greek, format: 'STREET NUMBER, CITY' (all caps). Example: 'ΛΕΩΦΟΡΟΣ ΚΗΦΙΣΙΑΣ 125, ΑΘΗΝΑ'. Do NOT include: δημος (municipality), ταχυδρομικός κώδικας (postal code), περιφέρεια (region), or country. Extract only street address and city.",
       nullable: true,
     },
     company_type: {
       type: "string",
-      description: "Legal type of the company",
+      description:
+        "Legal structure of the company. Must match exactly one of the predefined enum values. Common types: 'AE (Ανώνυμη Εταιρία)' for corporations, 'OE (Ομόρρυθμη Εταιρία)' for general partnerships, 'ΕΠΕ (Εταιρία Περιορισμένης Ευθύνης)' for limited liability companies, 'IKE (Ιδιωτική Κεφαλαιουχική Εταιρεία)' for private companies.",
       nullable: true,
       enum: legal_types,
     },
     competent_gemi_office: {
       type: "string",
-      description: "Responsible local GEMI service office",
+      description:
+        "The specific Chamber of Commerce or GEMI office responsible for this company's registration. Must match exactly one of the predefined enum values. Examples: 'ΕΜΠΟΡΙΚΟ & ΒΙΟΜΗΧΑΝΙΚΟ ΕΠΙΜΕΛΗΤΗΡΙΟ ΑΘΗΝΩΝ', 'ΕΠΙΜΕΛΗΤΗΡΙΟ ΘΕΣΣΑΛΟΝΙΚΗΣ'",
       nullable: true,
       enum: competent_gemi_offices,
     },
     region: {
       type: "string",
       description:
-        "Region of the company's headquarters (only Περιφερειακή Ενότητα ...)",
+        "Regional unit (Περιφερειακή Ενότητα) where company is registered. Examples: 'ΑΤΤΙΚΗΣ', 'ΘΕΣΣΑΛΟΝΙΚΗΣ', 'ΑΧΑΪΑΣ'. Use only the regional unit name, not the full 'Περιφερειακή Ενότητα' prefix.",
       nullable: true,
     },
     city: {
       type: "string",
-      description: "City where the company is registered, no region",
+      description:
+        "City/municipality name where company is registered (all caps). Examples: 'ΑΘΗΝΑ', 'ΘΕΣΣΑΛΟΝΙΚΗ', 'ΠΑΤΡΑ'. Do not include regional information.",
       nullable: true,
     },
     postal_code: {
       type: "string",
-      description: "Postal code (TK) of the company",
-      nullable: true,
-    },
-    document_type: {
-      type: "string",
       description:
-        "Type of the document(e.g. 'Ανακοίνωση σύστασης από ΥΜΣ','Ανακοίνωση τροποποίησης καταστατικού')",
+        "Postal code (Ταχυδρομικός Κώδικας, Τ.Κ.) of the company, consisting of 5 digits. Example: '11526'. Extract only the numeric code, do not include the 'Τ.Κ.' prefix or any other address details. Ensure the code matches the official postal code for the registered address as stated in the document.",
       nullable: true,
     },
     document_date: {
       type: "string",
-      description: "Date of the document in YYYY-MM-DD format",
-      nullable: true,
-    },
-    summary: {
-      type: "string",
       description:
-        "Summary of the document and the changes it brings to the company",
+        "Date when the GEMI document was issued/registered, in YYYY-MM-DD format. This should match the document's official date, not the filename date if they differ.",
       nullable: true,
     },
   },
   required: [
     "gemi_id",
+    "company_tax_id",
     "company_name",
     "representatives",
-    "creation_date",
     "registered_address",
     "company_type",
     "competent_gemi_office",
     "region",
     "city",
     "postal_code",
-    "document_type",
     "document_date",
-    "summary",
   ],
   propertyOrdering: [
     "gemi_id",
+    "company_tax_id",
     "company_name",
     "representatives",
-    "creation_date",
     "registered_address",
     "company_type",
     "competent_gemi_office",
     "region",
     "city",
     "postal_code",
-    "document_type",
     "document_date",
-    "summary",
   ],
-};
-
-export const DocumentHistoriesSchema = {
-  type: "object",
-  properties: {
-    documentHistories: {
-      type: "array",
-      description:
-        "An array of history segments, one for each source document, where each segment is written considering the overall context of all documents and their chronological order.",
-      items: {
-        type: "object",
-        properties: {
-          sourceFile: {
-            type: "string",
-            description:
-              "The name of the original source file from the input 'Collected Metadata' (e.g., 'report_2020.pdf'). THIS MUST MATCH THE INPUT SOURCE FILE NAME.",
-          },
-          historySegment: {
-            type: "string",
-            description:
-              "A concise history segment in Greek related to this specific document, synthesized by considering its information in the context of all other provided documents and its chronological position. This should reflect its place in the timeline or its specific contribution/relevance.",
-          },
-        },
-        required: ["sourceFile", "historySegment"],
-      },
-    },
-  },
-  required: ["documentHistories"],
 };

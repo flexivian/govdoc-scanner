@@ -3,16 +3,34 @@ import path from "path";
 import mammoth from "mammoth";
 import WordExtractor from "word-extractor";
 
-import {
-  CompanyEssentialMetadata,
-  DocumentHistoriesSchema,
-} from "./metadata.mjs";
+import { CompanyEssentialMetadata } from "./metadata.mjs";
 import { callGeminiWithRetry } from "./gemini-config.mjs";
+import {
+  getInitialExtractionPrompt,
+  getMergeMetadataPrompt,
+} from "./prompts.mjs";
 
 const MIME_TYPE_TEXT_PLAIN = "text/plain";
 const MIME_TYPE_PDF = "application/pdf";
 
-// === Single file processing ===
+function extractDateFromFilename(fileName) {
+  const dateMatch = fileName.match(/^(\d{4}-\d{2}-\d{2})/);
+  return dateMatch ? dateMatch[1] : null;
+}
+
+function sortFilesByDate(files) {
+  return files.slice().sort((a, b) => {
+    const dateA = extractDateFromFilename(a);
+    const dateB = extractDateFromFilename(b);
+
+    if (dateA && dateB) {
+      return new Date(dateA) - new Date(dateB);
+    }
+    if (dateA) return -1;
+    if (dateB) return 1;
+    return 0;
+  });
+}
 
 // Read any file as base64
 async function readFileAsBase64(filePath) {
@@ -57,11 +75,10 @@ async function prepareFileData(filePath, fileName) {
   throw new Error("unsupported_type");
 }
 
-// Call Gemini to extract metadata JSON
-async function extractMetadata(filePart, fileName, modelInstance) {
-  const prompt = `Analyze the attached document and extract essential company metadata.
-  Strictly follow the provided JSON schema. For fields where information is not found or you are not 100% certain, use null.
-  Ensure results are in Greek. Make sure to use only the choices from the enums where applicable.`;
+// Extract metadata from the first document
+async function extractInitialMetadata(filePart, fileName, modelInstance) {
+  const extractedDate = extractDateFromFilename(fileName);
+  const prompt = getInitialExtractionPrompt(extractedDate);
 
   const config = {
     responseMimeType: "application/json",
@@ -76,7 +93,30 @@ async function extractMetadata(filePart, fileName, modelInstance) {
   return JSON.parse(response);
 }
 
-// Save JSON file
+// Merge new document with existing metadata
+async function mergeMetadataWithGemini(
+  filePart,
+  fileName,
+  existingMetadata,
+  modelInstance
+) {
+  const extractedDate = extractDateFromFilename(fileName);
+  const prompt = getMergeMetadataPrompt(extractedDate, existingMetadata);
+
+  const config = {
+    responseMimeType: "application/json",
+    responseSchema: CompanyEssentialMetadata,
+  };
+  const response = await callGeminiWithRetry(
+    modelInstance,
+    [prompt, filePart],
+    `merge-${fileName}`,
+    config
+  );
+  return JSON.parse(response);
+}
+
+// Save JSON file to disk
 async function saveJson(data, dir, fileName) {
   await fs.mkdir(dir, { recursive: true });
   const outPath = path.join(dir, fileName);
@@ -84,122 +124,134 @@ async function saveJson(data, dir, fileName) {
   return outPath;
 }
 
-export async function processSingleFile(
-  filePath,
+// Create the final metadata structure
+function createFinalMetadataStructure(
+  gemiId,
+  companyName,
+  companyTaxId,
+  creationDate,
+  currentSnapshot
+) {
+  return {
+    [gemiId]: {
+      "company-name": companyName,
+      "company-tax-id": companyTaxId,
+      "creation-date": creationDate,
+      "scan-date": new Date().toISOString(),
+      metadata: {
+        "current-snapshot": currentSnapshot,
+      },
+    },
+  };
+}
+
+// Process company files sequentially by date and extract/merge metadata
+export async function processCompanyFiles(
+  files,
+  inputFolder,
   outputFolder,
-  fileName,
+  gemiId,
   metadataModel
 ) {
   try {
-    const { data, mimeType } = await prepareFileData(filePath, fileName);
-    const filePart = { inlineData: { data, mimeType } };
-
-    const metadataJson = await extractMetadata(
-      filePart,
-      fileName,
-      metadataModel
+    // Sort files chronologically
+    const sortedFiles = sortFilesByDate(files);
+    console.log(
+      `Processing ${sortedFiles.length} files in chronological order...`
     );
 
-    const metadataDir = path.join(outputFolder, "document_metadata");
-    const jsonName = fileName.replace(/\.(pdf|docx|doc)$/, ".json");
-    const savedPath = await saveJson(metadataJson, metadataDir, jsonName);
+    let cumulativeMetadata = null;
+    let companyName = null;
+    let companyTaxId = null;
+    let creationDate = null; // Track creation date from first document
 
-    return {
-      status: "success",
-      file: fileName,
-      data: { sourceFile: fileName, metadata: metadataJson },
-    };
-  } catch (err) {
-    console.error(`Error with ${fileName}:`, err);
-    const reason =
-      err.message === "unsupported_type"
-        ? "unsupported_type"
-        : "processing_error";
-    return { status: "error", file: fileName, reason, error: err };
-  }
-}
+    // Iterate through each file
+    for (let i = 0; i < sortedFiles.length; i++) {
+      const fileName = sortedFiles[i];
+      try {
+        console.log(`Processing: ${fileName} (${i + 1}/${sortedFiles.length})`);
+        const filePath = path.join(inputFolder, fileName);
 
-// === Contextual history ===
+        // Prepare file data for Gemini
+        const { data, mimeType } = await prepareFileData(filePath, fileName);
+        const filePart = { inlineData: { data, mimeType } };
 
-function sortByDate(metadataList) {
-  return metadataList.slice().sort((a, b) => {
-    const da = a.metadata?.document_date
-      ? new Date(a.metadata.document_date)
-      : null;
-    const db = b.metadata?.document_date
-      ? new Date(b.metadata.document_date)
-      : null;
-    if (da && db) return da - db;
-    if (da) return -1;
-    if (db) return 1;
-    return 0;
-  });
-}
+        if (i === 0) {
+          // Extract initial metadata from the first document
+          cumulativeMetadata = await extractInitialMetadata(
+            filePart,
+            fileName,
+            metadataModel
+          );
 
-function buildHistoryPrompt(sortedMetadata, gemiId) {
-  const historyPromptParts = [
-    `You are provided with a collection of metadata extracted from multiple documents related to a company (or entities under the GEMI_ID: ${gemiId}). The collection is sorted by the document's date, where available, from oldest to newest.`,
-    `Your task is to generate a specific "historySegment" for EACH document's metadata provided in the 'CollectedMetadata' array.`,
-    `When generating the 'historySegment' for a particular document, you MUST consider the information from ALL other documents in the collection (especially those chronologically preceding it) to:`,
-    `  - Create a coherent narrative piece for that document reflecting its place in the timeline.`,
-    `  - Reflect any evolution or changes observed across the documents (e.g., changes in address, board members, financial status over time as indicated by different documents).`,
-    `  - Highlight the specific contribution or information relevance of the current document in the context of the others and the established timeline.`,
-    `The output must be a JSON object containing a single key "documentHistories".`,
-    `The value of "documentHistories" must be an ARRAY of objects. Each object in this array must correspond to one of the input documents and contain:`,
-    `  1. "sourceFile": The original filename from the input metadata. THIS MUST MATCH THE INPUT SOURCE FILE NAME.`,
-    `  2. "historySegment": A string in GREEK, representing the synthesized history/narrative for that specific document, in the context of all others.`,
-    `Be concise and clear in your history segments. Avoid unnecessary details or overly complex language. Do not include explanations or justifications in the output. Do not include text such as 'δεν παρέχει πληροφορίες για τη διεύθυνση'.`,
-    `Always start by specifying the document's date in the history segment, if available. For example: "Στις 2020-01-01, το έγγραφο αναφέρει..."`,
-    `If, for a specific document, no meaningful history segment can be inferred even with the context of others, provide a brief statement in Greek for its "historySegment" indicating this (e.g., "Δεν εντοπίστηκαν συγκεκριμένες ιστορικές πληροφορίες για αυτό το έγγραφο στο παρόν σύνολο δεδομένων.").`,
-    `\nCollected Metadata (Array of objects, each with 'sourceFile' and 'metadata', sorted by document_date where available):\n${JSON.stringify(
-      sortedMetadata,
-      null,
-      2
-    )}`,
-    `\nStrictly follow the provided JSON schema for your response.`,
-  ];
-  return historyPromptParts.join("\n");
-}
+          const extractedDate = extractDateFromFilename(fileName);
+          if (extractedDate) {
+            cumulativeMetadata.document_date = extractedDate;
+            creationDate = extractedDate; // Set creation date from first document
+          }
 
-export async function generateContextualHistories(
-  metadataList,
-  outputFolder,
-  gemiId,
-  historyModel
-) {
-  console.log(
-    `Generating histories for ${metadataList.length} docs (GEMI_ID: ${gemiId})`
-  );
-  const sorted = sortByDate(metadataList);
-  const prompt = buildHistoryPrompt(sorted, gemiId);
-  const config = {
-    responseMimeType: "application/json",
-    responseSchema: DocumentHistoriesSchema,
-  };
+          companyName = cumulativeMetadata.company_name;
+          companyTaxId = cumulativeMetadata.company_tax_id;
+        } else {
+          // Merge new document metadata with existing metadata
+          cumulativeMetadata = await mergeMetadataWithGemini(
+            filePart,
+            fileName,
+            cumulativeMetadata,
+            metadataModel
+          );
 
-  try {
-    const raw = await callGeminiWithRetry(
-      historyModel,
-      prompt,
-      `history-${gemiId}`,
-      config
-    );
-    const json = JSON.parse(raw);
-    if (Array.isArray(json.documentHistories)) {
-      const outPath = path.join(
+          if (cumulativeMetadata.company_name && !companyName) {
+            companyName = cumulativeMetadata.company_name;
+          }
+          if (cumulativeMetadata.company_tax_id && !companyTaxId) {
+            companyTaxId = cumulativeMetadata.company_tax_id;
+          }
+        }
+
+        console.log(`Successfully processed: ${fileName}`);
+      } catch (err) {
+        console.error(`Error processing ${fileName}:`, err.message);
+      }
+    }
+
+    // Save final metadata to disk
+    if (cumulativeMetadata && gemiId) {
+      const finalMetadata = createFinalMetadataStructure(
+        gemiId,
+        companyName || cumulativeMetadata.company_name,
+        companyTaxId || cumulativeMetadata.company_tax_id,
+        creationDate,
+        cumulativeMetadata
+      );
+
+      const finalMetadataPath = path.join(
         outputFolder,
-        `${gemiId}_contextual_document_histories.json`
+        `${gemiId}_final_metadata.json`
       );
       await saveJson(
-        json,
+        finalMetadata,
         outputFolder,
-        `${gemiId}_contextual_document_histories.json`
+        `${gemiId}_final_metadata.json`
       );
-      console.log(`Histories saved: ${outPath}`);
+
+      return {
+        status: "success",
+        metadataPath: finalMetadataPath,
+        processedFiles: sortedFiles.length,
+        finalMetadata,
+      };
     } else {
-      console.error("Invalid response format", json);
+      throw new Error(
+        "No valid metadata could be extracted from any documents"
+      );
     }
   } catch (err) {
-    console.error("History generation failed:", err);
+    console.error("Error in processCompanyFiles:", err);
+    return {
+      status: "error",
+      error: err.message,
+      processedFiles: 0,
+    };
   }
 }
