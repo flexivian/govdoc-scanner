@@ -119,19 +119,19 @@ export const CompanyEssentialMetadata = {
           name: {
             type: "string",
             description:
-              "Full name of the company representative in Greek, format: 'SURNAME FIRSTNAME' (all caps). Examples: 'ΠΑΠΑΔΟΠΟΥΛΟΣ ΙΩΑΝΝΗΣ', 'ΚΩΝΣΤΑΝΤΙΝΟΥ ΜΑΡΙΑ'. Do NOT include father's name, mother's name, or titles. Only include if person has explicit representative role.",
+              "Full name of company representative in Greek format: 'ΕΠΩΝΥΜΟ ΟΝΟΜΑ' (surname first, all caps). Examples: 'ΠΑΠΑΔΟΠΟΥΛΟΣ ΙΩΑΝΝΗΣ', 'ΚΩΝΣΤΑΝΤΙΝΟΥ ΜΑΡΙΑ'. Extract exactly as written in official sections. EXCLUDE: father's/mother's names, titles, service providers (lawyers/accountants/notaries). INCLUDE ONLY: persons with explicit representative authority in corporate governance.",
             nullable: true,
           },
           role: {
             type: "string",
             description:
-              "Specific representative role in Greek. Common roles: 'Διαχειριστής', 'Ομόρρυθμος εταίρος', 'Ετερόρρυθμος εταίρος', 'Μέλος ΔΣ', 'Πρόεδρος ΔΣ', 'Αντιπρόεδρος ΔΣ', 'Διευθύνων Σύμβουλος', 'Γενικός Διευθυντής'. Use exact Greek terminology from document. A person can have multiple roles (e.g., both partner and manager)",
+              "Exact representative role in Greek as stated in document. Priority roles: 'Διαχειριστής' (Manager), 'Ομόρρυθμος εταίρος' (General Partner - unlimited liability), 'Ετερόρρυθμος εταίρος' (Limited Partner - passive investor), 'Πρόεδρος ΔΣ' (Board Chairman), 'Διευθύνων Σύμβουλος' (CEO), 'Μέλος ΔΣ' (Board Member), 'Αντιπρόεδρος ΔΣ' (Vice Chairman). Use verbatim Greek terminology from official document sections. Multiple roles possible for single person (e.g., both partner and manager).",
             nullable: true,
           },
           is_active: {
             type: "boolean",
             description:
-              "Current status in the company based on document action: TRUE if being elected/appointed/confirmed in role, FALSE if resigning/removed/replaced. For board election documents, newly elected members are TRUE.",
+              "Current representative status based on THIS document's specific actions. TRUE for: appointments ('εκλέγεται', 'διορίζεται'), continuing roles ('παραμένει', 'συνεχίζει'), share acquisition, or current ownership. FALSE for: departures ('αποχωρεί', 'παραιτείται'), replacements ('αντικαθίσταται'), complete share transfers, or role termination ('παύει'). Base determination on explicit document actions, not assumptions.",
             nullable: true,
           },
           tax_id: {
@@ -143,14 +143,14 @@ export const CompanyEssentialMetadata = {
           capital_share: {
             type: "string",
             description:
-              "Share percentage and/or capital amount owned by this representative in the company. Examples: '9.800,00 Ευρώ / 49%', '51%', '20%'. Extract from phrases like 'μετέχει στο εταιρικό κεφάλαιο με... ποσοστό στα κέρδη και στις ζημίες X%' or 'με ποσοστό X%'. Only include if explicitly mentioned.",
+              "Ownership stake in company extracted verbatim from document. Format patterns: 'X.XXX,XX Ευρώ / XX%' (amount with percentage), 'XX%' (percentage only), or 'X.XXX,XX Ευρώ' (amount only). Search for exact phrases: 'ποσοστό στα κέρδη και στις ζημίες X%', 'μετέχει στο εταιρικό κεφάλαιο με X ευρώ', 'εταιρικό μερίδιο X%'. Extract precise numerical values with Greek formatting (commas for decimals). Set null if person transferred all shares or has no ownership mentioned.",
             nullable: true,
           },
         },
         required: ["name", "role", "is_active", "tax_id", "capital_share"],
       },
       description:
-        "Array of company representatives/officers with their roles and current status. ONLY include people with explicit representative roles (Διαχειριστής, Ομόρρυθμος/Ετερόρρυθμος εταίρος, ΔΣ members, etc.). DO NOT include lawyers, accountants, witnesses, or service providers mentioned in documents. Focus on accuracy over completeness.",
+        "Company representatives array with strict inclusion criteria. INCLUDE ONLY: persons with explicit corporate governance roles (Διαχειριστής, Ομόρρυθμος/Ετερόρρυθμος εταίρος, ΔΣ members, executives) who have legal authority in company management or ownership. EXCLUDE: service providers (δικηγόροι/lawyers, λογιστές/accountants, συμβολαιογράφοι/notaries), witnesses (μάρτυρες), GEMI officials, historical references. Prioritize accuracy over completeness - when uncertain about representative status, exclude the person.",
       nullable: true,
     },
     registered_address: {

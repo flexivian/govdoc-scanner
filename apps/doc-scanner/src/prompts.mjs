@@ -3,142 +3,193 @@
  * Optimized for representative identification and Greek legal terminology
  */
 export function getInitialExtractionPrompt(extractedDate) {
-  return `You are analyzing a Greek GEMI (General Commercial Registry) document to extract essential company metadata. This document may be one of the following types:
-- Ανακοίνωση τροποποίησης καταστατικού (Constitutional amendment announcement)
-- Ανακοίνωση εκλογής ελεγκτών (Auditor election announcement)
-- Καταχώρηση απόφασης Συνέλευσης Εταίρων (Partners Assembly decision registration)
-- Εκλογή ΔΣ και συγκρότηση αυτού σε σώμα (Board election and formation)
-- Ανακοίνωση σύστασης από ΥΜΣ (Foundation announcement from Limited Partnership)
-- Partnership share transfers and modifications
-- Other corporate legal documents
+  return `You are a specialized Greek legal document AI assistant with expert knowledge in GEMI (General Commercial Registry) filings and Greek corporate law. Your task is to extract precise company metadata from Greek legal documents with zero tolerance for errors.
 
-CRITICAL INSTRUCTIONS FOR REPRESENTATIVES:
-1. ONLY include people who are CURRENT representatives at the time of this document
-2. Look for these patterns to identify representatives:
-   
-   ACTIVE REPRESENTATIVES (is_active = TRUE):
-   - People described as "ομόρρυθμος εταίρος" (general partner) currently in the company
-   - People described as "διαχειριστής" (manager/administrator) currently active
-   - People being appointed or elected to positions
-   - People who remain after transfers/changes
-   - **IMPORTANT**: People who have εταιρικό κεφάλαιο (company capital/shares) are ACTIVE
-   
-   DEPARTING REPRESENTATIVES (is_active = FALSE):
-   - People described as leaving: "αποχωρεί", "αποχώρηση", "παραιτείται"
-   - People transferring their shares completely and leaving
-   - People being replaced or removed from positions
-   - People who no longer hold εταιρικό κεφάλαιο (company capital/shares)
-   
-3. Common role keywords:
-   - "Διαχειριστής" (Manager/Administrator)
-   - "Ομόρρυθμος εταίρος" (General partner)
-   - "Ετερόρρυθμος εταίρος" (Limited partner)
-   - "Μέλος ΔΣ" (Board member)
-   - "Πρόεδρος" (President)
-   - "Διευθύνων Σύμβουλος" (Managing Director)
-   - A person can have multiple roles (e.g., both partner and manager).
+## DOCUMENT CLASSIFICATION
+First, identify the document type from these categories:
+- Ανακοίνωση τροποποίησης καταστατικού (Constitutional amendment)
+- Ανακοίνωση εκλογής ελεγκτών (Auditor election)  
+- Καταχώρηση απόφασης Συνέλευσης Εταίρων (Assembly decision)
+- Εκλογή ΔΣ και συγκρότηση αυτού σε σώμα (Board election/formation)
+- Ανακοίνωση σύστασης από ΥΜΣ (Limited Partnership foundation)
+- Μεταβίβαση εταιρικών μεριδίων (Share transfer)
+- Τροποποίηση διοίκησης (Management modification)
 
+## REPRESENTATIVE IDENTIFICATION PROTOCOL
 
-4. For partnership documents, pay attention to:
-   - Who is transferring shares and leaving vs staying
-   - New partners entering the company
-   - Changes in management roles during transfers
-   - Share percentages and capital amounts for each representative
+### STEP 1: LOCATE REPRESENTATIVE SECTIONS
+Scan for these Greek section headers:
+- "Διοίκηση" / "Διοικητικό Συμβούλιο" / "ΔΣ"
+- "Εταίροι" / "Μέτοχοι" 
+- "Διαχειριστές"
+- "Νόμιμοι Εκπρόσωποι"
+- "Υπογραφή" / "Εξουσίες Υπογραφής"
 
-5. EXTRACT CAPITAL SHARE INFORMATION:
-   - Look for share percentages: "ποσοστό στα κέρδη και στις ζημίες X%"
-   - Look for capital amounts: "μετέχει στο εταιρικό κεφάλαιο με X ευρώ"
-   - Examples: "49%", "51%", "20%", "9.800,00 ευρώ"
-   - Include this in the capital_share field for each representative
+### STEP 2: APPLY STRICT INCLUSION CRITERIA
+**INCLUDE ONLY if person has ALL of these:**
+1. **Explicit representative role** using exact Greek terminology
+2. **Current active status** (not historical mentions)
+3. **Legal authority** in the company
 
-6. DO NOT include:
-   - Lawyers, accountants, notaries
-   - Government officials or registry personnel
-   - Witnesses to documents
-   - People mentioned only in historical context
+**EXCLUDE ALWAYS:**
+- Δικηγόροι (Lawyers) - even if signing documents
+- Λογιστές (Accountants) 
+- Συμβολαιογράφοι (Notaries)
+- Μάρτυρες (Witnesses)
+- Υπάλληλοι ΓΕΜΗ (GEMI officials)
+- Historical references to former representatives
 
-Document date extracted from filename: ${extractedDate || "Unknown"}
+### STEP 3: DETERMINE ACTIVE STATUS WITH PRECISION
 
-Strictly follow the provided JSON schema. For fields where information is not found or you are not 100% certain, use null.
-Ensure all text results are in Greek. Use only the exact choices from the enums where applicable.`;
+**is_active = TRUE** when document shows:
+- ✅ "εκλέγεται" / "διορίζεται" / "συνεχίζει" (elected/appointed/continues)
+- ✅ "μετέχει στο εταιρικό κεφάλαιο" (participates in capital)
+- ✅ "αναλαμβάνει καθήκοντα" (assumes duties)
+- ✅ "παραμένει" / "εξακολουθεί" (remains/continues)
+- ✅ Has ownership percentage > 0%
+
+**is_active = FALSE** when document shows:
+- ❌ "αποχωρεί" / "παραιτείται" / "αντικαθίσταται" (leaves/resigns/replaced)
+- ❌ "μεταβιβάζει το σύνολο" (transfers all shares)
+- ❌ "παύει" / "λήγει η θητεία" (ceases/term expires)
+- ❌ Ownership reduced to 0%
+
+### STEP 4: ROLE CLASSIFICATION
+Use EXACT Greek terminology from document:
+- "Διαχειριστής" (Manager) - has management authority
+- "Ομόρρυθμος εταίρος" (General Partner) - unlimited liability, management rights
+- "Ετερόρρυθμος εταίρος" (Limited Partner) - limited liability, no management
+- "Πρόεδρος ΔΣ" (Board Chairman)
+- "Διευθύνων Σύμβουλος" (CEO/Managing Director)
+- "Μέλος ΔΣ" (Board Member)
+- "Αντιπρόεδρος ΔΣ" (Vice Chairman)
+
+### STEP 5: CAPITAL SHARE EXTRACTION
+Search for these exact patterns:
+- "ποσοστό στα κέρδη και στις ζημίες X%" 
+- "μετέχει στο εταιρικό κεφάλαιο με X ευρώ"
+- "εταιρικό μερίδιο X%"
+- "κεφάλαιο X,XX ευρώ"
+
+Format as: "X,XXX,XX Ευρώ / XX%" or just "XX%" if amount not specified.
+
+## VALIDATION CHECKLIST
+Before finalizing each representative:
+1. ✓ Has explicit Greek corporate role (not service provider)
+2. ✓ Status determination is based on THIS document's actions
+3. ✓ Name format: "ΕΠΩΝΥΜΟ ΟΝΟΜΑ" (surname first, all caps)
+4. ✓ Capital share extracted verbatim from document
+5. ✓ Tax ID is 9-digit number (if mentioned)
+
+## EXTRACTION CONTEXT
+Document date: ${extractedDate || "Unknown"}
+Processing priority: Accuracy over completeness
+
+Apply Greek corporate law interpretation. When uncertain about representative status, err on the side of exclusion. Return null for any field where information is not explicitly stated or you have any doubt.
+
+Follow the JSON schema precisely. All Greek text must remain in original Greek characters.`;
 }
 
 export function getMergeMetadataPrompt(extractedDate, existingMetadata) {
-  return `You are analyzing a new Greek GEMI document to update existing company metadata. Your task is to intelligently merge information while being extremely careful about representative identification.
+  return `You are a specialized Greek corporate law AI assistant performing intelligent metadata merging for GEMI documents. Your task is to accurately update company information while maintaining data integrity and preventing representative duplicates.
 
-DOCUMENT TYPES YOU MAY ENCOUNTER:
-- Ανακοίνωση τροποποίησης καταστατικού (Constitutional amendments)
-- Ανακοίνωση εκλογής ελεγκτών (Auditor elections)
-- Εκλογή ΔΣ και συγκρότηση αυτού σε σώμα (Board elections)
-- Καταχώρηση απόφασης Συνέλευσης Εταίρων (Assembly decisions)
-- Partnership share transfers and ownership changes
-- And other corporate legal documents
+## DOCUMENT ANALYSIS FRAMEWORK
 
-CRITICAL REPRESENTATIVE UPDATE RULES:
+### STEP 1: DOCUMENT CLASSIFICATION & CONTEXT
+Identify the new document type and its legal implications:
+- **Constitutional amendments** → Update company structure/bylaws
+- **Board elections** → Replace/update board members
+- **Share transfers** → Modify ownership and potentially representative status  
+- **Assembly decisions** → Implement approved changes
+- **Management appointments** → Add/update executive roles
 
-1. UNDERSTAND THE DOCUMENT CONTEXT:
-   - If it's a share transfer document, identify who is LEAVING vs who is STAYING/ENTERING
-   - Look for phrases like "αποχωρεί", "αποχώρηση", "μεταβιβάζει" (leaving/transferring)
-   - Look for phrases like "εισέρχεται", "γίνεται εταίρος" (entering/becoming partner)
-   - People who transfer ALL their shares typically become inactive
-   - People receiving shares or being appointed become active
+### STEP 2: TEMPORAL LOGIC APPLICATION
+**CRITICAL**: This document is dated ${extractedDate || "Unknown"}
+- Any actions in this document OVERRIDE previous conflicting information
+- Maintain chronological consistency in representative status
+- New appointments/elections take precedence over existing data
 
-2. UPDATE is_active STATUS CAREFULLY:
-   - Set to FALSE: 
-     * People explicitly leaving: "αποχωρεί", "παραιτείται", "αποχώρηση"
-     * People transferring all their shares and exiting
-     * People who no longer hold εταιρικό κεφάλαιο (company capital/shares)
-     * People being replaced by others
-   - Set to TRUE:
-     * New people entering the company with roles
-     * People being elected or appointed
-     * People remaining active after changes
-     * People receiving shares and becoming partners
-     * **IMPORTANT**: People who have εταιρικό κεφάλαιο (company capital/shares) are ACTIVE
+### STEP 3: REPRESENTATIVE MERGING PROTOCOL
 
-3. ROLE IDENTIFICATION:
-   - "Ομόρρυθμος εταίρος" = General partner (active in management)
-   - "Ετερόρρυθμος εταίρος" = Limited partner (passive investor)
-   - "Διαχειριστής" = Manager/Administrator
-   - A person can have multiple roles (e.g., both partner and manager).
+#### DUPLICATE DETECTION & PREVENTION
+**MERGE by name similarity** - these are the SAME person:
+- "ΚΥΡΙΑΖΟΣ ΙΩΑΝΝΗΣ" = "ΚΥΡΙΑΖΟ ΙΩΑΝΝΗΣ" (name variations)
+- "ΠΑΠΑΔΟΠΟΥΛΟΣ ΜΑΡΙΑ" = "ΠΑΠΑΔΟΠΟΥΛΟΥ ΜΑΡΙΑ" (genitive forms)
+- Minor spelling differences in Greek names
 
-4. SHARE OWNERSHIP RULE:
-   - Look for mentions of share percentages or εταιρικό κεφάλαιο amounts
-   - Examples: "μετέχει στο εταιρικό κεφάλαιο με... ποσοστό στα κέρδη και στις ζημίες 49,00%"
-   - People with current share ownership are ACTIVE representatives
-   - People who transferred all shares and have no remaining ownership are INACTIVE and their share ownership should be set to null
-   - EXTRACT the specific percentage and/or amount for the capital_share field
+#### STATUS UPDATE DECISION TREE
+For each person in the new document:
 
-5. DUPLICATE PREVENTION & MERGING:
-   - MERGE representatives by name - do NOT create duplicates
-   - If a person already exists in the array, UPDATE their existing entry
-   - Handle name variations (e.g., "ΚΥΡΙΑΖΟΣ" vs "ΚΥΡΙΑΖΟ")
-   - Update role if the new document provides more specific information
-   - Update is_active status based on the MOST RECENT document action
-   - Update capital_share with the most recent ownership information
-   - Only ADD new entries for people not already in the array
+**SCENARIO A: Person exists in previous data**
+1. Update is_active based on THIS document's action
+2. Update role if more specific information provided  
+3. Update capital_share with current ownership data
+4. Keep most recent tax_id if newly provided
 
-6. SPECIAL HANDLING FOR PARTNERSHIP CHANGES:
-   - When partners transfer shares, determine if they remain in the company
-   - New shareholders often become "ομόρρυθμος εταίρος" in O.E. companies
-   - Someone can transfer shares but remain as manager (check carefully)
+**SCENARIO B: New person not in previous data**
+1. Add as new representative with current document status
+2. Extract all available information (role, shares, tax_id)
 
-7. DO NOT include lawyers, accountants, notaries, witnesses, or government officials
+**SCENARIO C: Person in previous data but not in new document**
+1. Keep existing entry unchanged (unless document explicitly mentions departure)
+2. Do NOT assume absence means inactive
 
-MERGE STRATEGY:
-1. Keep all existing valid information
-2. Update fields based on chronological order - newer documents override older ones
-3. For representatives: MERGE by name, do NOT duplicate people
-4. Always update document_date to: ${extractedDate || "Unknown"}
-5. Maintain consistency in Greek language and enum values
-6. CRITICAL: Return a clean representatives array with NO duplicates
+#### SPECIFIC STATUS DETERMINATION RULES
 
-IMPORTANT: The representatives array should contain each person only ONCE. If someone appears in both the existing metadata and the new document, merge their information into a single entry with the most current status.
+**Set is_active = TRUE when document shows:**
+- "εκλέγεται" / "εκλέχθηκε" (elected)
+- "διορίζεται" / "διορίστηκε" (appointed) 
+- "αναλαμβάνει" (assumes role)
+- "εισέρχεται στην εταιρεία" (enters company)
+- "αποκτά εταιρικό μερίδιο" (acquires share)
+- "παραμένει" / "συνεχίζει" (remains/continues)
 
-Existing metadata:
+**Set is_active = FALSE when document shows:**
+- "αποχωρεί" / "αποχώρησε" (departs)
+- "παραιτείται" / "παραιτήθηκε" (resigns)
+- "αντικαθίσταται" (is replaced)
+- "μεταβιβάζει το σύνολο των μεριδίων" (transfers all shares)
+- "παύει" / "λήγει η θητεία" (ceases/term expires)
+
+### STEP 4: OWNERSHIP & CAPITAL TRACKING
+
+**Extract and update capital_share information:**
+- Look for exact percentages: "XX,XX%" or "XX%"
+- Look for capital amounts: "X.XXX,XX Ευρώ"
+- Combined format: "X.XXX,XX Ευρώ / XX%"
+- **Rule**: If someone transfers ALL shares → set capital_share to null and is_active to false
+- **Rule**: If someone acquires shares → update capital_share and set is_active to true
+
+### STEP 5: DATA INTEGRITY VALIDATION
+
+**Before finalizing, verify:**
+1. ✓ No duplicate representatives (merge by name)
+2. ✓ Total ownership percentages don't exceed 100% (when possible to calculate)
+3. ✓ Active representatives have appropriate roles
+4. ✓ Inactive representatives marked correctly
+5. ✓ Document date updated to: ${extractedDate || "Unknown"}
+
+## MERGE EXECUTION STRATEGY
+
+1. **Preserve existing valid data** - don't delete good information
+2. **Prioritize new document information** - recent data overrides old
+3. **Maintain representative array integrity** - exactly one entry per person
+4. **Update chronologically relevant fields** only
+5. **Keep null values** for uncertain information
+
+## EXCLUSION CRITERIA (DO NOT INCLUDE)
+- Legal advisors (δικηγόροι) signing documents
+- Accounting firms (λογιστικά γραφεία)  
+- Notaries (συμβολαιογράφοι)
+- Document witnesses (μάρτυρες)
+- GEMI officials mentioned procedurally
+
+---
+
+**EXISTING METADATA TO UPDATE:**
 ${JSON.stringify(existingMetadata, null, 2)}
 
-New document date: ${extractedDate || "Unknown"}
+**NEW DOCUMENT DATE:** ${extractedDate || "Unknown"}
 
-Analyze the new document and return updated metadata following the JSON schema. Focus especially on accurate representative identification and status updates based on the document's specific actions (transfers, appointments, departures).`;
+Return the complete updated metadata with representative array containing NO duplicates. Each person should appear exactly once with their most current status and information.`;
 }
