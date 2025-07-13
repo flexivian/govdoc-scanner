@@ -3,17 +3,15 @@
   "private": true,
   "scripts": {
     "postinstall": "npx playwright install chromium",
-    "doc": "node apps/doc-scanner/src/main.mjs",
+    "start": "node run.js",
     "crawler": "node apps/crawler/src/ui.mjs",
-    "main": "node scripts/orchestrator.mjs"
+    "scanner": "node apps/doc-scanner/src/main.mjs", 
+    "govdoc": "node cli/src/main.mjs"
   },
   "workspaces": [
-    "apps/*"
+    "apps/*",
+    "cli"
   ],
-  "devDependencies": {
-    "nx": "21.1.2"
-  },
-  "nx": {},
   "dependencies": {
     "chokidar": "^4.0.3",
     "cli-progress": "^3.12.0"
