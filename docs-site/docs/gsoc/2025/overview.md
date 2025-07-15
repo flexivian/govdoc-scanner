@@ -52,6 +52,65 @@ The orchestrator script ties the crawler and the doc-scanner together into a sea
 - **Nx Monorepo**: The entire project is managed as a monorepo using `Nx`. This simplifies the management of the different applications (`crawler`, `doc-scanner`) and shared scripts, and helps in enforcing consistent development practices.
 - **Playwright**: `playwright` is also used for end-to-end testing of the applications.
 
+## Future Roadmap & TODOs
+
+The following enhancements are planned for the GovDoc Scanner project as part of ongoing development:
+
+### Infrastructure & Deployment
+
+- **#18 - Identify Cloud Hosting Strategy and Provide Target Architecture Diagram**
+  - Design scalable cloud infrastructure for production deployment
+  - Create architectural diagrams for system components
+  - Define hosting requirements and cost estimates
+
+### Backend Development
+
+- **#13 - Store Company Metadata Output in OpenSearch Database**
+  - Implement OpenSearch integration for structured data storage
+  - Design efficient indexing strategies for company metadata
+  - Enable full-text search capabilities across company data
+
+- **#14 - Implement REST API Server for Company Metadata Querying and Access Management**
+  - Build RESTful API endpoints for data access
+  - Implement authentication and authorization
+  - Create rate limiting and usage monitoring
+
+- **#15 - Implement Backoffice for User, Throttling, Whitelist, and IP Management**
+  - Develop administrative interface for user management
+  - Create tools for API throttling and access control
+  - Build monitoring dashboards for system health
+
+### Advanced Features
+
+- **#12 - Implement Track Changes Feature for Company Incorporation Data**
+  - Monitor changes in company status and information
+  - Generate alerts for significant corporate events
+  - Maintain historical change logs
+
+- **#16 - Implement Crawling Feature for Admin from Backoffice**
+  - Enable administrative control of crawling operations
+  - Schedule automated crawling tasks
+  - Provide crawling status and progress monitoring
+
+- **#17 - Implement MCP Server and Showcase**
+  - Develop Model Context Protocol (MCP) server integration
+  - Create showcases demonstrating advanced AI capabilities
+  - Enable seamless AI model switching and optimization
+
+### Documentation & Outreach
+
+- **#21 - Finalize Documentation, GSoC Delivery URL/Page, and README**
+  - Complete comprehensive project documentation
+  - Create project delivery pages and demos
+  - Update README with latest features and usage instructions
+
+- **#20 - Make Social Buzz (Medium Article, LinkedIn Post, FB Post)**
+  - Write technical articles about the project
+  - Create social media content for project promotion
+  - Share project achievements and use cases
+
+All issues are tracked on GitHub and contributions are welcome from the community.
+
 ## Repository
 
 The repository for this project can be found [here](https://github.com/flexivian/govdoc-scanner).
@@ -59,4 +118,4 @@ The repository for this project can be found [here](https://github.com/flexivian
 ## Quick Start
 
 - **Development**: Setup the development environment as described in the [Development](../../installation/Development.md) guide.
-- **Documentation**: The documentation site can be started by following the instructions in the [Production](../../installation/Production.md) guide.
+- **Getting Started**: Basic usage instructions are available in the [Getting Started](../../installation/Getting%20Started.md) guide.

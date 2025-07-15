@@ -24,18 +24,15 @@ const sidebars = {
     {
       type: "category",
       label: "Installation",
-      items: [
-        "installation/Getting Started",
-        "installation/Development",
-        "installation/Production",
-      ],
+      items: ["installation/Getting Started", "installation/Development"],
     },
     {
       type: "category",
       label: "Code Examples",
       link: { type: "doc", id: "code-examples/overview" },
       items: [
-        // Add code example docs here, e.g. 'code-examples/example1'
+        "code-examples/crawler-examples",
+        "code-examples/doc-scanner-examples",
       ],
     },
     {

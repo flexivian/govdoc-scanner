@@ -6,30 +6,15 @@ sidebar_position: 1
 
 This page provides instructions for setting up and running the GovDoc Scanner project.
 
-## Requirements
+## Prerequisites
 
 - **Node.js**: v18.x or newer (recommended: v20.x)
-  Check your version with:
+- **Git**: For cloning the repository
+- **Gemini API Key**: Required for AI-powered document processing ([Get one here](https://aistudio.google.com/app/apikey))
 
-```sh
-node --version
-```
+## Quick Start
 
-- **.env file**: Copy the example environment file and update it with your Gemini API key:
-
-```sh
-cp .env.example .env
-```
-
-Then, open `.env` and set:
-
-```
-GEMINI_API_KEY=your_gemini_api_key_here
-```
-
-## Installation
-
-Clone the repository and install the necessary dependencies from the project root:
+### 1. Clone and Install
 
 ```bash
 git clone https://github.com/flexivian/govdoc-scanner.git
@@ -37,38 +22,81 @@ cd govdoc-scanner
 npm install
 ```
 
-## Running the Applications
-
-The project is managed as a monorepo using Nx. After running `npm install` in the root directory, you can run any of the applications using the commands below. Use the following commands to run the different applications from the project root.
-
-### Crawler
-
-To search for companies and download their documents, run the crawler:
+### 2. Environment Setup
 
 ```bash
-npx nx run crawler:start
+cp .env.example .env
+# Edit .env and add your Gemini API key:
+# GEMINI_API_KEY=your_gemini_api_key_here
 ```
 
-Follow the interactive prompts to specify GEMI IDs or search for companies.
+### 3. First Run
 
-### Doc-Scanner
-
-To process downloaded documents and extract metadata, run the doc-scanner:
-
-```bash
-npx nx run doc-scanner:start
-```
-
-Make sure the documents to be processed are in the `apps/doc-scanner/src/data/input/{GEMI_ID}/` directory.
-
-### Orchestrator
-
-To run the end-to-end workflow of crawling and scanning for multiple companies, use the orchestrator script:
+Test with the orchestrator (recommended):
 
 ```bash
 npx nx run orchestrator:start
+# Select: 1) Single ID
+# Enter GEMI ID: 123204604000
+# Watch the automated process
 ```
 
-- Follow prompts to select IDs (single or from file).
-- Downloads and processes documents, showing progress and summary.
-- Output is saved in the `output/` directory at the project root.
+## Project Applications
+
+The project includes three main applications:
+
+- **Orchestrator**: Complete end-to-end workflow (recommended)
+- **Crawler**: Search and download documents from GEMI portal
+- **Doc-Scanner**: Process documents and extract metadata
+
+## Individual Application Usage
+
+### Orchestrator (Recommended)
+
+```bash
+npx nx run orchestrator:start
+# Combines crawler + doc-scanner automatically
+# Shows progress bars and summaries
+# Output saved to project root ./output/
+```
+
+### Crawler
+
+```bash
+npx nx run crawler:start
+# Search for companies or download by GEMI ID
+# Results saved to apps/crawler/src/downloads/
+```
+
+### Doc-Scanner
+
+```bash
+npx nx run doc-scanner:start
+# Process documents from input directory
+# Requires manual document placement in apps/doc-scanner/src/data/input/
+```
+
+## Output Structure
+
+After processing, find results in:
+
+```
+output/
+├── 123204604000/
+│   ├── 123204604000_final_metadata.json
+│   └── document_downloads/
+│       └── *.pdf, *.docx files
+└── govdoc-output.json  # Summary
+```
+
+## Next Steps
+
+- Check [Development Setup](./Development.md) for advanced configuration
+- Explore [Code Examples](../code-examples/overview.md) for usage patterns
+- Review [GSoC 2025 Overview](../gsoc/2025/overview.md) for project background
+
+## Troubleshooting
+
+- **API Key Issues**: Ensure valid Gemini API key in `.env` file
+- **Browser Issues**: Run `npx playwright install chromium`
+- **Permissions**: Check write access to output directories
