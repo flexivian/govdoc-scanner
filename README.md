@@ -10,8 +10,8 @@ The govdoc-scanner is an open-source tool designed to convert unstructured [Î“.Î
 
 The repository currently includes three main applications:
 
-- **doc-scanner**: Processes `.pdf`, `.doc` and `.docx` documents for a given GEMI company, extracting metadata and generating a contextual document history in `.json` format.
-- **crawler**: Scrapes the GEMI portal to search for companies using advanced filters and downloads all available public documents for each company.
+- **doc-scanner**: Processes `.pdf`, `.doc` and `.docx` documents for a given GEMI company, extracting comprehensive metadata with chronological processing and intelligent representative tracking using Gemini 2.5 Flash.
+- **crawler**: Scrapes the GEMI portal to search for companies using advanced filters and downloads all available public documents with enhanced date extraction and robust retry mechanisms.
 - **cli**: A command-line tool that automates the workflow of crawling and scanning for multiple GEMI IDs with progress tracking.
 
 All tools are implemented in Node.js and use a combination of CLI interfaces and automated scripts. The project uses npm workspaces for managing multiple applications.
@@ -147,10 +147,13 @@ You can also run commands directly:
 
 ## Features Offered
 
-- **Automated Document Downloading**: Bulk or single download of all public documents for any Greek company listed in GEMI.
+- **Automated Document Downloading**: Bulk or single download of all public documents for any Greek company listed in GEMI with enhanced date extraction for proper filename organization.
 - **Advanced Company Search**: Filter by name, legal type, status, location, and more.
-- **Metadata Extraction**: Extracts structured metadata from company documents.
-- **Contextual History Generation**: Builds a timeline of company events from document metadata.
+- **Intelligent Metadata Extraction**: Uses Gemini 2.5 Flash for accurate extraction of company information, representative details, and ownership data from Greek legal documents.
+- **Chronological Processing**: Processes documents in date order to track company evolution and changes over time.
+- **Representative Tracking**: Accurately identifies company representatives, their active status, and ownership percentages with advanced duplicate prevention.
+- **Greek Legal Optimization**: Specialized for Greek corporate legal terminology and GEMI document structures.
+- **Enhanced Reliability**: Robust retry mechanisms and improved error handling for stable operation.
 - **Interactive CLI**: User-friendly command-line interfaces with guided prompts for all workflows.
 - **Multiple Input Methods**: Support for file input, manual entry, VAT-based search, and random selection.
 - **Progress Tracking**: Unified progress bar and summary for batch operations.
