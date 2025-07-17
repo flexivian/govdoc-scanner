@@ -45,8 +45,8 @@ cp .env.example .env
 ```
 govdoc-scanner/
 ├── apps/
-│   ├── crawler/            # GEMI portal scraping
-│   └── doc-scanner/        # Document processing
+│   ├── crawler/            # GEMI portal scraping with enhanced date extraction
+│   └── doc-scanner/        # AI-powered document processing with chronological analysis
 ├── scripts/
 │   └── orchestrator.mjs    # End-to-end workflow
 ├── docs-site/              # Documentation
@@ -76,7 +76,7 @@ npx nx run crawler:start
 
 # Test doc-scanner
 mkdir -p apps/doc-scanner/src/data/input/test123
-# Place a test PDF in the directory
+# Place a test PDF in the directory (name with date prefix: 2024-01-15_document.pdf)
 npx nx run doc-scanner:start
 # Enter "test123" as GEMI ID
 ```

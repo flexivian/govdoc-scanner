@@ -10,14 +10,14 @@ sidebar_position: 1
 
 ## Abstract
 
-The GovDoc Scanner project was undertaken to address the challenge of accessing and utilizing public company data from the Greek GEMI portal, which is often locked away in unstructured PDF and DOCX files. The project successfully developed a suite of tools to automate the process of fetching, processing, and structuring this data. The outcome is a powerful system that can crawl the GEMI portal, download relevant documents, extract metadata and content using generative AI, and organize the information into a structured, searchable format. This work significantly improves the transparency and accessibility of public corporate information in Greece.
+The GovDoc Scanner project was undertaken to address the challenge of accessing and utilizing public company data from the Greek GEMI portal, which is often locked away in unstructured PDF and DOCX files. The project successfully developed a sophisticated suite of tools to automate the process of fetching, processing, and structuring this data with advanced AI capabilities. The outcome is a powerful system that can crawl the GEMI portal, download relevant documents with proper date organization, extract comprehensive metadata using state-of-the-art AI models, and organize the information into structured, searchable formats with chronological tracking. This work significantly improves the transparency and accessibility of public corporate information in Greece.
 
 ## Main goals for GSoC 2025
 
 The primary objectives for this project were:
 
-- **Automated Document Crawling**: Develop a robust crawler to navigate the GEMI portal, search for companies using various filters, and download all associated public documents.
-- **Intelligent Document Processing**: Create a document processing pipeline that can handle different file formats (PDF, DOCX, DOC), extract text, and use Google's Gemini AI to extract structured metadata and generate contextual summaries.
+- **Automated Document Crawling**: Develop a robust crawler to navigate the GEMI portal, search for companies using various filters, and download all associated public documents with enhanced date extraction for proper organization.
+- **Intelligent Document Processing**: Create an advanced document processing pipeline that can handle different file formats (PDF, DOCX, DOC), extract text, and use Google's Gemini 2.5 Flash to extract comprehensive structured metadata with chronological processing and representative tracking.
 - **End-to-End Orchestration**: Build a top-level script to automate the entire workflow, from crawling and downloading to processing and storing the data, complete with progress tracking and error handling.
 - **Comprehensive Documentation**: Establish a documentation site to provide clear instructions for installation, usage, and development, ensuring the project is accessible to a wide audience.
 
@@ -28,16 +28,20 @@ The primary objectives for this project were:
 The crawler is a Node.js application responsible for interacting with the GEMI portal.
 
 - **Web Scraping and Automation**: `Playwright` is used for browser automation, enabling the crawler to perform complex interactions like filling out forms and navigating through pages to find and download documents. `Cheerio` is used for parsing the HTML of the portal to extract links and other relevant information.
+- **Enhanced Date Extraction**: Advanced logic extracts dates from table rows and prepends them to filenames for proper chronological organization.
 - **User Interface**: An interactive command-line interface (CLI) was built using `inquirer`, allowing users to easily specify which companies to search for or which GEMI IDs to download documents for.
-- **HTTP Requests and Data Handling**: `axios` is used for making direct HTTP requests to download files, and `greek-utils` helps in handling Greek-specific text and character sets. `string-similarity` is used to find potential matches for company names.
+- **Robust Download System**: `axios` is used for making direct HTTP requests with enhanced reliability through retry mechanisms and improved file extension detection. `greek-utils` helps in handling Greek-specific text and character sets. `string-similarity` is used to find potential matches for company names.
 
 ### Document Scanner Application
 
-The doc-scanner application processes the downloaded documents to extract valuable information.
+The doc-scanner application processes the downloaded documents to extract valuable information using advanced AI capabilities.
 
-- **AI-Powered Metadata Extraction**: The core of the scanner uses the `@google/generative-ai` package to communicate with the Google Gemini API. This allows for sophisticated analysis of the document text to extract metadata and generate contextual histories.
+- **Advanced AI-Powered Analysis**: The core of the scanner uses the `@google/generative-ai` package to communicate with Google's Gemini 2.5 Flash model, enabling sophisticated analysis of Greek legal documents with specialized prompts for representative identification and Greek corporate terminology.
+- **Chronological Processing**: Documents are automatically sorted by date based on filename prefixes, ensuring proper chronological processing to track company evolution over time.
+- **Intelligent Metadata Schema**: Expanded schema includes comprehensive company information, detailed representative data (active status, tax IDs, capital shares), and refined field descriptions with duplicate prevention logic.
+- **Modular Prompt Architecture**: Specialized prompts are extracted into a dedicated prompts.mjs file, implementing advanced instructions for Greek legal terminology, representative identification, and ownership analysis.
 - **Document Text Extraction**: The application supports multiple document formats. `mammoth` is used to extract raw text from `.docx` files, and `word-extractor` handles older `.doc` files.
-- **Asynchronous Processing**: To handle large numbers of documents efficiently, `p-limit` is used to control the concurrency of asynchronous operations, preventing the application from overwhelming the system or hitting API rate limits.
+- **Unified Processing Logic**: Replaced individual file processing with a streamlined processCompanyFiles function that generates a single comprehensive metadata file containing all extracted information merged chronologically.
 - **Environment Management**: The `dotenv` package is used to manage environment variables, keeping sensitive information like API keys out of the source code.
 
 ### Orchestrator Script

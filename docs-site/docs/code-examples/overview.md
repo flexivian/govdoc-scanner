@@ -64,7 +64,7 @@ After processing, you'll find results in the `output/` directory:
 ```
 output/
 ├── 123204604000/
-│   ├── 123204604000_final_metadata.json
+│   ├── 123204604000_final_metadata.json  # Comprehensive company metadata
 │   └── document_downloads/
 │       ├── 2019-09-23_90189.pdf
 │       └── 2020-11-03_2334237.pdf

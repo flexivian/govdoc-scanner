@@ -46,8 +46,8 @@ npx nx run orchestrator:start
 The project includes three main applications:
 
 - **Orchestrator**: Complete end-to-end workflow (recommended)
-- **Crawler**: Search and download documents from GEMI portal
-- **Doc-Scanner**: Process documents and extract metadata
+- **Crawler**: Search and download documents from GEMI portal with enhanced date extraction
+- **Doc-Scanner**: Process documents with AI-powered chronological analysis and representative tracking
 
 ## Individual Application Usage
 
@@ -74,6 +74,8 @@ npx nx run crawler:start
 npx nx run doc-scanner:start
 # Process documents from input directory
 # Requires manual document placement in apps/doc-scanner/src/data/input/
+# Important: Name files with date prefixes (YYYY-MM-DD) for chronological processing
+# Generates comprehensive metadata with representative tracking
 ```
 
 ## Output Structure
@@ -83,7 +85,7 @@ After processing, find results in:
 ```
 output/
 ├── 123204604000/
-│   ├── 123204604000_final_metadata.json
+│   ├── 123204604000_final_metadata.json  # Comprehensive company metadata
 │   └── document_downloads/
 │       └── *.pdf, *.docx files
 └── govdoc-output.json  # Summary

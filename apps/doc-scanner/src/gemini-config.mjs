@@ -12,10 +12,7 @@ dotenv.config({ path: path.resolve(projectRoot, ".env") });
 export const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 export const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
-export const GEMINI_METADATA_MODEL_NAME = "gemini-2.0-flash-lite";
-export const GEMINI_HISTORY_MODEL_NAME = "gemini-2.0-flash";
-
-export const MIME_TYPE_JSON = "application/json";
+export const GEMINI_METADATA_MODEL_NAME = "gemini-2.5-flash-lite-preview-06-17";
 
 // Retry configuration constants
 const MAX_GEMINI_ATTEMPTS = 5;
@@ -27,11 +24,6 @@ const JITTER_WITHOUT_SUGGESTED_DELAY_MS = 1000;
 // Return model for metadata extraction
 export function getMetadataModel() {
   return genAI.getGenerativeModel({ model: GEMINI_METADATA_MODEL_NAME });
-}
-
-// Return model for history/context generation
-export function getHistoryModel() {
-  return genAI.getGenerativeModel({ model: GEMINI_HISTORY_MODEL_NAME });
 }
 
 // Format prompt for Gemini API depending on input type

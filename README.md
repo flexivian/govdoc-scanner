@@ -10,8 +10,8 @@ The govdoc-scanner is an open-source tool designed to convert unstructured [Î“.Î
 
 The repository currently includes three main applications:
 
-- **doc-scanner**: Processes `.pdf`, `.doc` and `.docx` documents for a given GEMI company, extracting metadata and generating a contextual document history in `.json` format.
-- **crawler**: Scrapes the GEMI portal to search for companies using advanced filters and downloads all available public documents for each company.
+- **doc-scanner**: Processes `.pdf`, `.doc` and `.docx` documents for a given GEMI company, extracting comprehensive metadata with chronological processing and intelligent representative tracking using Gemini 2.5 Flash.
+- **crawler**: Scrapes the GEMI portal to search for companies using advanced filters and downloads all available public documents with enhanced date extraction and robust retry mechanisms.
 - **orchestrator**: A script that automates the workflow of crawling and scanning for multiple GEMI IDs with progress tracking.
 
 All tools are implemented in Node.js and use a combination of CLI interfaces and automated scripts. The project uses [Nx](https://nx.dev/) for monorepo management.
@@ -67,7 +67,8 @@ npx nx run doc-scanner:start
 ```
 
 - Place documents in `apps/doc-scanner/src/data/input/{GEMI_ID}/`.
-- Output is generated in `apps/doc-scanner/src/data/output/{GEMI_ID}/`.
+- **Important**: Name files with date prefixes (YYYY-MM-DD) for chronological processing.
+- Output generates a single comprehensive metadata file `{GEMI_ID}_final_metadata.json` in `apps/doc-scanner/src/data/output/{GEMI_ID}/`.
 
 ### 4. Orchestrated Workflow
 
@@ -83,10 +84,13 @@ npx nx run orchestrator:start
 
 ## Features Offered
 
-- **Automated Document Downloading**: Bulk or single download of all public documents for any Greek company listed in GEMI.
+- **Automated Document Downloading**: Bulk or single download of all public documents for any Greek company listed in GEMI with enhanced date extraction for proper filename organization.
 - **Advanced Company Search**: Filter by name, legal type, status, location, and more.
-- **Metadata Extraction**: Extracts structured metadata from company documents.
-- **Contextual History Generation**: Builds a timeline of company events from document metadata.
+- **Intelligent Metadata Extraction**: Uses Gemini 2.5 Flash for accurate extraction of company information, representative details, and ownership data from Greek legal documents.
+- **Chronological Processing**: Processes documents in date order to track company evolution and changes over time.
+- **Representative Tracking**: Accurately identifies company representatives, their active status, and ownership percentages with advanced duplicate prevention.
+- **Greek Legal Optimization**: Specialized for Greek corporate legal terminology and GEMI document structures.
+- **Enhanced Reliability**: Robust retry mechanisms and improved error handling for stable operation.
 - **Interactive CLI**: User-friendly command-line interfaces for all major workflows.
 - **Progress Tracking**: Unified progress bar and summary for batch operations.
 
