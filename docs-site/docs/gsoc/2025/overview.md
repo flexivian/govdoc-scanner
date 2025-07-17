@@ -18,7 +18,7 @@ The primary objectives for this project were:
 
 - **Automated Document Crawling**: Develop a robust crawler to navigate the GEMI portal, search for companies using various filters, and download all associated public documents with enhanced date extraction for proper organization.
 - **Intelligent Document Processing**: Create an advanced document processing pipeline that can handle different file formats (PDF, DOCX, DOC), extract text, and use Google's Gemini 2.5 Flash to extract comprehensive structured metadata with chronological processing and representative tracking.
-- **End-to-End Orchestration**: Build a top-level script to automate the entire workflow, from crawling and downloading to processing and storing the data, complete with progress tracking and error handling.
+- **End-to-End CLI Tool**: Build a unified command-line interface to orchestrate the entire workflow, from crawling and downloading to processing and storing the data, complete with interactive prompts, automated batch processing, progress tracking and error handling.
 - **Comprehensive Documentation**: Establish a documentation site to provide clear instructions for installation, usage, and development, ensuring the project is accessible to a wide audience.
 
 ## Implementation
@@ -44,16 +44,19 @@ The doc-scanner application processes the downloaded documents to extract valuab
 - **Unified Processing Logic**: Replaced individual file processing with a streamlined processCompanyFiles function that generates a single comprehensive metadata file containing all extracted information merged chronologically.
 - **Environment Management**: The `dotenv` package is used to manage environment variables, keeping sensitive information like API keys out of the source code.
 
-### Orchestrator Script
+### CLI Tool Application
 
-The orchestrator script ties the crawler and the doc-scanner together into a seamless workflow.
+The CLI tool serves as a unified interface that orchestrates the complete workflow, combining both crawler and doc-scanner functionality.
 
-- **Workflow Automation**: This script automates the process of running the crawler to download documents and then passing them to the doc-scanner for processing.
-- **Progress Tracking**: `cli-progress` is used to display a progress bar in the terminal, giving users real-time feedback on the status of the batch processing.
+- **Interactive Mode**: User-friendly prompts guide users through different input methods (file input, manual GEMI ID entry, VAT number search, or random selection) with step-by-step workflow automation.
+- **Command-Line Mode**: Non-interactive automation support for batch processing and CI/CD integration with comprehensive argument parsing and error handling.
+- **Workflow Orchestration**: Seamlessly coordinates the crawler and doc-scanner applications, handling file transfer between components and maintaining processing state.
+- **Progress Tracking**: Real-time progress bars and comprehensive summaries using `cli-progress` to provide users with detailed feedback on batch processing operations.
+- **Error Handling**: Robust error management with graceful failure recovery and detailed logging for troubleshooting processing issues.
 
 ### Monorepo and Development
 
-- **Nx Monorepo**: The entire project is managed as a monorepo using `Nx`. This simplifies the management of the different applications (`crawler`, `doc-scanner`) and shared scripts, and helps in enforcing consistent development practices.
+- **NPM Workspaces**: The entire project is managed as a monorepo using NPM workspaces. This simplifies the management of the different applications (`crawler`, `doc-scanner`, `cli`) and shared dependencies, enabling consistent development practices across all components.
 - **Playwright**: `playwright` is also used for end-to-end testing of the applications.
 
 ## Future Roadmap & TODOs
