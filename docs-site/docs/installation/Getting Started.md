@@ -37,7 +37,7 @@ Test with the interactive CLI (recommended):
 ```bash
 npm start govdoc
 # Follow the interactive prompts to:
-# - Choose input method (file, manual, VAT search, or random)
+# - Choose input method (file, manual, or random)
 # - Process companies with automated workflow
 # - View progress and results
 ```
@@ -57,7 +57,7 @@ The project includes three main applications:
 ```bash
 npm start govdoc
 # Interactive mode with guided prompts:
-# - File input, manual entry, VAT search, or random selection
+# - File input, manual entry, or random selection
 # - Automated crawling and document processing
 # - Progress tracking and comprehensive summaries
 # - Output saved to project root ./output/
@@ -69,10 +69,7 @@ npm start govdoc
 # Process from file
 npm start govdoc -- --input ./companies.gds
 
-# Search by VAT numbers (coming soon)
-npm start govdoc -- --company-vat "123456789,987654321"
-
-# Process random companies (coming soon)
+# Process random companies
 npm start govdoc -- --company-random 10
 
 # Show help

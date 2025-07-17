@@ -48,7 +48,7 @@ The doc-scanner application processes the downloaded documents to extract valuab
 
 The CLI tool serves as a unified interface that orchestrates the complete workflow, combining both crawler and doc-scanner functionality.
 
-- **Interactive Mode**: User-friendly prompts guide users through different input methods (file input, manual GEMI ID entry, VAT number search, or random selection) with step-by-step workflow automation.
+- **Interactive Mode**: User-friendly prompts guide users through different input methods (file input, manual GEMI ID entry, or random selection with date-based search filters) with step-by-step workflow automation.
 - **Command-Line Mode**: Non-interactive automation support for batch processing and CI/CD integration with comprehensive argument parsing and error handling.
 - **Workflow Orchestration**: Seamlessly coordinates the crawler and doc-scanner applications, handling file transfer between components and maintaining processing state.
 - **Progress Tracking**: Real-time progress bars and comprehensive summaries using `cli-progress` to provide users with detailed feedback on batch processing operations.

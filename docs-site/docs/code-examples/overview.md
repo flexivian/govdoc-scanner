@@ -17,7 +17,7 @@ The CLI tool provides the complete end-to-end workflow, combining crawling and d
 ```bash
 npm start govdoc
 # Follow interactive prompts:
-# 1. Choose input method (file, manual, VAT search, random)
+# 1. Choose input method (file, manual, random)
 # 2. Enter or select companies
 # 3. Confirm processing
 # 4. Watch automated crawling and processing
@@ -29,10 +29,7 @@ npm start govdoc
 # Process from file
 npm start govdoc -- --input ./companies.gds
 
-# Search by VAT numbers (coming soon)
-npm start govdoc -- --company-vat "123456789,987654321"
-
-# Process random companies (coming soon)
+# Process random companies
 npm start govdoc -- --company-random 10
 
 # Show help

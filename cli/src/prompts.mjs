@@ -14,24 +14,18 @@ export async function promptOperationMode() {
       choices: [
         {
           name: "📄 Process GEMI IDs from file",
-          value: "file"
+          value: "file",
         },
         {
           name: "🔢 Enter specific GEMI IDs",
-          value: "manual"
+          value: "manual",
         },
         {
-          name: "🏢 Search by company VAT numbers (coming soon)",
-          value: "vat",
-          disabled: "Feature not implemented yet"
-        },
-        {
-          name: "🎲 Process random companies (coming soon)", 
+          name: "🎲 Process random companies",
           value: "random",
-          disabled: "Feature not implemented yet"
-        }
-      ]
-    }
+        },
+      ],
+    },
   ]);
 
   return mode;
@@ -54,8 +48,8 @@ export async function promptFileInput() {
         } catch {
           return "File not found. Please enter a valid file path.";
         }
-      }
-    }
+      },
+    },
   ]);
 
   return filePath;
@@ -74,45 +68,24 @@ export async function promptManualGemiIds() {
         if (!input.trim()) {
           return "Please enter at least one GEMI ID.";
         }
-        
-        const ids = input.split(",").map(id => id.trim());
-        const invalidIds = ids.filter(id => !/^\d+$/.test(id));
-        
+
+        const ids = input.split(",").map((id) => id.trim());
+        const invalidIds = ids.filter((id) => !/^\d+$/.test(id));
+
         if (invalidIds.length > 0) {
           return `Invalid GEMI IDs: ${invalidIds.join(", ")}. Only numbers are allowed.`;
         }
-        
+
         return true;
-      }
-    }
+      },
+    },
   ]);
 
-  return gemiIds.split(",").map(id => id.trim());
+  return gemiIds.split(",").map((id) => id.trim());
 }
 
 /**
- * Prompt for VAT numbers (placeholder for future implementation)
- */
-export async function promptVatNumbers() {
-  const { vatNumbers } = await inquirer.prompt([
-    {
-      type: "input",
-      name: "vatNumbers",
-      message: "Enter VAT numbers (comma-separated):",
-      validate: (input) => {
-        if (!input.trim()) {
-          return "Please enter at least one VAT number.";
-        }
-        return true;
-      }
-    }
-  ]);
-
-  return vatNumbers.split(",").map(vat => vat.trim());
-}
-
-/**
- * Prompt for random company count (placeholder for future implementation)
+ * Prompt for random company count
  */
 export async function promptRandomCount() {
   const { count } = await inquirer.prompt([
@@ -120,17 +93,17 @@ export async function promptRandomCount() {
       type: "number",
       name: "count",
       message: "How many random companies to process?",
-      default: 10,
+      default: 5,
       validate: (input) => {
         if (!Number.isInteger(input) || input < 1) {
           return "Please enter a positive integer.";
         }
-        if (input > 100) {
-          return "Maximum 100 companies allowed for random processing.";
+        if (input > 11) {
+          return "Maximum 10 companies allowed for random processing.";
         }
         return true;
-      }
-    }
+      },
+    },
   ]);
 
   return count;
@@ -141,7 +114,7 @@ export async function promptRandomCount() {
  */
 export async function promptConfirmation(gemiIds, mode) {
   let message = "";
-  
+
   switch (mode) {
     case "file":
       message = `Process ${gemiIds.length} GEMI ID(s) from file?`;
@@ -149,11 +122,11 @@ export async function promptConfirmation(gemiIds, mode) {
     case "manual":
       message = `Process ${gemiIds.length} manually entered GEMI ID(s)?`;
       break;
-    case "vat":
-      message = `Search and process companies with ${gemiIds.length} VAT number(s)?`;
-      break;
     case "random":
-      message = `Process ${gemiIds} random companies?`;
+      message = `Process ${gemiIds.length} random companies?`;
+      break;
+    default:
+      message = `Process ${gemiIds.length} companies?`;
       break;
   }
 
@@ -162,8 +135,8 @@ export async function promptConfirmation(gemiIds, mode) {
       type: "confirm",
       name: "confirmed",
       message: message,
-      default: true
-    }
+      default: true,
+    },
   ]);
 
   return confirmed;

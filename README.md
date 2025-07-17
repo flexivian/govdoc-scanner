@@ -87,8 +87,7 @@ This launches an interactive CLI that guides you through the process:
 
 - **File Input**: Process GEMI IDs from a .gds file
 - **Manual Entry**: Enter specific GEMI IDs directly
-- **VAT Search**: Search companies by VAT numbers (coming soon)
-- **Random Selection**: Process random companies (coming soon)
+- **Random Selection**: Process random companies with date-based search filters
 
 ### 2. Command Line Usage (for automation)
 
@@ -96,10 +95,7 @@ This launches an interactive CLI that guides you through the process:
 # Process from file
 npm start govdoc -- --input ./companies.gds
 
-# Search by VAT numbers (coming soon)
-npm start govdoc -- --company-vat "123456789,987654321"
-
-# Process random companies (coming soon)
+# Process random companies
 npm start govdoc -- --company-random 10
 
 # Show help
@@ -170,7 +166,7 @@ You can also run commands directly:
 - **Greek Legal Optimization**: Specialized for Greek corporate legal terminology and GEMI document structures.
 - **Enhanced Reliability**: Robust retry mechanisms and improved error handling for stable operation.
 - **Interactive CLI**: User-friendly command-line interfaces with guided prompts for all workflows.
-- **Multiple Input Methods**: Support for file input, manual entry, VAT-based search, and random selection.
+- **Multiple Input Methods**: Support for file input, manual entry, and random selection with date-based search filters.
 - **Progress Tracking**: Unified progress bar and summary for batch operations.
 
 ## Documentation

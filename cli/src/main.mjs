@@ -5,16 +5,10 @@ import {
   promptOperationMode,
   promptFileInput,
   promptManualGemiIds,
-  promptVatNumbers,
   promptRandomCount,
-  promptConfirmation
+  promptConfirmation,
 } from "./prompts.mjs";
-import {
-  loadInputFile,
-  writeOutput,
-  searchCompaniesByVat,
-  getRandomCompanies
-} from "./utils.mjs";
+import { loadInputFile, writeOutput, getRandomCompanies } from "./utils.mjs";
 import { processCompanies } from "./processor.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -28,9 +22,8 @@ function parseArgs() {
   const args = process.argv.slice(2);
   const parsed = {
     input: null,
-    companyVat: null,
     companyRandom: null,
-    help: false
+    help: false,
   };
 
   for (let i = 0; i < args.length; i++) {
@@ -39,21 +32,28 @@ function parseArgs() {
         if (args[i + 1]) {
           parsed.input = args[i + 1];
           i++; // Skip next argument as it's the value
-        }
-        break;
-      case "--company-vat":
-        if (args[i + 1]) {
-          parsed.companyVat = args[i + 1].split(",").map(vat => vat.trim());
-          i++; // Skip next argument as it's the value
+        } else {
+          console.error("❌ Error: --input requires a file path argument");
+          process.exit(1);
         }
         break;
       case "--company-random":
         if (args[i + 1]) {
-          const count = parseInt(args[i + 1]);
+          const count = parseInt(args[i + 1], 10);
           if (!isNaN(count) && count > 0) {
             parsed.companyRandom = count;
+          } else {
+            console.error(
+              "❌ Error: --company-random requires a positive number"
+            );
+            process.exit(1);
           }
           i++; // Skip next argument as it's the value
+        } else {
+          console.error(
+            "❌ Error: --company-random requires a number argument"
+          );
+          process.exit(1);
         }
         break;
       case "--help":
@@ -77,14 +77,12 @@ function showHelp() {
   console.log("");
   console.log("Options:");
   console.log("  --input <file>              Process GEMI IDs from .gds file");
-  console.log("  --company-vat <VAT1,VAT2>   Search companies by VAT numbers (coming soon)");
-  console.log("  --company-random <count>    Process random companies (coming soon)");
+  console.log("  --company-random <count>    Process random companies");
   console.log("  --help, -h                  Show this help message");
   console.log("");
   console.log("Examples:");
   console.log("  node cli/src/main.mjs --input ./companies.gds");
   console.log("  npm start govdoc -- --input ./companies.gds");
-  console.log("  npm start govdoc -- --company-vat 123456789,987654321");
   console.log("  npm start govdoc -- --company-random 10");
   console.log("");
   console.log("Interactive Mode:");
@@ -96,7 +94,7 @@ function showHelp() {
 
 /**
  * Main CLI application
- */ 
+ */
 async function main() {
   const args = parseArgs();
 
@@ -107,7 +105,7 @@ async function main() {
   }
 
   // Check if any command line arguments were provided
-  const hasArgs = args.input || args.companyVat || args.companyRandom !== null;
+  const hasArgs = args.input || args.companyRandom !== null;
 
   if (hasArgs) {
     // Command line mode
@@ -134,20 +132,14 @@ async function runCommandLineMode(args) {
       console.log(`Loading GEMI IDs from: ${args.input}`);
       gemiIds = await loadInputFile(args.input);
       console.log(`✅ Loaded ${gemiIds.length} GEMI ID(s) from file.`);
-    } else if (args.companyVat) {
-      mode = "vat";
-      console.log(`🔍 Searching for companies with VAT numbers: ${args.companyVat.join(", ")}`);
-      gemiIds = await searchCompaniesByVat(args.companyVat);
-      if (gemiIds.length === 0) {
-        console.log("❌ No companies found or feature not implemented yet.");
-        process.exit(0);
-      }
     } else if (args.companyRandom !== null) {
       mode = "random";
       console.log(`🎲 Getting ${args.companyRandom} random companies...`);
       gemiIds = await getRandomCompanies(args.companyRandom);
       if (gemiIds.length === 0) {
-        console.log("❌ Could not get random companies or feature not implemented yet.");
+        console.log(
+          "❌ Could not find any random companies. Please try again later."
+        );
         process.exit(0);
       }
     }
@@ -161,24 +153,26 @@ async function runCommandLineMode(args) {
     console.log(`\n🚀 Starting processing of ${gemiIds.length} companies...\n`);
 
     const outputRoot = path.join(projectRoot, "output");
-    const companies = await processCompanies(gemiIds, outputRoot);
+    const result = await processCompanies(gemiIds, outputRoot);
+    const companies = result.companies;
+    const stats = result.stats;
 
     // Write output and show summary
     const outputFile = path.join(outputRoot, "govdoc-output.json");
     await writeOutput(companies, outputFile);
 
-    // Print summary
-    const successful = companies.filter(
-      (c) => Object.keys(c.metadata["current-snapshot"]).length > 0
-    ).length;
+    // Print summary using stats from processor
+    const totalProcessed = stats.successful + stats.noDocuments + stats.failed;
 
     console.log(`\n📊 Summary:`);
-    console.log(`  Total processed: ${companies.length}`);
-    console.log(`  Successfully scanned: ${successful}`);
-    console.log(`  Failed: ${companies.length - successful}`);
+    console.log(`  Total processed: ${totalProcessed}`);
+    console.log(`  Successfully scanned: ${stats.successful}`);
+    if (stats.noDocuments > 0) {
+      console.log(`  No documents found: ${stats.noDocuments}`);
+    }
+    console.log(`  Failed: ${stats.failed}`);
 
     console.log(`\n🎉 Processing completed successfully!`);
-
   } catch (error) {
     console.error(`\n❌ Error: ${error.message}`);
     process.exit(1);
@@ -210,23 +204,14 @@ async function runInteractiveMode() {
         break;
       }
 
-      case "vat": {
-        const vatNumbers = await promptVatNumbers();
-        console.log(`🔍 Searching for companies with VAT numbers: ${vatNumbers.join(", ")}`);
-        gemiIds = await searchCompaniesByVat(vatNumbers);
-        if (gemiIds.length === 0) {
-          console.log("❌ No companies found or feature not implemented yet.");
-          process.exit(0);
-        }
-        break;
-      }
-
       case "random": {
         const count = await promptRandomCount();
         console.log(`🎲 Getting ${count} random companies...`);
         gemiIds = await getRandomCompanies(count);
         if (gemiIds.length === 0) {
-          console.log("❌ Could not get random companies or feature not implemented yet.");
+          console.log(
+            "❌ Could not find any random companies. Please try again later."
+          );
           process.exit(0);
         }
         break;
@@ -248,24 +233,26 @@ async function runInteractiveMode() {
     console.log(`\n🚀 Starting processing of ${gemiIds.length} companies...\n`);
 
     const outputRoot = path.join(projectRoot, "output");
-    const companies = await processCompanies(gemiIds, outputRoot);
+    const result = await processCompanies(gemiIds, outputRoot);
+    const companies = result.companies;
+    const stats = result.stats;
 
     // 5. Write output and show summary
     const outputFile = path.join(outputRoot, "govdoc-output.json");
     await writeOutput(companies, outputFile);
 
-    // Print summary
-    const successful = companies.filter(
-      (c) => Object.keys(c.metadata["current-snapshot"]).length > 0
-    ).length;
+    // Print summary using stats from processor
+    const totalProcessed = stats.successful + stats.noDocuments + stats.failed;
 
     console.log(`\n📊 Summary:`);
-    console.log(`  Total processed: ${companies.length}`);
-    console.log(`  Successfully scanned: ${successful}`);
-    console.log(`  Failed: ${companies.length - successful}`);
+    console.log(`  Total processed: ${totalProcessed}`);
+    console.log(`  Successfully scanned: ${stats.successful}`);
+    if (stats.noDocuments > 0) {
+      console.log(`  No documents found: ${stats.noDocuments}`);
+    }
+    console.log(`  Failed: ${stats.failed}`);
 
     console.log(`\n🎉 Processing completed successfully!`);
-
   } catch (error) {
     console.error(`\n❌ Error: ${error.message}`);
     process.exit(1);
