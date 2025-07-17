@@ -62,7 +62,7 @@ npx nx run crawler:start
 
 ## Output Structure
 
-Downloaded documents are organized as:
+Downloaded documents are organized with date prefixes for chronological processing:
 
 ```
 apps/crawler/src/downloads/
@@ -130,14 +130,16 @@ npx nx run crawler:start
 
 The crawler handles common issues automatically:
 
-- Network timeouts with retry logic
+- Network timeouts with retry logic and enhanced reliability
 - Rate limiting with exponential backoff
 - Invalid document formats (skipped)
 - Browser crashes (automatic restart)
+- Failed downloads with robust retry mechanism
 
 ## Tips
 
 - Use specific company names for better search results
 - Check `ids.txt` before bulk downloading
 - Monitor disk space for large batch downloads
+- Files are automatically named with date prefixes for chronological processing
 - Stable internet connection recommended for best results
