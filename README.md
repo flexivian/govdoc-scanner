@@ -90,6 +90,29 @@ npx nx run orchestrator:start
 - **Interactive CLI**: User-friendly command-line interfaces for all major workflows.
 - **Progress Tracking**: Unified progress bar and summary for batch operations.
 
+## Documentation
+
+This project includes comprehensive documentation built with [Docusaurus](https://docusaurus.io/). The documentation provides:
+
+- **Getting Started Guide**: Step-by-step setup and usage instructions
+- **Development Setup**: Detailed guide for contributors and developers
+- **Code Examples**: Practical examples for each application component
+- **GSoC 2025 Overview**: Project background and future roadmap
+
+### Accessing the Documentation
+
+**Online**: Visit the [project documentation site](https://flexivian.github.io/govdoc-scanner/)
+
+**Local Development**: To run the documentation locally:
+
+```bash
+cd docs-site
+npm install
+npm start
+```
+
+The documentation site will be available at `http://localhost:3000` with live reloading for development.
+
 ## Reasons for Offering & Problem Solved
 
 Access to Greek public company data is hindered by the prevalence of unstructured PDF files. This project addresses the lack of transparency and the inefficiency in data utilization by converting these documents into structured, machine-readable formats.
