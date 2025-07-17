@@ -4,34 +4,36 @@ sidebar_position: 1
 
 # Code Examples Overview
 
-This section provides simple examples for using the GovDoc Scanner orchestrator - the recommended way to use the project.
+This section provides simple examples for using the GovDoc Scanner CLI tool - the recommended way to use the project.
 
-## Orchestrator Examples
+## CLI Tool Examples
 
-The orchestrator provides the complete end-to-end workflow, combining crawling and document processing automatically.
+The CLI tool provides the complete end-to-end workflow, combining crawling and document processing automatically with both interactive and command-line modes.
 
 ### Basic Usage
 
-**Single Company Processing:**
+**Interactive Mode (Recommended):**
 
 ```bash
-npx nx run orchestrator:start
-# Select: 1) Single ID
-# Enter GEMI ID: 123204604000
-# Wait for automatic crawling and processing
+npm start govdoc
+# Follow interactive prompts:
+# 1. Choose input method (file, manual, random)
+# 2. Enter or select companies
+# 3. Confirm processing
+# 4. Watch automated crawling and processing
 ```
 
-**Batch Processing from File:**
+**Command Line Mode for Automation:**
 
 ```bash
-# Create a file with GEMI IDs (one per line)
-echo "123204604000" > companies.txt
-echo "144340502000" >> companies.txt
+# Process from file
+npm start govdoc -- --input ./companies.gds
 
-# Run orchestrator
-npx nx run orchestrator:start
-# Select: 2) File
-# Enter file path: companies.txt
+# Process random companies
+npm start govdoc -- --company-random 10
+
+# Show help
+npm start govdoc -- --help
 ```
 
 ### Programmatic Usage
@@ -43,14 +45,15 @@ import { spawn } from "child_process";
 
 async function processCompanies(gemiIds) {
   return new Promise((resolve, reject) => {
-    const orchestrator = spawn("npx", ["nx", "run", "orchestrator:start"]);
+    const govdoc = spawn("npm", [
+      "start",
+      "govdoc",
+      "--",
+      "--input",
+      "./ids.txt",
+    ]);
 
-    // Send input
-    orchestrator.stdin.write("2\n"); // File option
-    orchestrator.stdin.write("./ids.txt\n");
-    orchestrator.stdin.end();
-
-    orchestrator.on("close", (code) => {
+    govdoc.on("close", (code) => {
       code === 0 ? resolve() : reject(new Error(`Failed: ${code}`));
     });
   });
