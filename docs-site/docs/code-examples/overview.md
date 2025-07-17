@@ -18,7 +18,7 @@ The CLI tool provides the complete end-to-end workflow, combining crawling and d
 npm start govdoc
 # Follow interactive prompts:
 # 1. Choose input method (file, manual, VAT search, random)
-# 2. Enter or select companies 
+# 2. Enter or select companies
 # 3. Confirm processing
 # 4. Watch automated crawling and processing
 ```
@@ -48,7 +48,13 @@ import { spawn } from "child_process";
 
 async function processCompanies(gemiIds) {
   return new Promise((resolve, reject) => {
-    const govdoc = spawn("npm", ["start", "govdoc", "--", "--input", "./ids.txt"]);
+    const govdoc = spawn("npm", [
+      "start",
+      "govdoc",
+      "--",
+      "--input",
+      "./ids.txt",
+    ]);
 
     govdoc.on("close", (code) => {
       code === 0 ? resolve() : reject(new Error(`Failed: ${code}`));

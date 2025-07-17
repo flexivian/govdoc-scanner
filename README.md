@@ -42,6 +42,7 @@ GEMINI_API_KEY=your_gemini_api_key_here
 ### Quick Start
 
 1. **Install Dependencies**
+
    ```sh
    npm install
    ```
@@ -49,22 +50,27 @@ GEMINI_API_KEY=your_gemini_api_key_here
 2. **Run the Tool** (choose one of the following)
 
    **🚀 Most Common Usage - Interactive Workflow:**
+
    ```sh
    npm start govdoc
    ```
+
    This runs an interactive CLI that guides you through the complete workflow.
 
    **🔍 Just Search & Download Documents:**
+
    ```sh
    npm start crawler
    ```
 
    **📄 Just Process Existing Documents:**
+
    ```sh
    npm start scanner
    ```
 
    **❓ Get Help:**
+
    ```sh
    npm start help
    ```
@@ -78,8 +84,9 @@ npm start govdoc
 ```
 
 This launches an interactive CLI that guides you through the process:
+
 - **File Input**: Process GEMI IDs from a .gds file
-- **Manual Entry**: Enter specific GEMI IDs directly  
+- **Manual Entry**: Enter specific GEMI IDs directly
 - **VAT Search**: Search companies by VAT numbers (coming soon)
 - **Random Selection**: Process random companies (coming soon)
 
@@ -92,7 +99,7 @@ npm start govdoc -- --input ./companies.gds
 # Search by VAT numbers (coming soon)
 npm start govdoc -- --company-vat "123456789,987654321"
 
-# Process random companies (coming soon)  
+# Process random companies (coming soon)
 npm start govdoc -- --company-random 10
 
 # Show help
@@ -100,12 +107,14 @@ npm start govdoc -- --help
 ```
 
 The command line mode:
+
 - Runs without interactive prompts (perfect for automation)
 - Accepts the same input methods as interactive mode
 - Provides the same processing and output capabilities
 - Shows progress tracking and comprehensive summary
 
 Both modes:
+
 - Show clear progress tracking with visual indicators
 - Provide comprehensive summary when complete
 - Save output in the `output/` directory
@@ -115,35 +124,40 @@ Both modes:
 If you prefer to run each step separately:
 
 **Step 1: Search & Download**
+
 ```sh
 npm start crawler
 ```
+
 - Use the interactive CLI to search for companies or download documents by GEMI ID(s)
 - Results are saved in `ids.txt` and downloaded files in `apps/crawler/src/downloads/{GEMI_ID}/`
 
 **Step 2: Process Documents**
+
 ```sh
 npm start scanner
 ```
+
 - Place documents in `apps/doc-scanner/src/data/input/{GEMI_ID}/`
 - Output is generated in `apps/doc-scanner/src/data/output/{GEMI_ID}/`
 
 ### Alternative Commands
 
 You can also run commands directly:
+
 - `npm run crawler` (same as `npm start crawler`)
 - `npm run scanner` (same as `npm start scanner`)
 - `npm run govdoc` (same as `npm start govdoc`)
 
 ## Command Summary
 
-| What you want to do | Command |
-|---------------------|---------|
-| **First time setup** | `npm install` |
-| **Interactive workflow** | `npm start govdoc` |
+| What you want to do        | Command             |
+| -------------------------- | ------------------- |
+| **First time setup**       | `npm install`       |
+| **Interactive workflow**   | `npm start govdoc`  |
 | **Search & download only** | `npm start crawler` |
 | **Process documents only** | `npm start scanner` |
-| **Get help** | `npm start help` |
+| **Get help**               | `npm start help`    |
 
 ## Features Offered
 
