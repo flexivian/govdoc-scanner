@@ -130,8 +130,15 @@ function createFinalMetadataStructure(
   companyName,
   companyTaxId,
   creationDate,
-  currentSnapshot
+  currentSnapshot,
+  trackedChangesHistory = {}
 ) {
+  // Extract tracked_changes from current snapshot for both history and current display
+  const trackedChanges = currentSnapshot.tracked_changes;
+
+  // Keep tracked_changes in current snapshot but also store in history
+  const finalSnapshot = { ...currentSnapshot };
+
   return {
     [gemiId]: {
       "company-name": companyName,
@@ -139,8 +146,9 @@ function createFinalMetadataStructure(
       "creation-date": creationDate,
       "scan-date": new Date().toISOString(),
       metadata: {
-        "current-snapshot": currentSnapshot,
+        "current-snapshot": finalSnapshot,
       },
+      "tracked-changes": trackedChangesHistory,
     },
   };
 }
@@ -164,6 +172,27 @@ export async function processCompanyFiles(
     let companyName = null;
     let companyTaxId = null;
     let creationDate = null; // Track creation date from first document
+    let trackedChangesHistory = {}; // Store tracked changes by document name
+
+    // Check if final metadata file already exists to load existing tracked changes
+    const finalMetadataPath = path.join(
+      outputFolder,
+      `${gemiId}_final_metadata.json`
+    );
+
+    try {
+      const existingFinalMetadata = await fs.readFile(
+        finalMetadataPath,
+        "utf-8"
+      );
+      const parsedExisting = JSON.parse(existingFinalMetadata);
+      if (parsedExisting[gemiId] && parsedExisting[gemiId]["tracked-changes"]) {
+        trackedChangesHistory = parsedExisting[gemiId]["tracked-changes"];
+      }
+    } catch (err) {
+      // File doesn't exist or is invalid, start fresh
+      console.log("No existing final metadata found, starting fresh");
+    }
 
     // Iterate through each file
     for (let i = 0; i < sortedFiles.length; i++) {
@@ -201,6 +230,12 @@ export async function processCompanyFiles(
             metadataModel
           );
 
+          // Store tracked changes if they exist
+          if (cumulativeMetadata.tracked_changes) {
+            trackedChangesHistory[fileName] =
+              cumulativeMetadata.tracked_changes;
+          }
+
           companyName = cumulativeMetadata.company_name; // Company name may change
         }
 
@@ -217,13 +252,10 @@ export async function processCompanyFiles(
         companyName || cumulativeMetadata.company_name,
         companyTaxId || cumulativeMetadata.company_tax_id,
         creationDate,
-        cumulativeMetadata
+        cumulativeMetadata,
+        trackedChangesHistory
       );
 
-      const finalMetadataPath = path.join(
-        outputFolder,
-        `${gemiId}_final_metadata.json`
-      );
       await saveJson(
         finalMetadata,
         outputFolder,
