@@ -5,7 +5,7 @@ import styles from "./styles.module.css";
 const FeatureList = [
   {
     title: "Automated Document Crawling",
-    Svg: require("@site/static/img/undraw_docusaurus_mountain.svg").default,
+    Svg: require("@site/static/img/crawler.png").default,
     description: (
       <>
         Efficiently crawls the Greek GEMI portal to find and download all public
@@ -16,7 +16,7 @@ const FeatureList = [
   },
   {
     title: "AI-Powered Extraction",
-    Svg: require("@site/static/img/undraw_docusaurus_tree.svg").default,
+    Svg: require("@site/static/img/ai.png").default,
     description: (
       <>
         Leverages Google Gemini's advanced generative AI to accurately extract
@@ -27,7 +27,7 @@ const FeatureList = [
   },
   {
     title: "Structured & Searchable Data",
-    Svg: require("@site/static/img/undraw_docusaurus_react.svg").default,
+    Svg: require("@site/static/img/struct.png").default,
     description: (
       <>
         Organizes extracted data into a searchable format, making it easy to
@@ -41,7 +41,7 @@ function Feature({ Svg, title, description }) {
   return (
     <div className={clsx("col col--4")}>
       <div className="text--center">
-        <Svg className={styles.featureSvg} role="img" />
+        <img src={Svg} className={styles.featureSvg} role="img" alt={title} />
       </div>
       <div className="text--center padding-horiz--md">
         <Heading as="h3">{title}</Heading>
