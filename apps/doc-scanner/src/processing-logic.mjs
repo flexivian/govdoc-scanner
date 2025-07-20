@@ -164,34 +164,64 @@ export async function processCompanyFiles(
   try {
     // Sort files chronologically
     const sortedFiles = sortFilesByDate(files);
-    console.log(
-      `Processing ${sortedFiles.length} files in chronological order...`
-    );
-
     let cumulativeMetadata = null;
     let companyName = null;
     let companyTaxId = null;
     let creationDate = null; // Track creation date from first document
     let trackedChangesHistory = {}; // Store tracked changes by document name
 
-    // Check if final metadata file already exists to load existing tracked changes
+    // Check if final metadata file already exists to load existing data
     const finalMetadataPath = path.join(
       outputFolder,
       `${gemiId}_final_metadata.json`
     );
 
+    let existingFinalMetadata = null;
+    let hasExistingMetadata = false;
+
     try {
-      const existingFinalMetadata = await fs.readFile(
+      const existingFinalMetadataContent = await fs.readFile(
         finalMetadataPath,
         "utf-8"
       );
-      const parsedExisting = JSON.parse(existingFinalMetadata);
-      if (parsedExisting[gemiId] && parsedExisting[gemiId]["tracked-changes"]) {
-        trackedChangesHistory = parsedExisting[gemiId]["tracked-changes"];
+      existingFinalMetadata = JSON.parse(existingFinalMetadataContent);
+      hasExistingMetadata = true;
+
+      if (existingFinalMetadata[gemiId]) {
+        const existingData = existingFinalMetadata[gemiId];
+
+        // Load existing metadata
+        if (
+          existingData.metadata &&
+          existingData.metadata["current-snapshot"]
+        ) {
+          cumulativeMetadata = existingData.metadata["current-snapshot"];
+          companyName = existingData["company-name"];
+          companyTaxId = existingData["company-tax-id"];
+          creationDate = existingData["creation-date"];
+        }
+
+        // Load existing tracked changes
+        if (existingData["tracked-changes"]) {
+          trackedChangesHistory = existingData["tracked-changes"];
+        }
       }
+
+      console.log("Loaded existing metadata, processing new files only");
     } catch (err) {
       // File doesn't exist or is invalid, start fresh
       console.log("No existing final metadata found, starting fresh");
+      hasExistingMetadata = false;
+    }
+
+    // If we have existing metadata but no files to process, something went wrong
+    if (hasExistingMetadata && sortedFiles.length === 0) {
+      return {
+        status: "success",
+        metadataPath: finalMetadataPath,
+        processedFiles: 0,
+        finalMetadata: existingFinalMetadata,
+      };
     }
 
     // Iterate through each file
@@ -205,8 +235,8 @@ export async function processCompanyFiles(
         const { data, mimeType } = await prepareFileData(filePath, fileName);
         const filePart = { inlineData: { data, mimeType } };
 
-        if (i === 0) {
-          // Extract initial metadata from the first document
+        if (!hasExistingMetadata && i === 0) {
+          // Extract initial metadata from the first document (only if no existing metadata)
           cumulativeMetadata = await extractInitialMetadata(
             filePart,
             fileName,
@@ -221,6 +251,10 @@ export async function processCompanyFiles(
 
           companyName = cumulativeMetadata.company_name;
           companyTaxId = cumulativeMetadata.company_tax_id;
+
+          // For the first file, record it as the initial company registration
+          trackedChangesHistory[fileName] =
+            "Initial company registration document";
         } else {
           // Merge new document metadata with existing metadata
           cumulativeMetadata = await mergeMetadataWithGemini(
@@ -234,6 +268,9 @@ export async function processCompanyFiles(
           if (cumulativeMetadata.tracked_changes) {
             trackedChangesHistory[fileName] =
               cumulativeMetadata.tracked_changes;
+          } else {
+            // Even if no specific changes, record that the file was processed
+            trackedChangesHistory[fileName] = "No significant changes detected";
           }
 
           companyName = cumulativeMetadata.company_name; // Company name may change
