@@ -11,7 +11,7 @@ The govdoc-scanner is an open-source tool designed to convert unstructured [Î“.Î
 The repository currently includes three main applications:
 
 - **doc-scanner**: Processes `.pdf`, `.doc` and `.docx` documents for a given GEMI company, extracting comprehensive metadata with chronological processing and intelligent representative tracking using Gemini 2.5 Flash.
-- **crawler**: Scrapes the GEMI portal to search for companies using advanced filters and downloads all available public documents with enhanced date extraction and robust retry mechanisms.
+- **crawler**: Scrapes the GEMI portal to search for companies using advanced filters and downloads all available public documents with enhanced date extraction, intelligent file management, and robust retry mechanisms.
 - **cli**: A unified command-line interface that orchestrates the complete workflow, combining crawling and scanning with interactive prompts and automated batch processing.
 
 All tools are implemented in Node.js and use a combination of CLI interfaces and automated scripts. The project uses npm workspaces for managing multiple applications.
@@ -163,6 +163,8 @@ You can also run commands directly:
 - **Intelligent Metadata Extraction**: Uses Gemini 2.5 Flash for accurate extraction of company information, representative details, and ownership data from Greek legal documents.
 - **Chronological Processing**: Processes documents in date order to track company evolution and changes over time.
 - **Representative Tracking**: Accurately identifies company representatives, their active status, and ownership percentages with advanced duplicate prevention.
+- **Change Tracking**: Automatically summarizes significant changes between document versions, including role changes, ownership transfers, and address updates with intelligent processing optimization.
+- **Incremental Processing**: Skip processing when metadata indicates all documents are up to date, reducing unnecessary API calls and processing time.
 - **Greek Legal Optimization**: Specialized for Greek corporate legal terminology and GEMI document structures.
 - **Enhanced Reliability**: Robust retry mechanisms and improved error handling for stable operation.
 - **Interactive CLI**: User-friendly command-line interfaces with guided prompts for all workflows.
