@@ -124,13 +124,23 @@ async function extractDownloadLinks(html, downloadDir) {
 
     // Add date prefix to the filename if we found a date
     const baseFileName = datePrefix + name;
-
-    // avoid overwrites
     let out = path.join(downloadDir, baseFileName);
-    let i = 1;
-    while (fs.existsSync(out)) {
-      const base = path.basename(baseFileName);
-      out = path.join(downloadDir, `${base}_(${i++})`);
+
+    // Skip if file already exists (check for common extensions)
+    const extensions = [".pdf", ".doc", ".docx"];
+    let fileExists = false;
+    for (const ext of extensions) {
+      if (fs.existsSync(out + ext)) {
+        console.log(
+          `Skipping ${path.basename(out + ext)} - file already exists`
+        );
+        fileExists = true;
+        break;
+      }
+    }
+
+    if (fileExists) {
+      continue;
     }
 
     downloadLinks.push({ url: fullUrl, path: out, sourceUrl: rel });
@@ -153,8 +163,8 @@ async function downloadAll(documentLinks) {
         documentInfo.path
       );
       downloadedCount++;
-      process.stdout.write(
-        `\rDownloading: ${downloadedCount}/${documentLinks.length}`
+      console.log(
+        `Downloaded: ${downloadedCount}/${documentLinks.length} - ${path.basename(actualPath)}`
       );
     } catch (err) {
       console.error(
