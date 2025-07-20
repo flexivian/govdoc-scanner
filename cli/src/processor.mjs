@@ -5,6 +5,7 @@ import cliProgress from "cli-progress";
 import { runCrawlerForGemiIds } from "../../apps/crawler/src/id_crawler.mjs";
 import { processCompanyFiles } from "../../apps/doc-scanner/src/processing-logic.mjs";
 import { getMetadataModel } from "../../apps/doc-scanner/src/gemini-config.mjs";
+import { checkExistingMetadata } from "../../apps/doc-scanner/src/metadata-checker.mjs";
 
 /**
  * Global suppression state to handle parallel operations
@@ -151,12 +152,64 @@ export async function processCompanies(gemiIds, outputRoot) {
         continue;
       }
 
-      // 3. Start scan job for this company (parallel, don't wait)
+      // 3. Check if metadata already exists and determine if scan is needed
       const scanOutputDir = path.join(outputRoot, gemiId);
+      const processCheck = checkExistingMetadata(gemiId, scanOutputDir, files);
+
+      if (!processCheck.shouldProcess) {
+        // Load existing metadata
+        try {
+          const metadataFile = path.join(
+            scanOutputDir,
+            `${gemiId}_final_metadata.json`
+          );
+          const metadataContent = await fs.readFile(metadataFile, "utf-8");
+          const metadata = JSON.parse(metadataContent);
+          const companyData = metadata[gemiId];
+
+          if (companyData) {
+            // Extract key information from company data
+            if (companyData["company-name"]) {
+              result["company-name"] = companyData["company-name"];
+            }
+            if (companyData["company-tax-id"]) {
+              result["company-tax-id"] = companyData["company-tax-id"];
+            }
+            if (companyData["creation-date"]) {
+              result["creation-date"] = companyData["creation-date"];
+            }
+
+            // Store the inner current-snapshot directly (avoid double nesting)
+            if (
+              companyData.metadata &&
+              companyData.metadata["current-snapshot"]
+            ) {
+              result.metadata["current-snapshot"] =
+                companyData.metadata["current-snapshot"];
+            }
+
+            // Include tracked-changes section if available
+            if (companyData["tracked-changes"]) {
+              result["tracked-changes"] = companyData["tracked-changes"];
+            }
+          }
+
+          result["processing-status"] = "successful";
+        } catch (error) {
+          result["processing-status"] = "scan-failed";
+        }
+
+        companies.push(result);
+        progressBar.increment(); // Skip scan - already up to date
+        continue;
+      }
+
+      // 4. Start scan job for this company (parallel, don't wait)
       const metadataModel = getMetadataModel();
+      const filesToProcess = processCheck.filesToProcess;
 
       const scanJob = runDocScannerSilently(
-        files,
+        filesToProcess,
         downloadDir,
         scanOutputDir,
         gemiId,
@@ -195,6 +248,11 @@ export async function processCompanies(gemiIds, outputRoot) {
               ) {
                 result.metadata["current-snapshot"] =
                   companyData.metadata["current-snapshot"];
+              }
+
+              // Include tracked-changes section if available
+              if (companyData["tracked-changes"]) {
+                result["tracked-changes"] = companyData["tracked-changes"];
               }
             }
 

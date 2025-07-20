@@ -138,6 +138,8 @@ For each person in the new document:
 
 #### SPECIFIC STATUS DETERMINATION RULES
 
+**IMPORTANT**: DO NOT remove representatives from the metadata even if they leave the company. Only update their status based on the document's explicit actions.
+
 **Set is_active = TRUE when document shows:**
 - "εκλέγεται" / "εκλέχθηκε" (elected)
 - "διορίζεται" / "διορίστηκε" (appointed) 
@@ -153,7 +155,6 @@ For each person in the new document:
 - "μεταβιβάζει το σύνολο των μεριδίων" (transfers all shares)
 - "παύει" / "λήγει η θητεία" (ceases/term expires)
 
-DO NOT remove representatives from the metadata. Only update their status based on the document's explicit actions.
 
 ### STEP 4: OWNERSHIP & CAPITAL TRACKING
 
