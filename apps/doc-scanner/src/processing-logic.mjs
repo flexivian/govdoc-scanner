@@ -83,6 +83,10 @@ async function extractInitialMetadata(filePart, fileName, modelInstance) {
   const config = {
     responseMimeType: "application/json",
     responseSchema: CompanyEssentialMetadata,
+    // Optimized parameters for structured data extraction
+    temperature: 0.1, // Low temperature for consistent, deterministic output
+    topK: 1, // Always select the most probable token (greedy decoding)
+    topP: 0.8, // Slightly reduced from default for more focused responses
   };
   const response = await callGeminiWithRetry(
     modelInstance,
@@ -106,6 +110,10 @@ async function mergeMetadataWithGemini(
   const config = {
     responseMimeType: "application/json",
     responseSchema: CompanyEssentialMetadata,
+    // Optimized parameters for structured data extraction
+    temperature: 0.1, // Low temperature for consistent, deterministic output
+    topK: 1, // Always select the most probable token (greedy decoding)
+    topP: 0.8, // Slightly reduced from default for more focused responses
   };
   const response = await callGeminiWithRetry(
     modelInstance,
