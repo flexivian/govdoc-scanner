@@ -29,62 +29,13 @@ async function downloadWithAxios(documentUrl, outputPath) {
       timeout: DOWNLOAD_TIMEOUT_AXIOS,
     });
 
-    const writer = fs.createWriteStream(outputPath);
-    response.data.pipe(writer);
+    // Determine extension from response headers if not already present
+    let finalOutputPath = outputPath;
+    if (!path.extname(outputPath)) {
+      const headers = response.headers;
+      let ext = "";
 
-    return new Promise((resolve, reject) => {
-      writer.on("finish", resolve);
-      writer.on("error", cleanupAndReject);
-      response.data.on("error", cleanupAndReject);
-
-      function cleanupAndReject(err) {
-        if (fs.existsSync(outputPath)) fs.unlinkSync(outputPath);
-        writer.close();
-        reject(err);
-      }
-    });
-  } catch (error) {
-    if (fs.existsSync(outputPath)) fs.unlinkSync(outputPath);
-    throw error;
-  }
-}
-
-// Parses the HTML and extracts download links (.pdf, .doc, .docx)
-async function extractDownloadLinks(html, downloadDir) {
-  const $ = cheerio.load(html);
-  const selector = 'a[href^="/api/download/"]';
-  const seen = new Set();
-  const downloadLinks = [];
-
-  for (const el of $(selector).toArray()) {
-    const rel = $(el).attr("href");
-    if (!rel || seen.has(rel)) continue;
-    seen.add(rel);
-
-    const fullUrl = BASE_URL + rel;
-    let name = rel.split("/").pop().split("?")[0] || `file_${seen.size}`;
-    let ext = path.extname(name).toLowerCase();
-
-    if (!ext) {
-      // do a byte‐range GET to get headers
-      let headers = {};
-      try {
-        const resp = await axios.get(fullUrl, {
-          responseType: "stream",
-          headers: {
-            "User-Agent": "...",
-            Referer: BASE_URL,
-            Range: "bytes=0-0",
-          },
-          timeout: DOWNLOAD_TIMEOUT_AXIOS,
-        });
-        headers = resp.headers;
-        resp.data.destroy();
-      } catch (err) {
-        console.error(`Could not fetch headers for ${fullUrl}: ${err.message}`);
-      }
-
-      // Try Content-Disposition
+      // Try Content-Disposition first
       const cd = headers["content-disposition"];
       if (cd) {
         const m = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/.exec(cd);
@@ -108,15 +59,78 @@ async function extractDownloadLinks(html, downloadDir) {
         }
       }
 
-      name += ext;
+      if (ext) {
+        finalOutputPath = outputPath + ext;
+
+        // Check for conflicts with the new extension
+        let i = 1;
+        while (fs.existsSync(finalOutputPath)) {
+          const base = outputPath;
+          finalOutputPath = `${base}_(${i++})${ext}`;
+        }
+      }
     }
 
+    const writer = fs.createWriteStream(finalOutputPath);
+    response.data.pipe(writer);
+
+    return new Promise((resolve, reject) => {
+      writer.on("finish", () => resolve(finalOutputPath));
+      writer.on("error", cleanupAndReject);
+      response.data.on("error", cleanupAndReject);
+
+      function cleanupAndReject(err) {
+        if (fs.existsSync(finalOutputPath)) fs.unlinkSync(finalOutputPath);
+        writer.close();
+        reject(err);
+      }
+    });
+  } catch (error) {
+    if (fs.existsSync(outputPath)) fs.unlinkSync(outputPath);
+    throw error;
+  }
+}
+
+// Parses the HTML and extracts download links (.pdf, .doc, .docx)
+async function extractDownloadLinks(html, downloadDir) {
+  const $ = cheerio.load(html);
+  const selector =
+    'a[href^="/api/download/Modifications/"], a[href^="/api/download/YMSdata/"]';
+  const seen = new Set();
+  const downloadLinks = [];
+
+  for (const el of $(selector).toArray()) {
+    const rel = $(el).attr("href");
+    if (!rel || seen.has(rel)) continue;
+    seen.add(rel);
+
+    const fullUrl = BASE_URL + rel;
+    let name = rel.split("/").pop().split("?")[0] || `file_${seen.size}`;
+
+    // Extract date from the table row containing this download link
+    let datePrefix = "";
+    const $row = $(el).closest("tr");
+    if ($row.length > 0) {
+      const $firstCell = $row.find("td").first();
+      const dateText = $firstCell.text().trim();
+      // Check if it matches DD/MM/YYYY format
+      const dateMatch = dateText.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+      if (dateMatch) {
+        // Convert DD/MM/YYYY to YYYY-MM-DD format for filename
+        const [, day, month, year] = dateMatch;
+        datePrefix = `${year}-${month}-${day}_`;
+      }
+    }
+
+    // Add date prefix to the filename if we found a date
+    const baseFileName = datePrefix + name;
+
     // avoid overwrites
-    let out = path.join(downloadDir, name);
+    let out = path.join(downloadDir, baseFileName);
     let i = 1;
     while (fs.existsSync(out)) {
-      const base = path.basename(name, ext);
-      out = path.join(downloadDir, `${base}_(${i++})${ext}`);
+      const base = path.basename(baseFileName);
+      out = path.join(downloadDir, `${base}_(${i++})`);
     }
 
     downloadLinks.push({ url: fullUrl, path: out, sourceUrl: rel });
@@ -128,16 +142,59 @@ async function extractDownloadLinks(html, downloadDir) {
 // Downloads all the extracted document links
 async function downloadAll(documentLinks) {
   let downloadedCount = 0;
+  const failedDownloads = [];
 
-  for (const documentInfo of documentLinks) {
+  // First attempt
+  for (let i = 0; i < documentLinks.length; i++) {
+    const documentInfo = documentLinks[i];
     try {
-      await downloadWithAxios(documentInfo.url, documentInfo.path);
+      const actualPath = await downloadWithAxios(
+        documentInfo.url,
+        documentInfo.path
+      );
       downloadedCount++;
+      process.stdout.write(
+        `\rDownloading: ${downloadedCount}/${documentLinks.length}`
+      );
     } catch (err) {
       console.error(
-        `Failed to download document from ${documentInfo.sourceUrl}: ${err.message}`
+        `\nFailed to download document from ${documentInfo.sourceUrl}: ${err.message}`
       );
+      failedDownloads.push(documentInfo);
     }
+  }
+  console.log(); // New line after progress
+
+  // Retry failed downloads
+  if (failedDownloads.length > 0) {
+    console.log(`\nRetrying ${failedDownloads.length} failed downloads...`);
+    let retrySuccessCount = 0;
+
+    for (let i = 0; i < failedDownloads.length; i++) {
+      const documentInfo = failedDownloads[i];
+      try {
+        process.stdout.write(`\rRetrying: ${i + 1}/${failedDownloads.length}`);
+        const actualPath = await downloadWithAxios(
+          documentInfo.url,
+          documentInfo.path
+        );
+        downloadedCount++;
+        retrySuccessCount++;
+      } catch (err) {
+        console.error(
+          `\n✗ Retry failed for ${documentInfo.sourceUrl}: ${err.message}`
+        );
+      }
+    }
+    console.log(
+      `\nRetry completed: ${retrySuccessCount}/${failedDownloads.length} successful`
+    );
+  }
+
+  const totalAttempted = documentLinks.length;
+  const finalFailedCount = totalAttempted - downloadedCount;
+  if (finalFailedCount > 0) {
+    console.log(`  Failed downloads: ${finalFailedCount}`);
   }
 
   return downloadedCount;
@@ -223,9 +280,7 @@ export async function runCrawlerForGemiIds(gemiIds, outputBaseDir) {
 
     for (const [index, gemiId] of gemiIds.entries()) {
       console.log(
-        `\n--- CRAWLER: Processing ${index + 1}/${
-          gemiIds.length
-        }: ${gemiId} ---`
+        `\n--- Processing ${index + 1}/${gemiIds.length}: ${gemiId} ---`
       );
 
       // Construct the final, desired download path
