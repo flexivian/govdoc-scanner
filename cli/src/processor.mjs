@@ -98,6 +98,7 @@ async function runCrawlerSilently(gemiIds, outputRoot) {
 export async function processCompanies(gemiIds, outputRoot) {
   const companies = [];
   const scanJobs = [];
+  const failures = [];
 
   // Create progress bar for total operations (crawl + scan per company)
   const totalOperations = gemiIds.length * 2;
@@ -128,10 +129,39 @@ export async function processCompanies(gemiIds, outputRoot) {
 
     try {
       // 1. Run crawler for this GEMI ID (serial)
-      const downloadPaths = await runCrawlerSilently([gemiId], outputRoot);
+      const crawlMap = await runCrawlerSilently([gemiId], outputRoot);
       progressBar.increment(); // Crawl completed
 
-      const downloadDir = downloadPaths[gemiId];
+      // Handle new structured result (or fallback to legacy string path)
+      let downloadDir = null;
+      let crawlSuccess = true;
+      let crawlErrorCode = null;
+      let crawlErrorMessage = null;
+
+      const entry = crawlMap[gemiId];
+      if (entry && typeof entry === "object" && "success" in entry) {
+        crawlSuccess = !!entry.success;
+        downloadDir = entry.path || null;
+        if (!crawlSuccess) {
+          crawlErrorCode = entry.errorCode || "crawl-error";
+          crawlErrorMessage = entry.errorMessage || "Unknown crawl error";
+        }
+      } else {
+        // Backward compatibility: entry is a string path
+        downloadDir = entry || null;
+      }
+
+      if (!crawlSuccess) {
+        result["processing-status"] = "crawl-failed";
+        failures.push({
+          gemiId,
+          code: crawlErrorCode,
+          message: crawlErrorMessage,
+        });
+        companies.push(result);
+        progressBar.increment(); // Skip scan when crawl fails
+        continue;
+      }
 
       // 2. Check if any documents were downloaded
       let files = [];
@@ -260,6 +290,11 @@ export async function processCompanies(gemiIds, outputRoot) {
           } catch (error) {
             // Metadata loading failed, but scan job completed
             result["processing-status"] = "scan-failed";
+            failures.push({
+              gemiId,
+              code: "scan-failed",
+              message: error.message || "Metadata loading failed",
+            });
           }
 
           progressBar.increment(); // Scan completed
@@ -267,6 +302,11 @@ export async function processCompanies(gemiIds, outputRoot) {
         })
         .catch((error) => {
           result["processing-status"] = "scan-failed";
+          failures.push({
+            gemiId,
+            code: "scan-failed",
+            message: error?.message || "Scan failed",
+          });
           progressBar.increment(); // Scan failed
           return result;
         });
@@ -275,6 +315,12 @@ export async function processCompanies(gemiIds, outputRoot) {
     } catch (error) {
       progressBar.increment(); // Crawl failed
       result["processing-status"] = "crawl-failed";
+      const code = error?.code || "crawl-error";
+      failures.push({
+        gemiId,
+        code,
+        message: error?.message || "Crawl failed",
+      });
       companies.push(result);
       progressBar.increment(); // Skip scan for failed crawl
     }
@@ -327,6 +373,6 @@ export async function processCompanies(gemiIds, outputRoot) {
     ({ "processing-status": _, ...company }) => company
   );
 
-  // Return both cleaned companies and calculated stats
-  return { companies: cleanedCompanies, stats: finalStats };
+  // Return both cleaned companies and calculated stats, plus categorized failures
+  return { companies: cleanedCompanies, stats: finalStats, failures };
 }

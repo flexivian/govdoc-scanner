@@ -10,6 +10,22 @@ import {
 } from "./prompts.mjs";
 import { loadInputFile, writeOutput, getRandomCompanies } from "./utils.mjs";
 import { processCompanies } from "./processor.mjs";
+import { validateApiKeyOnline } from "../../apps/doc-scanner/src/gemini-config.mjs";
+// Map failure codes to concise messages for summary listing
+function mapFailureCodeToMessage(code) {
+  switch (code) {
+    case "browser-launch-failed":
+      return "browser failed to start";
+    case "company-not-found":
+      return "company doesn't exist";
+    case "site-navigation-timeout":
+      return "site didn't load";
+    case "scan-failed":
+      return "scan failed";
+    default:
+      return "operation failed";
+  }
+}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -106,7 +122,12 @@ async function main() {
 
   // Check if any command line arguments were provided
   const hasArgs = args.input || args.companyRandom !== null;
-
+  // Early API key validation
+  const online = await validateApiKeyOnline();
+  if (!online.ok) {
+    console.error(`\n❌ Invalid API key: ${online.reason}`);
+    process.exit(1);
+  }
   if (hasArgs) {
     // Command line mode
     console.log("\n🇬🇷 GovDoc Scanner CLI - Command Line Mode\n");
@@ -156,6 +177,7 @@ async function runCommandLineMode(args) {
     const result = await processCompanies(gemiIds, outputRoot);
     const companies = result.companies;
     const stats = result.stats;
+    const failures = result.failures || [];
 
     // Write output and show summary
     const outputFile = path.join(outputRoot, "govdoc-output.json");
@@ -172,7 +194,15 @@ async function runCommandLineMode(args) {
     }
     console.log(`  Failed: ${stats.failed}`);
 
-    console.log(`\n🎉 Processing completed successfully!`);
+    if (failures.length > 0) {
+      // Group failures by code for clearer messages
+      const lines = failures.map(
+        (f) => `    - ${f.gemiId} ${mapFailureCodeToMessage(f.code)}`
+      );
+      console.log(lines.join("\n"));
+    }
+
+    console.log(`\n🎉 Processing completed.`);
   } catch (error) {
     console.error(`\n❌ Error: ${error.message}`);
     process.exit(1);
@@ -236,6 +266,7 @@ async function runInteractiveMode() {
     const result = await processCompanies(gemiIds, outputRoot);
     const companies = result.companies;
     const stats = result.stats;
+    const failures = result.failures || [];
 
     // 5. Write output and show summary
     const outputFile = path.join(outputRoot, "govdoc-output.json");
@@ -252,7 +283,14 @@ async function runInteractiveMode() {
     }
     console.log(`  Failed: ${stats.failed}`);
 
-    console.log(`\n🎉 Processing completed successfully!`);
+    if (failures.length > 0) {
+      const lines = failures.map(
+        (f) => `    - ${f.gemiId} ${mapFailureCodeToMessage(f.code)}`
+      );
+      console.log(lines.join("\n"));
+    }
+
+    console.log(`\n🎉 Processing completed.`);
   } catch (error) {
     console.error(`\n❌ Error: ${error.message}`);
     process.exit(1);

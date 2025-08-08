@@ -3,7 +3,11 @@ import path from "path";
 import readline from "readline";
 import { fileURLToPath } from "url";
 
-import { getMetadataModel } from "./gemini-config.mjs";
+import {
+  getMetadataModel,
+  validateApiKey,
+  validateApiKeyOnline,
+} from "./gemini-config.mjs";
 import { processCompanyFiles } from "./processing-logic.mjs";
 import { checkExistingMetadata } from "./metadata-checker.mjs";
 import { exit } from "process";
@@ -63,6 +67,18 @@ async function main() {
   });
 
   try {
+    const api = validateApiKey();
+    if (!api.ok) {
+      console.error(`\n❌ Invalid API key: ${api.reason}`);
+      rl.close();
+      exit(1);
+    }
+    const online = await validateApiKeyOnline();
+    if (!online.ok) {
+      console.error(`\n❌ Invalid API key: ${online.reason}`);
+      rl.close();
+      exit(1);
+    }
     const gemiId = await promptForGemiId(rl);
     const { inputFolder, outputFolder } = prepareFolders(gemiId);
     const files = getFilesToProcess(inputFolder);
