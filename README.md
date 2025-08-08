@@ -14,6 +14,9 @@ The repository currently includes three main applications:
 - **crawler**: Scrapes the GEMI portal to search for companies using advanced filters and downloads all available public documents with enhanced date extraction, intelligent file management, and robust retry mechanisms.
 - **cli**: A unified command-line interface that orchestrates the complete workflow, combining crawling and scanning with interactive prompts and automated batch processing.
 
+Optional integration:
+- **OpenSearch**: Index your results for search/analytics with a ready mapping template and CLI bulk push.
+
 All tools are implemented in Node.js and use a combination of CLI interfaces and automated scripts. The project uses npm workspaces for managing multiple applications.
 
 ## Usage Instructions
@@ -37,6 +40,17 @@ Then, open `.env` and set:
 
 ```
 GEMINI_API_KEY=your_gemini_api_key_here
+
+# Optional: OpenSearch integration (local defaults)
+OPENSEARCH_PUSH=true
+OPENSEARCH_URL=https://localhost:9200
+OPENSEARCH_USERNAME=admin
+OPENSEARCH_PASSWORD=yourStrongPassword
+OPENSEARCH_INSECURE=true
+OPENSEARCH_INDEX=govdoc-companies-000001
+OPENSEARCH_INDEX_STRATEGY=static
+OPENSEARCH_BATCH_SIZE=500
+OPENSEARCH_REFRESH=false
 ```
 
 ### Quick Start
@@ -114,6 +128,51 @@ Both modes:
 - Show clear progress tracking with visual indicators
 - Provide comprehensive summary when complete
 - Save output in the `output/` directory
+
+### 4. OpenSearch Integration (optional)
+
+1) Start OpenSearch + Dashboards (Docker):
+
+```bash
+export OPENSEARCH_INITIAL_ADMIN_PASSWORD=yourStrongPassword
+docker compose up -d opensearch opensearch-dashboards
+```
+
+2) Install the index template and create the index:
+
+```bash
+curl -k -u admin:$OPENSEARCH_INITIAL_ADMIN_PASSWORD \
+   -H 'content-type: application/json' \
+   -X PUT https://localhost:9200/_index_template/govdoc-companies-template \
+   --data-binary @opensearch/company-index-template.json
+
+curl -k -u admin:$OPENSEARCH_INITIAL_ADMIN_PASSWORD -X PUT https://localhost:9200/govdoc-companies-000001
+```
+
+3) Push data from the CLI:
+
+Interactive mode (reads OPENSEARCH_* from .env and OPENSEARCH_PUSH=true):
+
+```bash
+npm start govdoc
+```
+
+Command mode with flags:
+
+```bash
+npm start govdoc -- --input ./companies.gds \
+   --push \
+   --os.endpoint https://localhost:9200 \
+   --os.username admin \
+   --os.password yourStrongPassword \
+   --os.index govdoc-companies-000001 \
+   --os.index-strategy static \
+   --os.insecure \
+   --os.batch-size 500 \
+   --os.refresh
+```
+
+Docs: see `docs-site/docs/installation/OpenSearch.md` for end-to-end setup and query examples.
 
 ### 3. Manual Workflow
 
