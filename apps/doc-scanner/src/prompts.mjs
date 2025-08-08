@@ -89,7 +89,12 @@ Apply Greek corporate law interpretation. When uncertain about representative st
 
 **IMPORTANT**: This is an initial document extraction. Set the "tracked_changes" field to null since there is no previous document for comparison.
 
-Follow the JSON schema precisely. All Greek text must remain in original Greek characters.`;
+Follow the JSON schema precisely. All Greek text must remain in original Greek characters.
+
+OUTPUT FORMAT RULES:
+- Return ONLY raw JSON, no explanations.
+- Do NOT wrap the JSON in markdown fences.
+- Ensure valid JSON according to the provided schema.`;
 }
 
 export function getMergeMetadataPrompt(extractedDate, existingMetadata) {
@@ -215,5 +220,10 @@ ${JSON.stringify(existingMetadata, null, 2)}
 
 **NEW DOCUMENT DATE:** ${extractedDate || "Unknown"}
 
-Return the complete updated metadata with representative array containing NO duplicates. Each person should appear exactly once with their most current status and information. **CRITICAL**: Include a comprehensive tracked_change summary highlighting all significant differences between the existing and new data.`;
+Return the complete updated metadata with representative array containing NO duplicates. Each person should appear exactly once with their most current status and information. **CRITICAL**: Include a comprehensive tracked_change summary highlighting all significant differences between the existing and new data.
+
+OUTPUT FORMAT RULES:
+- Return ONLY raw JSON, no explanations.
+- Do NOT wrap the JSON in markdown fences.
+- Ensure valid JSON according to the provided schema.`;
 }
