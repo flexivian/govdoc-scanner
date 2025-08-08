@@ -9,6 +9,7 @@ A Node.js tool for scraping the Greek Business Portal (GEMI). It allows users to
 - **Smart Filtering:** Includes a "Did you mean...?" feature that corrects typos in filter inputs for a smoother experience.
 - **Two-Step Workflow:** First, search and gather a list of target companies. Then, crawl and download their documents.
 - **Bulk or Single Crawling:** Download documents for a single GEMI ID or for all companies found in a search.
+- **Intelligent Download Management:** Automatically skips downloading files that already exist locally, reducing bandwidth usage and processing time.
 
 ## Setup
 
@@ -33,7 +34,6 @@ The application operates in two ways:
     ```
 
 2.  **Search for Companies**
-
     - From the main menu, choose `1. Search for companies`.
     - You will be prompted to enter a search term (e.g., ΤΡΑΠΕΖΑ).
     - Next, you can optionally provide any number of filters (e.g., Legal Type, Status, Competent Office, Dates). Press Enter to skip any filter.

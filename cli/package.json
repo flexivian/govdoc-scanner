@@ -1,0 +1,16 @@
+{
+  "name": "govdoc-cli",
+  "version": "1.0.0",
+  "description": "CLI tool for govdoc-scanner",
+  "main": "src/main.mjs",
+  "scripts": {
+    "start": "node src/main.mjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "inquirer": "^12.6.3",
+    "cli-progress": "^3.12.0"
+  }
+}
