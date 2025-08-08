@@ -13,6 +13,41 @@ import {
 const MIME_TYPE_TEXT_PLAIN = "text/plain";
 const MIME_TYPE_PDF = "application/pdf";
 
+// Lenient JSON parsing to handle occasional markdown-fenced responses from the model
+export function parseGeminiJson(raw, fileName = "") {
+  if (raw == null) throw new Error("Empty response from model");
+  const text = String(raw).trim();
+  try {
+    return JSON.parse(text);
+  } catch (_) {
+    // Try stripping markdown code fences like ```json ... ```
+    let stripped = text
+      .replace(/^\s*```(?:json|JSON)?\s*/m, "")
+      .replace(/\s*```\s*$/m, "")
+      .trim();
+    try {
+      return JSON.parse(stripped);
+    } catch (_) {
+      // As a last resort, extract the largest {...} block
+      const start = stripped.indexOf("{");
+      const end = stripped.lastIndexOf("}");
+      if (start !== -1 && end !== -1 && end > start) {
+        const candidate = stripped.slice(start, end + 1);
+        try {
+          return JSON.parse(candidate);
+        } catch (err3) {
+          throw new Error(
+            `Failed to parse JSON for ${fileName || "response"}: ${err3.message}`
+          );
+        }
+      }
+      throw new Error(
+        `Failed to parse JSON for ${fileName || "response"}: Unexpected content`
+      );
+    }
+  }
+}
+
 function extractDateFromFilename(fileName) {
   const dateMatch = fileName.match(/^(\d{4}-\d{2}-\d{2})/);
   return dateMatch ? dateMatch[1] : null;
@@ -94,7 +129,7 @@ async function extractInitialMetadata(filePart, fileName, modelInstance) {
     fileName,
     config
   );
-  return JSON.parse(response);
+  return parseGeminiJson(response, fileName);
 }
 
 // Merge new document with existing metadata
@@ -121,7 +156,7 @@ async function mergeMetadataWithGemini(
     `merge-${fileName}`,
     config
   );
-  return JSON.parse(response);
+  return parseGeminiJson(response, fileName);
 }
 
 // Save JSON file to disk
