@@ -4,6 +4,10 @@ node_modules/
 .env
 **/.env
 
+# Docusaurus
+docs-site/.docusaurus/
+docs-site/build/
+
 output/*
 ids.txt
 companies.gds
