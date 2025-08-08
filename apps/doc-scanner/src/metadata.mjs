@@ -197,6 +197,12 @@ export const CompanyEssentialMetadata = {
         "Date when the GEMI document was issued/registered, in YYYY-MM-DD format. This should match the document's official date, not the filename date if they differ.",
       nullable: true,
     },
+    tracked_changes: {
+      type: "string",
+      description:
+        "Summary of key changes from the previous document state, formatted as a bulleted list. Include only significant changes such as: representative appointments/departures, role changes, ownership transfers, address updates, company name changes, or capital modifications. Example: '• ΠΑΠΑΔΟΠΟΥΛΟΣ ΙΩΑΝΝΗΣ appointed as Διαχειριστής • ΚΩΝΣΤΑΝΤΙΝΟΥ ΜΑΡΙΑ increased ownership to 45% • Company address changed to ΛΕΩΦΟΡΟΣ ΚΗΦΙΣΙΑΣ 200, ΑΘΗΝΑ'. Leave null for initial document extraction when no comparison exists.",
+      nullable: true,
+    },
   },
   required: [
     "gemi_id",
@@ -223,5 +229,6 @@ export const CompanyEssentialMetadata = {
     "city",
     "postal_code",
     "document_date",
+    "tracked_changes",
   ],
 };
