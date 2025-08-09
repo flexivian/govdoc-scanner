@@ -6,7 +6,6 @@ import {
   promptFileInput,
   promptManualGemiIds,
   promptRandomCount,
-  promptConfirmation,
 } from "./prompts.mjs";
 import { loadInputFile, writeOutput, getRandomCompanies } from "./utils.mjs";
 import { processCompanies } from "./processor.mjs";
@@ -19,9 +18,11 @@ function mapFailureCodeToMessage(code) {
     case "company-not-found":
       return "company doesn't exist";
     case "site-navigation-timeout":
-      return "site didn't load";
+      return "GEMI site didn't load";
     case "scan-failed":
       return "scan failed";
+    case "no-search-results":
+      return "no random search results";
     default:
       return "operation failed";
   }
@@ -142,6 +143,26 @@ async function main() {
 /**
  * Run in command line mode with provided arguments
  */
+function printSummary(stats, failures, noDocs = []) {
+  const totalProcessed = stats.successful + stats.noDocuments + stats.failed;
+  console.log(`\n📊 Summary:`);
+  console.log(`  Total processed: ${totalProcessed}`);
+  console.log(`  Successfully scanned: ${stats.successful}`);
+  if (stats.noDocuments > 0)
+    console.log(`  No documents found: ${stats.noDocuments}`);
+  console.log(`  Failed: ${stats.failed}`);
+  if (failures.length > 0) {
+    const lines = failures.map(
+      (f) => `    - ${f.gemiId} ${mapFailureCodeToMessage(f.code)}`
+    );
+    console.log(lines.join("\n"));
+  }
+  if (noDocs.length > 0) {
+    console.log("  Companies with no documents:");
+    for (const id of noDocs) console.log(`    - ${id}`);
+  }
+}
+
 async function runCommandLineMode(args) {
   try {
     let gemiIds = [];
@@ -157,7 +178,7 @@ async function runCommandLineMode(args) {
       mode = "random";
       console.log(`🎲 Getting ${args.companyRandom} random companies...`);
       gemiIds = await getRandomCompanies(args.companyRandom);
-      if (gemiIds.length === 0) {
+      if (!Array.isArray(gemiIds) || gemiIds.length === 0) {
         console.log(
           "❌ Could not find any random companies. Please try again later."
         );
@@ -178,29 +199,14 @@ async function runCommandLineMode(args) {
     const companies = result.companies;
     const stats = result.stats;
     const failures = result.failures || [];
+    const noDocs = result.noDocuments || [];
 
     // Write output and show summary
     const outputFile = path.join(outputRoot, "govdoc-output.json");
     await writeOutput(companies, outputFile);
 
     // Print summary using stats from processor
-    const totalProcessed = stats.successful + stats.noDocuments + stats.failed;
-
-    console.log(`\n📊 Summary:`);
-    console.log(`  Total processed: ${totalProcessed}`);
-    console.log(`  Successfully scanned: ${stats.successful}`);
-    if (stats.noDocuments > 0) {
-      console.log(`  No documents found: ${stats.noDocuments}`);
-    }
-    console.log(`  Failed: ${stats.failed}`);
-
-    if (failures.length > 0) {
-      // Group failures by code for clearer messages
-      const lines = failures.map(
-        (f) => `    - ${f.gemiId} ${mapFailureCodeToMessage(f.code)}`
-      );
-      console.log(lines.join("\n"));
-    }
+    printSummary(stats, failures, noDocs);
 
     console.log(`\n🎉 Processing completed.`);
   } catch (error) {
@@ -238,7 +244,7 @@ async function runInteractiveMode() {
         const count = await promptRandomCount();
         console.log(`🎲 Getting ${count} random companies...`);
         gemiIds = await getRandomCompanies(count);
-        if (gemiIds.length === 0) {
+        if (!Array.isArray(gemiIds) || gemiIds.length === 0) {
           console.log(
             "❌ Could not find any random companies. Please try again later."
           );
@@ -252,14 +258,7 @@ async function runInteractiveMode() {
         process.exit(1);
     }
 
-    // 3. Confirm before processing
-    const confirmed = await promptConfirmation(gemiIds, mode);
-    if (!confirmed) {
-      console.log("Operation cancelled.");
-      process.exit(0);
-    }
-
-    // 4. Process the companies
+    // 3. Process the companies (confirmation removed)
     console.log(`\n🚀 Starting processing of ${gemiIds.length} companies...\n`);
 
     const outputRoot = path.join(projectRoot, "output");
@@ -267,28 +266,16 @@ async function runInteractiveMode() {
     const companies = result.companies;
     const stats = result.stats;
     const failures = result.failures || [];
+    const noDocs = result.noDocuments || [];
 
-    // 5. Write output and show summary
-    const outputFile = path.join(outputRoot, "govdoc-output.json");
-    await writeOutput(companies, outputFile);
+    // 4. Write output and show summary
+    if (stats.successful > 0) {
+      const outputFile = path.join(outputRoot, "govdoc-output.json");
+      await writeOutput(companies, outputFile);
+    }
 
     // Print summary using stats from processor
-    const totalProcessed = stats.successful + stats.noDocuments + stats.failed;
-
-    console.log(`\n📊 Summary:`);
-    console.log(`  Total processed: ${totalProcessed}`);
-    console.log(`  Successfully scanned: ${stats.successful}`);
-    if (stats.noDocuments > 0) {
-      console.log(`  No documents found: ${stats.noDocuments}`);
-    }
-    console.log(`  Failed: ${stats.failed}`);
-
-    if (failures.length > 0) {
-      const lines = failures.map(
-        (f) => `    - ${f.gemiId} ${mapFailureCodeToMessage(f.code)}`
-      );
-      console.log(lines.join("\n"));
-    }
+    printSummary(stats, failures, noDocs);
 
     console.log(`\n🎉 Processing completed.`);
   } catch (error) {

@@ -99,6 +99,8 @@ export async function processCompanies(gemiIds, outputRoot) {
   const companies = [];
   const scanJobs = [];
   const failures = [];
+  const noDocumentIds = [];
+  let currentTotalOperations = gemiIds.length * 2; // crawl + potential scan each
 
   // Create progress bar for total operations (crawl + scan per company)
   const totalOperations = gemiIds.length * 2;
@@ -110,7 +112,7 @@ export async function processCompanies(gemiIds, outputRoot) {
     cliProgress.Presets.shades_classic
   );
 
-  progressBar.start(totalOperations, 0);
+  progressBar.start(currentTotalOperations, 0);
 
   // Process each GEMI ID serially for crawling, but start scanning immediately when ready
   for (const gemiId of gemiIds) {
@@ -132,24 +134,12 @@ export async function processCompanies(gemiIds, outputRoot) {
       const crawlMap = await runCrawlerSilently([gemiId], outputRoot);
       progressBar.increment(); // Crawl completed
 
-      // Handle new structured result (or fallback to legacy string path)
-      let downloadDir = null;
-      let crawlSuccess = true;
-      let crawlErrorCode = null;
-      let crawlErrorMessage = null;
-
+      // Structured crawl result expected
       const entry = crawlMap[gemiId];
-      if (entry && typeof entry === "object" && "success" in entry) {
-        crawlSuccess = !!entry.success;
-        downloadDir = entry.path || null;
-        if (!crawlSuccess) {
-          crawlErrorCode = entry.errorCode || "crawl-error";
-          crawlErrorMessage = entry.errorMessage || "Unknown crawl error";
-        }
-      } else {
-        // Backward compatibility: entry is a string path
-        downloadDir = entry || null;
-      }
+      const crawlSuccess = entry?.success === true;
+      const downloadDir = entry?.path || null;
+      const crawlErrorCode = entry?.errorCode || "crawl-error";
+      const crawlErrorMessage = entry?.errorMessage || "Unknown crawl error";
 
       if (!crawlSuccess) {
         result["processing-status"] = "crawl-failed";
@@ -177,8 +167,9 @@ export async function processCompanies(gemiIds, outputRoot) {
 
       if (files.length === 0) {
         result["processing-status"] = "no-documents";
+        noDocumentIds.push(gemiId);
         companies.push(result);
-        progressBar.increment(); // Skip scan - no files
+        progressBar.increment(); // Skip scan - no files (we still count placeholder scan op)
         continue;
       }
 
@@ -313,7 +304,7 @@ export async function processCompanies(gemiIds, outputRoot) {
 
       scanJobs.push(scanJob);
     } catch (error) {
-      progressBar.increment(); // Crawl failed
+      progressBar.increment(); // Crawl attempt completed (failed)
       result["processing-status"] = "crawl-failed";
       const code = error?.code || "crawl-error";
       failures.push({
@@ -322,7 +313,19 @@ export async function processCompanies(gemiIds, outputRoot) {
         message: error?.message || "Crawl failed",
       });
       companies.push(result);
-      progressBar.increment(); // Skip scan for failed crawl
+      // Collapse reserved scan slot for this ID (remove one from total)
+      if (currentTotalOperations > progressBar.value) {
+        currentTotalOperations -= 1; // remove the unused scan step
+        try {
+          if (typeof progressBar.setTotal === "function") {
+            progressBar.setTotal(currentTotalOperations);
+          } else if (typeof progressBar.updateTotal === "function") {
+            progressBar.updateTotal(currentTotalOperations);
+          }
+        } catch (_) {
+          // ignore if library doesn't support dynamic total
+        }
+      }
     }
 
     // Continue to next crawler immediately (don't wait for scan to complete)
@@ -374,5 +377,10 @@ export async function processCompanies(gemiIds, outputRoot) {
   );
 
   // Return both cleaned companies and calculated stats, plus categorized failures
-  return { companies: cleanedCompanies, stats: finalStats, failures };
+  return {
+    companies: cleanedCompanies,
+    stats: finalStats,
+    failures,
+    noDocuments: noDocumentIds,
+  };
 }
