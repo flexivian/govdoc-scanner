@@ -11,7 +11,7 @@ This guide will help you set up the GovDoc Scanner project for development purpo
 - **Node.js**: v18.x or newer (recommended: v20.x LTS)
 - **Git**: For version control
 - **Gemini API Key**: Required for document processing ([Get one here](https://aistudio.google.com/app/apikey))
-- **Code Editor**: VS Code recommended with Nx Console extension
+- **Code Editor**: VS Code recommended for development
 
 ## Setup
 
@@ -47,8 +47,7 @@ govdoc-scanner/
 ├── apps/
 │   ├── crawler/            # GEMI portal scraping with enhanced date extraction
 │   └── doc-scanner/        # AI-powered document processing with chronological analysis
-├── scripts/
-│   └── orchestrator.mjs    # End-to-end workflow
+├── cli/                    # Unified CLI tool for complete workflow orchestration
 ├── docs-site/              # Documentation
 └── output/                 # Generated files
 ```
@@ -59,26 +58,31 @@ govdoc-scanner/
 
 ```bash
 # Run individual applications
-npx nx run crawler:start
-npx nx run doc-scanner:start
-npx nx run orchestrator:start
+npm start crawler
+npm start scanner
+npm start govdoc
 
-# List all available commands
-npx nx show projects
+# Show help for any command
+npm start help
+npm start govdoc -- --help
 ```
 
 ### Testing Setup
 
 ```bash
 # Test crawler functionality
-npx nx run crawler:start
+npm start crawler
 # Select search option and try a simple company name
 
 # Test doc-scanner
 mkdir -p apps/doc-scanner/src/data/input/test123
 # Place a test PDF in the directory (name with date prefix: 2024-01-15_document.pdf)
-npx nx run doc-scanner:start
+npm start scanner
 # Enter "test123" as GEMI ID
+
+# Test complete workflow
+npm start govdoc
+# Follow interactive prompts or use command line mode
 ```
 
 ## Development Tips

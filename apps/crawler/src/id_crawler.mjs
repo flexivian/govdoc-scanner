@@ -124,13 +124,23 @@ async function extractDownloadLinks(html, downloadDir) {
 
     // Add date prefix to the filename if we found a date
     const baseFileName = datePrefix + name;
-
-    // avoid overwrites
     let out = path.join(downloadDir, baseFileName);
-    let i = 1;
-    while (fs.existsSync(out)) {
-      const base = path.basename(baseFileName);
-      out = path.join(downloadDir, `${base}_(${i++})`);
+
+    // Skip if file already exists (check for common extensions)
+    const extensions = [".pdf", ".doc", ".docx"];
+    let fileExists = false;
+    for (const ext of extensions) {
+      if (fs.existsSync(out + ext)) {
+        console.log(
+          `Skipping ${path.basename(out + ext)} - file already exists`
+        );
+        fileExists = true;
+        break;
+      }
+    }
+
+    if (fileExists) {
+      continue;
     }
 
     downloadLinks.push({ url: fullUrl, path: out, sourceUrl: rel });
@@ -153,8 +163,8 @@ async function downloadAll(documentLinks) {
         documentInfo.path
       );
       downloadedCount++;
-      process.stdout.write(
-        `\rDownloading: ${downloadedCount}/${documentLinks.length}`
+      console.log(
+        `Downloaded: ${downloadedCount}/${documentLinks.length} - ${path.basename(actualPath)}`
       );
     } catch (err) {
       console.error(
@@ -216,14 +226,25 @@ async function fetchCompanyDocuments(context, gemiId, downloadPath) {
 
     // Check for "Not found" in the page content
     if (html.includes("Not found")) {
-      throw new Error(
+      const err = new Error(
         `Company with GEMI ID ${gemiId} not found. Please check the ID or try again later.`
       );
+      err.code = "company-not-found";
+      throw err;
+    }
+
+    try {
+      await page.waitForSelector("div#title", { timeout: 4000 });
+    } catch {
+      // Browser loaded but the site content didn't render expected title in time
+      const err = new Error("Site content did not load in time");
+      err.code = "site-navigation-timeout";
+      throw err;
     }
 
     try {
       // Wait for the page to load and the modification history to appear
-      await page.waitForSelector("div#ModificationHistory", { timeout: 2000 });
+      await page.waitForSelector("div#ModificationHistory", { timeout: 1000 });
     } catch {
       // If the modification history doesn't load:
       // No pdfs are available, so we can continue and find 0 or
@@ -245,11 +266,22 @@ async function fetchCompanyDocuments(context, gemiId, downloadPath) {
         `Found ${downloadLinks.length} Document(s). Saving to: ${downloadDir}`
       );
       await downloadAll(downloadLinks);
+      return { success: true, downloadDir };
     } else {
       console.log("No Documents found to download.");
+      return { success: true, downloadDir };
     }
   } catch (error) {
     console.error(`Error processing GEMI ID ${gemiId}: ${error.message}`);
+    // Map common crawler error scenarios to stable codes
+    let code = error.code || "crawl-error";
+    if (!code) {
+      const msg = String(error.message || "").toLowerCase();
+      if (error.name === "TimeoutError" || msg.includes("timeout")) {
+        code = "site-navigation-timeout"; // Browser loaded, site didn't load
+      }
+    }
+    return { success: false, errorCode: code, errorMessage: error.message };
   } finally {
     if (page) await page.close();
   }
@@ -262,16 +294,22 @@ export async function runCrawlerForGemiIds(gemiIds, outputBaseDir) {
   let browser = null;
 
   try {
-    browser = await chromium.launch({
-      headless: true,
-      args: [
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--disable-dev-shm-usage",
-        "--disable-accelerated-2d-canvas",
-        "--disable-gpu",
-      ],
-    });
+    try {
+      browser = await chromium.launch({
+        headless: true,
+        args: [
+          "--no-sandbox",
+          "--disable-setuid-sandbox",
+          "--disable-dev-shm-usage",
+          "--disable-accelerated-2d-canvas",
+          "--disable-gpu",
+        ],
+      });
+    } catch (e) {
+      const err = new Error(`Failed to launch browser: ${e.message}`);
+      err.code = "browser-launch-failed";
+      throw err;
+    }
 
     const context = await browser.newContext({
       userAgent:
@@ -291,11 +329,26 @@ export async function runCrawlerForGemiIds(gemiIds, outputBaseDir) {
       );
 
       // Pass the final path to the fetcher
-      await fetchCompanyDocuments(context, gemiId, gemiDownloadPath);
-      finalDownloadPaths[gemiId] = gemiDownloadPath;
+      const res = await fetchCompanyDocuments(
+        context,
+        gemiId,
+        gemiDownloadPath
+      );
+      if (res && res.success) {
+        finalDownloadPaths[gemiId] = { path: gemiDownloadPath, success: true };
+      } else {
+        finalDownloadPaths[gemiId] = {
+          path: gemiDownloadPath,
+          success: false,
+          errorCode: res?.errorCode || "crawl-error",
+          errorMessage: res?.errorMessage || "Unknown crawl error",
+        };
+      }
     }
   } catch (error) {
     console.error("A critical error occurred during crawling:", error);
+    // Re-throw to allow caller to categorize (e.g., browser-launch-failed)
+    throw error;
   } finally {
     if (browser) await browser.close();
   }

@@ -32,38 +32,54 @@ cp .env.example .env
 
 ### 3. First Run
 
-Test with the orchestrator (recommended):
+Test with the interactive CLI (recommended):
 
 ```bash
-npx nx run orchestrator:start
-# Select: 1) Single ID
-# Enter GEMI ID: 123204604000
-# Watch the automated process
+npm start govdoc
+# Follow the interactive prompts to:
+# - Choose input method (file, manual, or random)
+# - Process companies with automated workflow
+# - View progress and results
 ```
 
 ## Project Applications
 
 The project includes three main applications:
 
-- **Orchestrator**: Complete end-to-end workflow (recommended)
+- **CLI Tool**: Complete end-to-end interactive workflow (recommended)
 - **Crawler**: Search and download documents from GEMI portal with enhanced date extraction
-- **Doc-Scanner**: Process documents with AI-powered chronological analysis and representative tracking
+- **Doc-Scanner**: Process documents with AI-powered chronological analysis, representative tracking, and automatic change detection
 
 ## Individual Application Usage
 
-### Orchestrator (Recommended)
+### CLI Tool (Recommended)
 
 ```bash
-npx nx run orchestrator:start
-# Combines crawler + doc-scanner automatically
-# Shows progress bars and summaries
-# Output saved to project root ./output/
+npm start govdoc
+# Interactive mode with guided prompts:
+# - File input, manual entry, or random selection
+# - Automated crawling and document processing
+# - Progress tracking and comprehensive summaries
+# - Output saved to project root ./output/
+```
+
+**Command line mode for automation:**
+
+```bash
+# Process from file
+npm start govdoc -- --input ./companies.gds
+
+# Process random companies
+npm start govdoc -- --company-random 10
+
+# Show help
+npm start govdoc -- --help
 ```
 
 ### Crawler
 
 ```bash
-npx nx run crawler:start
+npm start crawler
 # Search for companies or download by GEMI ID
 # Results saved to apps/crawler/src/downloads/
 ```
@@ -71,11 +87,14 @@ npx nx run crawler:start
 ### Doc-Scanner
 
 ```bash
-npx nx run doc-scanner:start
+npm start scanner
 # Process documents from input directory
 # Requires manual document placement in apps/doc-scanner/src/data/input/
 # Important: Name files with date prefixes (YYYY-MM-DD) for chronological processing
-# Generates comprehensive metadata with representative tracking
+# Features:
+#   - Intelligent processing: skips documents that are already up to date
+#   - Change tracking: automatically summarizes significant changes between versions
+#   - Comprehensive metadata with representative tracking and ownership history
 ```
 
 ## Output Structure
@@ -85,11 +104,18 @@ After processing, find results in:
 ```
 output/
 ├── 123204604000/
-│   ├── 123204604000_final_metadata.json  # Comprehensive company metadata
+│   ├── 123204604000_final_metadata.json  # Comprehensive company metadata with tracked changes
 │   └── document_downloads/
 │       └── *.pdf, *.docx files
 └── govdoc-output.json  # Summary
 ```
+
+The metadata file includes:
+
+- **Current Snapshot**: Latest company state with all extracted information
+- **Tracked Changes**: Document-by-document history of significant changes
+- **Representative Tracking**: Complete ownership and role evolution
+- **Change Summaries**: Human-readable summaries of key modifications
 
 ## Next Steps
 
