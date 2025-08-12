@@ -6,12 +6,6 @@ This directory contains the centralized configuration management system for the 
 
 The configuration system eliminates hardcoded values throughout the codebase and provides a centralized, environment-aware configuration management solution.
 
-## Files
-
-- **`index.mjs`** - Main configuration object with environment variable loading
-- **`validator.mjs`** - Configuration validation functions and schema
-- **`README.md`** - This documentation file
-
 ## Usage
 
 ### Basic Import
