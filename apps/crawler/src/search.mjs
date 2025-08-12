@@ -2,10 +2,11 @@ import { chromium } from "playwright";
 import { existsSync, rmSync } from "fs";
 import fs from "fs";
 import path from "path";
+import { config } from "../../../shared/config/index.mjs";
 
 // Configs
 const USER_DATA_DIR = "./playwright_profile";
-const URL = "https://publicity.businessportal.gr/";
+const URL = config.crawler.baseUrl;
 
 function parseArgs() {
   const args = process.argv.slice(2);
@@ -48,7 +49,7 @@ async function main() {
 
   let browser;
   try {
-    browser = await chromium.launch({ headless: true });
+    browser = await chromium.launch({ headless: config.crawler.headless });
   } catch (e) {
     const errPayload = {
       code: "browser-launch-failed",
@@ -58,8 +59,7 @@ async function main() {
     process.exit(1);
   }
   const context = await browser.newContext({
-    userAgent:
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36",
+    userAgent: config.crawler.userAgent,
   });
   const page = await context.newPage();
 

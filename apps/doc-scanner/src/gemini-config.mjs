@@ -1,66 +1,19 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import dotenv from "dotenv";
-import path from "path";
-import { fileURLToPath } from "url";
+import { config } from "../../../shared/config/index.mjs";
 
-// Always load .env from the project root
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const projectRoot = path.resolve(__dirname, "../../../");
-dotenv.config({ path: path.resolve(projectRoot, ".env") });
-
-export const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+export const GEMINI_API_KEY = config.api.gemini.apiKey;
 export const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
-export const GEMINI_METADATA_MODEL_NAME = "gemini-2.5-flash-lite";
+export const GEMINI_METADATA_MODEL_NAME = config.api.gemini.modelName;
 
-// Attempt a minimal online validation by calling countTokens. This avoids generating content.
-export async function validateApiKeyOnline(timeoutMs = 5000) {
-  try {
-    const model = genAI.getGenerativeModel({
-      model: GEMINI_METADATA_MODEL_NAME,
-    });
-    const controller = new AbortController();
-    const t = setTimeout(() => controller.abort(), timeoutMs);
-    try {
-      // Low-cost endpoint to validate auth
-      await model.countTokens({
-        contents: [{ role: "user", parts: [{ text: "ping" }] }],
-        signal: controller.signal,
-      });
-      clearTimeout(t);
-      return { ok: true };
-    } catch (err) {
-      clearTimeout(t);
-      const status = err?.status || err?.response?.status;
-      const msg = String(err?.message || "").toLowerCase();
-      if (
-        status === 401 ||
-        status === 403 ||
-        msg.includes("api key") ||
-        msg.includes("unauthorized") ||
-        msg.includes("permission")
-      ) {
-        return {
-          ok: false,
-          reason: `Gemini API authorization failed (${status || "unknown"})`,
-        };
-      }
-      // Network or transient errors: don't block execution
-      return { ok: true, warning: err?.message };
-    }
-  } catch (e) {
-    // Library/init error; proceed but warn
-    return { ok: true, warning: e?.message };
-  }
-}
-
-// Retry configuration constants
-const MAX_GEMINI_ATTEMPTS = 5;
-const INITIAL_GEMINI_DELAY_MS = 3000;
-const MAX_BACKOFF_DELAY_MS = 60000;
-const JITTER_WITH_SUGGESTED_DELAY_MS = 3000;
-const JITTER_WITHOUT_SUGGESTED_DELAY_MS = 1000;
+// Import retry configuration from centralized config
+const {
+  maxAttempts: MAX_GEMINI_ATTEMPTS,
+  initialDelayMs: INITIAL_GEMINI_DELAY_MS,
+  maxBackoffDelayMs: MAX_BACKOFF_DELAY_MS,
+  jitterWithSuggestedDelayMs: JITTER_WITH_SUGGESTED_DELAY_MS,
+  jitterWithoutSuggestedDelayMs: JITTER_WITHOUT_SUGGESTED_DELAY_MS,
+} = config.api.gemini;
 
 // Return model for metadata extraction
 export function getMetadataModel() {

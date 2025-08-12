@@ -5,14 +5,19 @@ import path from "path";
 import { fileURLToPath } from "url";
 import axios from "axios";
 import mime from "mime-types";
+import { config } from "../../../shared/config/index.mjs";
 
 // ES Module compatible __dirname
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const BASE_URL = "https://publicity.businessportal.gr";
-const PAGE_LOAD_TIMEOUT_IN_MILLISECONDS = 60000;
-const DOWNLOAD_TIMEOUT_AXIOS = 120000;
+// Import crawler configuration from centralized config
+const {
+  baseUrl: BASE_URL,
+  pageLoadTimeoutMs: PAGE_LOAD_TIMEOUT_IN_MILLISECONDS,
+  downloadTimeoutMs: DOWNLOAD_TIMEOUT_AXIOS,
+  userAgent: USER_AGENT,
+} = config.crawler;
 
 // Downloads a document using Axios
 async function downloadWithAxios(documentUrl, outputPath) {
@@ -22,8 +27,7 @@ async function downloadWithAxios(documentUrl, outputPath) {
       url: documentUrl,
       responseType: "stream",
       headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+        "User-Agent": USER_AGENT,
         Referer: BASE_URL,
       },
       timeout: DOWNLOAD_TIMEOUT_AXIOS,
@@ -296,7 +300,7 @@ export async function runCrawlerForGemiIds(gemiIds, outputBaseDir) {
   try {
     try {
       browser = await chromium.launch({
-        headless: true,
+        headless: config.crawler.headless,
         args: [
           "--no-sandbox",
           "--disable-setuid-sandbox",
@@ -312,8 +316,7 @@ export async function runCrawlerForGemiIds(gemiIds, outputBaseDir) {
     }
 
     const context = await browser.newContext({
-      userAgent:
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+      userAgent: USER_AGENT,
     });
 
     for (const [index, gemiId] of gemiIds.entries()) {
