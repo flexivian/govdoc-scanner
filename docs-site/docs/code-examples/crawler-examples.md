@@ -15,7 +15,7 @@ npm start crawler
 # Select: "Search for companies"
 # Enter company name: "ALPHA BANK"
 # Apply filters as needed
-# Results saved to ids.txt
+# Results saved to apps/crawler/src/ids.txt
 ```
 
 ### Direct Download by GEMI ID
@@ -31,23 +31,26 @@ npm start crawler
 
 ### Download Documents for Specific IDs
 
-````javascript
-import { runCrawlerForGemiIds } from './apps/crawler/src/id_crawler.mjs';
+```javascript
+// From a script in the repo root
+import { runCrawlerForGemiIds } from "./apps/crawler/src/id_crawler.mjs";
 
 async function downloadDocuments(gemiIds, outputDir) {
   try {
     const results = await runCrawlerForGemiIds(gemiIds, outputDir);
-    console.log('Download results:', results);
+    console.log("Download results:", results);
     return results;
   } catch (error) {
-    console.error('Download failed:', error);
+    console.error("Download failed:", error);
     throw error;
   }
 }
 
 // Usage
-const gemiIds = ['123204604000', '144340502000'];
-const results = await downloadDocuments(gemiIds, './downloads');
+const gemiIds = ["123204604000", "144340502000"];
+const results = await downloadDocuments(gemiIds, "./downloads");
+```
+
 ### Batch Processing with File Input
 
 ```bash
@@ -58,7 +61,7 @@ echo "144340502000" >> company-ids.txt
 # Run crawler with file
 npm start crawler
 # Select file option and provide path
-````
+```
 
 ## Output Structure
 
@@ -101,8 +104,8 @@ npm start crawler
 # Search for: "TELECOMMUNICATIONS"
 # Apply filters: Active companies only
 
-# 2. Review ids.txt results
-cat apps/crawler/ids.txt
+# 2. Review ids.txt results (saved in crawler src directory)
+cat apps/crawler/src/ids.txt
 
 # 3. Download documents for selected IDs
 npm start crawler

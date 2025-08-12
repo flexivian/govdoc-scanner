@@ -50,7 +50,7 @@ async function processCompanies(gemiIds) {
       "govdoc",
       "--",
       "--input",
-      "./ids.txt",
+      "./companies.gds", // JSON file with an array of GEMI IDs, e.g. ["152034008000","175175703000"]
     ]);
 
     govdoc.on("close", (code) => {

@@ -46,9 +46,9 @@ npm start govdoc
 
 The project includes three main applications:
 
-- **CLI Tool**: Complete end-to-end interactive workflow (recommended)
-- **Crawler**: Search and download documents from GEMI portal with enhanced date extraction
-- **Doc-Scanner**: Process documents with AI-powered chronological analysis, representative tracking, and automatic change detection
+- **CLI Tool** (`govdoc`): Complete end-to-end interactive workflow (recommended for most users)
+- **Crawler** (`crawler`): Search and download documents from GEMI portal with enhanced date extraction
+- **Doc-Scanner** (`scanner`): Process documents with AI-powered chronological analysis, representative tracking, and automatic change detection
 
 ## Individual Application Usage
 
@@ -60,7 +60,7 @@ npm start govdoc
 # - File input, manual entry, or random selection
 # - Automated crawling and document processing
 # - Progress tracking and comprehensive summaries
-# - Output saved to project root ./output/
+# - Output saved to ./output/ at project root
 ```
 
 **Command line mode for automation:**
@@ -81,7 +81,7 @@ npm start govdoc -- --help
 ```bash
 npm start crawler
 # Search for companies or download by GEMI ID
-# Results saved to apps/crawler/src/downloads/
+# Results saved to apps/crawler/src/downloads/ and ids.txt to apps/crawler/src/ids.txt
 ```
 
 ### Doc-Scanner
