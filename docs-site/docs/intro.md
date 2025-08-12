@@ -31,8 +31,9 @@ searchable database accessible via a REST API. The solution comprises the follow
 ## Tools Used
 
 - **Node.js**: The runtime environment for all scripts and applications.
-- **Nx**: A smart, extensible build framework for monorepo management.
+- **NPM Workspaces**: Modern monorepo management for organizing multiple applications and shared dependencies.
 - **Google Gemini**: Used for its generative AI capabilities in document processing and metadata extraction.
+- **Unified CLI Tool**: Interactive and command-line interfaces for seamless workflow orchestration.
 
 ## Something Missing? {#something-missing}
 

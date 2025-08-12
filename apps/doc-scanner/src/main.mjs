@@ -4,7 +4,9 @@ import readline from "readline";
 import { fileURLToPath } from "url";
 
 import { getMetadataModel } from "./gemini-config.mjs";
+import { validateApiKey } from "../../../shared/config/validator.mjs";
 import { processCompanyFiles } from "./processing-logic.mjs";
+import { checkExistingMetadata } from "./metadata-checker.mjs";
 import { exit } from "process";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -62,15 +64,33 @@ async function main() {
   });
 
   try {
+    const online = await validateApiKey();
+    if (!online.ok) {
+      console.error(`\n❌ Invalid API key: ${online.reason}`);
+      rl.close();
+      exit(1);
+    }
     const gemiId = await promptForGemiId(rl);
     const { inputFolder, outputFolder } = prepareFolders(gemiId);
     const files = getFilesToProcess(inputFolder);
 
-    console.log(`Found ${files.length} files to process...`);
+    console.log(`Found ${files.length} files in input folder...`);
+
+    // Check if we need to process based on existing metadata
+    const processCheck = checkExistingMetadata(gemiId, outputFolder, files);
+    console.log(`\n${processCheck.reason}`);
+
+    if (!processCheck.shouldProcess) {
+      console.log("✓ No processing needed. All documents are up to date.");
+      return;
+    }
+
+    const filesToProcess = processCheck.filesToProcess;
+    console.log(`Processing ${filesToProcess.length} file(s)...`);
 
     const metadataModel = getMetadataModel();
     const result = await processCompanyFiles(
-      files,
+      filesToProcess,
       inputFolder,
       outputFolder,
       gemiId,
