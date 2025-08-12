@@ -1,5 +1,8 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { config } from "../../../shared/config/index.mjs";
+import { createLogger } from "../../../shared/logging/index.mjs";
+
+const logger = createLogger("GEMINI-CONFIG");
 
 export const GEMINI_API_KEY = config.api.gemini.apiKey;
 export const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
@@ -129,7 +132,7 @@ export async function callGeminiWithRetry(
         );
         const waitMs = (suggestedDelay || delayMs) + jitter;
 
-        console.warn(
+        logger.warn(
           `Retrying (${attempts}/${maxAttempts}) for ${fileIdentifier} after ${(
             waitMs / 1000
           ).toFixed(1)}s... (${error.message})`
@@ -142,7 +145,7 @@ export async function callGeminiWithRetry(
             ? initialDelayMs
             : Math.min(delayMs * 2, MAX_BACKOFF_DELAY_MS);
       } else {
-        console.error(
+        logger.error(
           `Gemini call failed for ${fileIdentifier} (attempt ${attempts}): ${error.message}`
         );
 

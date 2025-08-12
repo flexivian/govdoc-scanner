@@ -1,5 +1,8 @@
 import fs from "fs";
 import path from "path";
+import { createLogger } from "../../../shared/logging/index.mjs";
+
+const logger = createLogger("METADATA-CHECKER");
 
 // Check if metadata already exists and determine if we need to process
 export function checkExistingMetadata(gemiId, outputFolder, inputFiles) {
@@ -88,7 +91,7 @@ export function checkExistingMetadata(gemiId, outputFolder, inputFiles) {
       reason: `Found ${newFiles.length} new file(s) to process: ${newFiles.join(", ")}`,
     };
   } catch (error) {
-    console.warn(`Error reading existing metadata: ${error.message}`);
+    logger.warn(`Error reading existing metadata: ${error.message}`);
     return {
       shouldProcess: true,
       filesToProcess: inputFiles,

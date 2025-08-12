@@ -41,4 +41,17 @@ export const config = {
   processing: {
     outputDir: process.env.OUTPUT_DIR || "./output",
   },
+  logging: {
+    level:
+      process.env.LOG_LEVEL === "debug"
+        ? 0
+        : process.env.LOG_LEVEL === "info"
+          ? 1
+          : process.env.LOG_LEVEL === "warn"
+            ? 2
+            : 3, // error only
+    suppressInfo: false, // Set to true during progress operations
+  },
 };
+
+export default config;

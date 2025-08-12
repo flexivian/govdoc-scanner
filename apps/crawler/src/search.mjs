@@ -3,6 +3,9 @@ import { existsSync, rmSync } from "fs";
 import fs from "fs";
 import path from "path";
 import { config } from "../../../shared/config/index.mjs";
+import { createLogger } from "../../../shared/logging/index.mjs";
+
+const logger = createLogger("SEARCH");
 
 // Configs
 const USER_DATA_DIR = "./playwright_profile";
@@ -29,7 +32,7 @@ function parseArgs() {
     }
   }
   if (!searchTerm && Object.keys(filters).length === 0) {
-    console.error("You must provide at least a search term or one filter.");
+    logger.error("You must provide at least a search term or one filter.");
     process.exit(1);
   }
   return { searchTerm, filters };
@@ -38,9 +41,9 @@ function parseArgs() {
 async function main() {
   const { searchTerm, filters } = parseArgs();
 
-  console.log("Starting the search script...");
-  console.log(`Search Term: "${searchTerm}"`);
-  console.log("Applying Filters:", filters);
+  logger.info("Starting the search script...");
+  logger.info(`Search Term: "${searchTerm}"`);
+  logger.info("Applying Filters:", JSON.stringify(filters));
 
   // Remove old browser profile for a clean session
   if (existsSync(USER_DATA_DIR)) {
