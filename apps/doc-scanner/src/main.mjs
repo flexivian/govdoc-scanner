@@ -4,8 +4,13 @@ import readline from "readline";
 import { fileURLToPath } from "url";
 
 import { getMetadataModel } from "./gemini-config.mjs";
+import { validateApiKey } from "../../../shared/config/validator.mjs";
 import { processCompanyFiles } from "./processing-logic.mjs";
+import { checkExistingMetadata } from "./metadata-checker.mjs";
 import { exit } from "process";
+import { createLogger } from "../../../shared/logging/index.mjs";
+
+const logger = createLogger("DOC-SCANNER");
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -24,7 +29,7 @@ async function promptForGemiId(rl) {
 function prepareFolders(gemiId) {
   const inputFolder = path.resolve(__dirname, "data/input", gemiId);
   if (!fs.existsSync(inputFolder)) {
-    console.log(
+    logger.error(
       `Input folder ${inputFolder} does not exist. Please ensure the folder is created and contains the files to process.`
     );
     exit(1);
@@ -62,15 +67,33 @@ async function main() {
   });
 
   try {
+    const online = await validateApiKey();
+    if (!online.ok) {
+      logger.error(`Invalid API key: ${online.reason}`);
+      rl.close();
+      exit(1);
+    }
     const gemiId = await promptForGemiId(rl);
     const { inputFolder, outputFolder } = prepareFolders(gemiId);
     const files = getFilesToProcess(inputFolder);
 
-    console.log(`Found ${files.length} files to process...`);
+    logger.info(`Found ${files.length} files in input folder...`);
+
+    // Check if we need to process based on existing metadata
+    const processCheck = checkExistingMetadata(gemiId, outputFolder, files);
+    logger.info(processCheck.reason);
+
+    if (!processCheck.shouldProcess) {
+      logger.info("No processing needed. All documents are up to date.");
+      return;
+    }
+
+    const filesToProcess = processCheck.filesToProcess;
+    logger.info(`Processing ${filesToProcess.length} file(s)...`);
 
     const metadataModel = getMetadataModel();
     const result = await processCompanyFiles(
-      files,
+      filesToProcess,
       inputFolder,
       outputFolder,
       gemiId,
@@ -78,15 +101,14 @@ async function main() {
     );
 
     if (result.status === "success") {
-      console.log(`\nProcessing completed successfully!`);
-      console.log(`Processed ${result.processedFiles} files`);
-      console.log(`Final metadata saved to: ${result.metadataPath}`);
+      logger.info(`Processing completed successfully!`);
+      logger.info(`Processed ${result.processedFiles} files`);
+      logger.info(`Final metadata saved to: ${result.metadataPath}`);
     } else {
-      console.error(`\n✗ Processing failed: ${result.error}`);
+      logger.error(`Processing failed: ${result.error}`);
     }
   } catch (err) {
-    console.error("Error in main execution:", err.message);
-    if (err.stack) console.error(err.stack);
+    logger.error("Error in main execution", err);
   } finally {
     rl.close();
   }

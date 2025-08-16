@@ -8,6 +8,8 @@ A Node.js tool for processing Greek company documents (GEMI) to extract metadata
 - **Representative Tracking**: Accurately identifies company representatives and their active status
 - **Share Ownership Analysis**: Extracts capital share percentages and ownership information
 - **Chronological Processing**: Processes documents in date order to track company evolution
+- **Change Tracking**: Automatically summarizes significant changes between document versions, such as role changes, ownership transfers, and address updates
+- **Incremental Processing**: Intelligent metadata checking that skips processing when all documents are up to date, reducing unnecessary API calls
 - **Duplicate Prevention**: Advanced merging logic to prevent duplicate representatives
 - **Greek Legal Terminology**: Optimized for Greek corporate legal language and structures
 
@@ -75,6 +77,31 @@ The system extracts comprehensive company information including:
 - **Ownership Information**: Share percentages and capital amounts
 - **Legal Structure**: Company type, competent GEMI office
 - **Timeline**: Creation date (from first document) and processing dates
+- **Change Tracking**: Detailed summaries of significant changes between document versions
+
+### Tracked Changes Feature
+
+The system automatically generates summaries of significant changes when processing multiple documents:
+
+- **Representative Changes**: New appointments, departures, role modifications
+- **Ownership Transfers**: Capital share transfers between parties
+- **Structural Changes**: Address updates, company name changes, capital modifications
+- **Change History**: Maintains a complete history of all tracked changes by document
+
+Example tracked changes output:
+
+```
+"tracked_changes": "• ΠΑΠΑΔΟΠΟΥΛΟΣ ΙΩΑΝΝΗΣ appointed as Διαχειριστής • ΚΩΝΣΤΑΝΤΙΝΟΥ ΜΑΡΙΑ increased ownership to 45% • Company address changed to ΛΕΩΦΟΡΟΣ ΚΗΦΙΣΙΑΣ 200, ΑΘΗΝΑ"
+```
+
+### Incremental Processing
+
+The system includes intelligent processing optimization:
+
+- **Metadata Checking**: Automatically determines if processing is needed based on existing metadata
+- **File Comparison**: Compares input files with previously processed documents
+- **Skip Logic**: Avoids reprocessing when all documents are up to date
+- **New File Detection**: Identifies and processes only new or updated documents
 
 ## Output
 
@@ -82,4 +109,4 @@ The system generates a comprehensive metadata file:
 
 - **Location**: `/src/data/output/[GEMI_ID]/[GEMI_ID]_final_metadata.json`
 - **Format**: Structured JSON with complete company information
-- **Content**: All extracted data merged chronologically
+- **Content**: All extracted data merged chronologically with tracked changes history

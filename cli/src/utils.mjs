@@ -2,7 +2,13 @@ import fs from "fs/promises";
 import { spawn } from "child_process";
 import path from "path";
 import { fileURLToPath } from "url";
+import { createLogger } from "../../shared/logging/index.mjs";
+import {
+  FileProcessingError,
+  ValidationError,
+} from "../../shared/errors/index.mjs";
 
+const logger = createLogger("CLI-UTILS");
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -30,15 +36,27 @@ export async function loadInputFile(filePath) {
     }
 
     if (gemiIds.length === 0) {
-      throw new Error("No valid GEMI IDs found in input file");
+      throw new ValidationError(
+        "No valid GEMI IDs found in input file",
+        "gemi_ids"
+      );
     }
 
     return gemiIds.map(String);
   } catch (error) {
     if (error.code === "ENOENT") {
-      throw new Error(`Input file not found: ${filePath}`);
+      throw new FileProcessingError(
+        `Input file not found: ${filePath}`,
+        filePath
+      );
     }
-    throw new Error(`Error reading input file: ${error.message}`);
+    if (error instanceof ValidationError) {
+      throw error; // Re-throw validation errors as-is
+    }
+    throw new FileProcessingError(
+      `Error reading input file: ${error.message}`,
+      filePath
+    );
   }
 }
 
@@ -51,7 +69,7 @@ export async function writeOutput(companies, outputPath) {
   };
 
   await fs.writeFile(outputPath, JSON.stringify(output, null, 2), "utf-8");
-  console.log(`\nOutput written to: ${outputPath}`);
+  logger.info(`Output written to: ${outputPath}`);
 }
 
 /**
@@ -78,20 +96,48 @@ function formatDate(date) {
  */
 function runScript(scriptPath, args) {
   return new Promise((resolve, reject) => {
+    let stderr = "";
+    let stdout = "";
     const child = spawn("node", [scriptPath, ...args], {
-      stdio: "pipe",
+      stdio: ["ignore", "pipe", "pipe"],
       cwd: path.dirname(scriptPath),
+      env: process.env,
+    });
+
+    child.stdout.on("data", (d) => {
+      stdout += d.toString();
+    });
+    child.stderr.on("data", (d) => {
+      stderr += d.toString();
     });
 
     child.on("close", (code) => {
       if (code === 0) {
-        resolve();
+        resolve({ code, stdout, stderr });
       } else {
-        reject(new Error(`Script exited with code ${code}`));
+        // Attempt to parse structured error marker
+        const markerIndex = stderr.lastIndexOf("__SEARCH_ERROR__");
+        if (markerIndex !== -1) {
+          const jsonPart = stderr.substring(markerIndex + 16).trim();
+          try {
+            const parsed = JSON.parse(jsonPart);
+            const err = new Error(parsed.message || "Search script failed");
+            err.code = parsed.code || "search-error";
+            return reject(err);
+          } catch (_) {
+            // fall through
+          }
+        }
+        const err = new Error(
+          `Search script exited with code ${code}: ${stderr || stdout}`
+        );
+        err.code = "search-error";
+        reject(err);
       }
     });
 
     child.on("error", (error) => {
+      error.code = error.code || "search-error";
       reject(error);
     });
   });
@@ -153,13 +199,12 @@ export async function getRandomCompanies(count) {
 
       return gemiIds;
     } catch (readError) {
-      console.warn(
-        `Warning: Could not read results file: ${readError.message}`
-      );
+      logger.warn(`Warning: Could not read results file: ${readError.message}`);
       return [];
     }
   } catch (error) {
-    console.error(`Error running search script: ${error.message}`);
-    return [];
+    logger.error(`Error running search script: ${error.message}`);
+    // Re-throw with code so caller can differentiate
+    throw error;
   }
 }
