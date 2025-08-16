@@ -21,9 +21,9 @@ The repository currently includes three main applications:
 
 - **doc-scanner**: Processes `.pdf`, `.doc` and `.docx` documents for a given GEMI company, extracting comprehensive metadata with chronological processing and intelligent representative tracking using Gemini 2.5 Flash.
 - **crawler**: Scrapes the GEMI portal to search for companies using advanced filters and downloads all available public documents with enhanced date extraction and robust retry mechanisms.
-- **orchestrator**: A script that automates the workflow of crawling and scanning for multiple GEMI IDs with progress tracking.
+- **cli**: A unified command-line interface that orchestrates the complete workflow, combining crawling and scanning with interactive prompts and automated batch processing.
 
-All tools are implemented in Node.js and use a combination of CLI interfaces and automated scripts. The project uses [Nx](https://nx.dev/) for monorepo management.
+All tools are implemented in Node.js and use a combination of CLI interfaces and automated scripts. The project uses npm workspaces for managing multiple applications.
 
 ## Usage Instructions
 
@@ -48,51 +48,125 @@ Then, open `.env` and set:
 GEMINI_API_KEY=your_gemini_api_key_here
 ```
 
-### 1. Install Dependencies
+### Quick Start
 
-From the project root:
+1. **Install Dependencies**
+
+   ```sh
+   npm install
+   ```
+
+2. **Run the Tool** (choose one of the following)
+
+   **🚀 Most Common Usage - Interactive Workflow:**
+
+   ```sh
+   npm start govdoc
+   ```
+
+   This runs an interactive CLI that guides you through the complete workflow.
+
+   **🔍 Just Search & Download Documents:**
+
+   ```sh
+   npm start crawler
+   ```
+
+   **📄 Just Process Existing Documents:**
+
+   ```sh
+   npm start scanner
+   ```
+
+   **❓ Get Help:**
+
+   ```sh
+   npm start help
+   ```
+
+### Detailed Usage
+
+### 1. Interactive Workflow (Recommended)
 
 ```sh
-npm install
+npm start govdoc
 ```
 
-### 2. Running the Crawler
+This launches an interactive CLI that guides you through the process:
 
-To search for companies or download documents:
+- **File Input**: Process GEMI IDs from a .gds file
+- **Manual Entry**: Enter specific GEMI IDs directly
+- **Random Selection**: Process random companies with date-based search filters
+
+### 2. Command Line Usage (for automation)
 
 ```sh
-npx nx run crawler:start
+# Process from file
+npm start govdoc -- --input ./companies.gds
+
+# Process random companies
+npm start govdoc -- --company-random 10
+
+# Show help
+npm start govdoc -- --help
 ```
 
-- Use the interactive CLI to search for companies or download documents by GEMI ID(s).
-- Results are saved in `ids.txt` and downloaded files in `apps/crawler/src/downloads/{GEMI_ID}/`.
+The command line mode:
 
-### 3. Running the Doc-Scanner
+- Runs without interactive prompts (perfect for automation)
+- Accepts the same input methods as interactive mode
+- Provides the same processing and output capabilities
+- Shows progress tracking and comprehensive summary
 
-To process documents and extract metadata:
+Both modes:
+
+- Show clear progress tracking with visual indicators
+- Provide comprehensive summary when complete
+- Save output in the `output/` directory
+
+### 3. Manual Workflow
+
+If you prefer to run each step separately:
+
+**Step 1: Search & Download**
 
 ```sh
-npx nx run doc-scanner:start
+npm start crawler
 ```
 
-- Place documents in `apps/doc-scanner/src/data/input/{GEMI_ID}/`.
-- **Important**: Name files with date prefixes (YYYY-MM-DD) for chronological processing.
-- Output generates a single comprehensive metadata file `{GEMI_ID}_final_metadata.json` in `apps/doc-scanner/src/data/output/{GEMI_ID}/`.
+- Use the interactive CLI to search for companies or download documents by GEMI ID(s)
+- Results are saved in `ids.txt` and downloaded files in `apps/crawler/src/downloads/{GEMI_ID}/`
 
-### 4. Orchestrated Workflow
-
-To automate crawling and scanning for multiple IDs:
+**Step 2: Process Documents**
 
 ```sh
-npx nx run orchestrator:start
+npm start scanner
 ```
 
-- Follows prompts to select IDs (single or from file).
-- Downloads and processes documents, showing progress and summary.
-- Output is saved in the `output/` directory at the project root.
+- Place documents in `apps/doc-scanner/src/data/input/{GEMI_ID}/`
+- Output is generated in `apps/doc-scanner/src/data/output/{GEMI_ID}/`
+
+### Alternative Commands
+
+You can also run commands directly:
+
+- `npm run crawler` (same as `npm start crawler`)
+- `npm run scanner` (same as `npm start scanner`)
+- `npm run govdoc` (same as `npm start govdoc`)
+
+## Command Summary
+
+| What you want to do        | Command             |
+| -------------------------- | ------------------- |
+| **First time setup**       | `npm install`       |
+| **Interactive workflow**   | `npm start govdoc`  |
+| **Search & download only** | `npm start crawler` |
+| **Process documents only** | `npm start scanner` |
+| **Get help**               | `npm start help`    |
 
 ## Features Offered
 
+- **Unified CLI Tool**: Complete end-to-end workflow with both interactive and command-line modes for different use cases and automation needs.
 - **Automated Document Downloading**: Bulk or single download of all public documents for any Greek company listed in GEMI with enhanced date extraction for proper filename organization.
 - **Advanced Company Search**: Filter by name, legal type, status, location, and more.
 - **Intelligent Metadata Extraction**: Uses Gemini 2.5 Flash for accurate extraction of company information, representative details, and ownership data from Greek legal documents.
@@ -100,7 +174,8 @@ npx nx run orchestrator:start
 - **Representative Tracking**: Accurately identifies company representatives, their active status, and ownership percentages with advanced duplicate prevention.
 - **Greek Legal Optimization**: Specialized for Greek corporate legal terminology and GEMI document structures.
 - **Enhanced Reliability**: Robust retry mechanisms and improved error handling for stable operation.
-- **Interactive CLI**: User-friendly command-line interfaces for all major workflows.
+- **Interactive CLI**: User-friendly command-line interfaces with guided prompts for all workflows.
+- **Multiple Input Methods**: Support for file input, manual entry, and random selection with date-based search filters.
 - **Progress Tracking**: Unified progress bar and summary for batch operations.
 
 ## Documentation

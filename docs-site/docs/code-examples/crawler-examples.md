@@ -11,7 +11,7 @@ The crawler application handles searching for companies and downloading their do
 ### Interactive Search
 
 ```bash
-npx nx run crawler:start
+npm start crawler
 # Select: "Search for companies"
 # Enter company name: "ALPHA BANK"
 # Apply filters as needed
@@ -21,7 +21,7 @@ npx nx run crawler:start
 ### Direct Download by GEMI ID
 
 ```bash
-npx nx run crawler:start
+npm start crawler
 # Select: "Download documents by GEMI ID"
 # Option 1: Enter single ID: 123204604000
 # Option 2: Provide file path with multiple IDs
@@ -56,7 +56,7 @@ echo "123204604000" > company-ids.txt
 echo "144340502000" >> company-ids.txt
 
 # Run crawler with file
-npx nx run crawler:start
+npm start crawler
 # Select file option and provide path
 ````
 
@@ -97,7 +97,7 @@ apps/crawler/src/downloads/
 
 ```bash
 # 1. Search for companies
-npx nx run crawler:start
+npm start crawler
 # Search for: "TELECOMMUNICATIONS"
 # Apply filters: Active companies only
 
@@ -105,7 +105,7 @@ npx nx run crawler:start
 cat apps/crawler/ids.txt
 
 # 3. Download documents for selected IDs
-npx nx run crawler:start
+npm start crawler
 # Use file option with filtered IDs
 ```
 
@@ -121,7 +121,7 @@ cat > bulk-companies.txt << EOF
 EOF
 
 # Run bulk download
-npx nx run crawler:start
+npm start crawler
 # Select file option
 # Enter: bulk-companies.txt
 ```

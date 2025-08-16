@@ -17,7 +17,7 @@ cp /path/to/documents/2019-09-23_document.pdf apps/doc-scanner/src/data/input/12
 cp /path/to/documents/2020-11-03_report.pdf apps/doc-scanner/src/data/input/123204604000/
 
 # 2. Run the scanner
-npx nx run doc-scanner:start
+npm start scanner
 # Enter GEMI ID: 123204604000
 
 # 3. Find comprehensive results in output directory
