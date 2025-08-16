@@ -142,4 +142,5 @@ The crawler handles common issues automatically:
 - Check `ids.txt` before bulk downloading
 - Monitor disk space for large batch downloads
 - Files are automatically named with date prefixes for chronological processing
+- Re-running downloads is safe - existing files will be automatically skipped
 - Stable internet connection recommended for best results

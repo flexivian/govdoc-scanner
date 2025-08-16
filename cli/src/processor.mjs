@@ -5,6 +5,7 @@ import cliProgress from "cli-progress";
 import { runCrawlerForGemiIds } from "../../apps/crawler/src/id_crawler.mjs";
 import { processCompanyFiles } from "../../apps/doc-scanner/src/processing-logic.mjs";
 import { getMetadataModel } from "../../apps/doc-scanner/src/gemini-config.mjs";
+import { checkExistingMetadata } from "../../apps/doc-scanner/src/metadata-checker.mjs";
 
 /**
  * Global suppression state to handle parallel operations
@@ -97,6 +98,9 @@ async function runCrawlerSilently(gemiIds, outputRoot) {
 export async function processCompanies(gemiIds, outputRoot) {
   const companies = [];
   const scanJobs = [];
+  const failures = [];
+  const noDocumentIds = [];
+  let currentTotalOperations = gemiIds.length * 2; // crawl + potential scan each
 
   // Create progress bar for total operations (crawl + scan per company)
   const totalOperations = gemiIds.length * 2;
@@ -108,7 +112,7 @@ export async function processCompanies(gemiIds, outputRoot) {
     cliProgress.Presets.shades_classic
   );
 
-  progressBar.start(totalOperations, 0);
+  progressBar.start(currentTotalOperations, 0);
 
   // Process each GEMI ID serially for crawling, but start scanning immediately when ready
   for (const gemiId of gemiIds) {
@@ -127,10 +131,27 @@ export async function processCompanies(gemiIds, outputRoot) {
 
     try {
       // 1. Run crawler for this GEMI ID (serial)
-      const downloadPaths = await runCrawlerSilently([gemiId], outputRoot);
+      const crawlMap = await runCrawlerSilently([gemiId], outputRoot);
       progressBar.increment(); // Crawl completed
 
-      const downloadDir = downloadPaths[gemiId];
+      // Structured crawl result expected
+      const entry = crawlMap[gemiId];
+      const crawlSuccess = entry?.success === true;
+      const downloadDir = entry?.path || null;
+      const crawlErrorCode = entry?.errorCode || "crawl-error";
+      const crawlErrorMessage = entry?.errorMessage || "Unknown crawl error";
+
+      if (!crawlSuccess) {
+        result["processing-status"] = "crawl-failed";
+        failures.push({
+          gemiId,
+          code: crawlErrorCode,
+          message: crawlErrorMessage,
+        });
+        companies.push(result);
+        progressBar.increment(); // Skip scan when crawl fails
+        continue;
+      }
 
       // 2. Check if any documents were downloaded
       let files = [];
@@ -146,17 +167,70 @@ export async function processCompanies(gemiIds, outputRoot) {
 
       if (files.length === 0) {
         result["processing-status"] = "no-documents";
+        noDocumentIds.push(gemiId);
         companies.push(result);
-        progressBar.increment(); // Skip scan - no files
+        progressBar.increment(); // Skip scan - no files (we still count placeholder scan op)
         continue;
       }
 
-      // 3. Start scan job for this company (parallel, don't wait)
+      // 3. Check if metadata already exists and determine if scan is needed
       const scanOutputDir = path.join(outputRoot, gemiId);
+      const processCheck = checkExistingMetadata(gemiId, scanOutputDir, files);
+
+      if (!processCheck.shouldProcess) {
+        // Load existing metadata
+        try {
+          const metadataFile = path.join(
+            scanOutputDir,
+            `${gemiId}_final_metadata.json`
+          );
+          const metadataContent = await fs.readFile(metadataFile, "utf-8");
+          const metadata = JSON.parse(metadataContent);
+          const companyData = metadata[gemiId];
+
+          if (companyData) {
+            // Extract key information from company data
+            if (companyData["company-name"]) {
+              result["company-name"] = companyData["company-name"];
+            }
+            if (companyData["company-tax-id"]) {
+              result["company-tax-id"] = companyData["company-tax-id"];
+            }
+            if (companyData["creation-date"]) {
+              result["creation-date"] = companyData["creation-date"];
+            }
+
+            // Store the inner current-snapshot directly (avoid double nesting)
+            if (
+              companyData.metadata &&
+              companyData.metadata["current-snapshot"]
+            ) {
+              result.metadata["current-snapshot"] =
+                companyData.metadata["current-snapshot"];
+            }
+
+            // Include tracked-changes section if available
+            if (companyData["tracked-changes"]) {
+              result["tracked-changes"] = companyData["tracked-changes"];
+            }
+          }
+
+          result["processing-status"] = "successful";
+        } catch (error) {
+          result["processing-status"] = "scan-failed";
+        }
+
+        companies.push(result);
+        progressBar.increment(); // Skip scan - already up to date
+        continue;
+      }
+
+      // 4. Start scan job for this company (parallel, don't wait)
       const metadataModel = getMetadataModel();
+      const filesToProcess = processCheck.filesToProcess;
 
       const scanJob = runDocScannerSilently(
-        files,
+        filesToProcess,
         downloadDir,
         scanOutputDir,
         gemiId,
@@ -196,12 +270,22 @@ export async function processCompanies(gemiIds, outputRoot) {
                 result.metadata["current-snapshot"] =
                   companyData.metadata["current-snapshot"];
               }
+
+              // Include tracked-changes section if available
+              if (companyData["tracked-changes"]) {
+                result["tracked-changes"] = companyData["tracked-changes"];
+              }
             }
 
             result["processing-status"] = "successful";
           } catch (error) {
             // Metadata loading failed, but scan job completed
             result["processing-status"] = "scan-failed";
+            failures.push({
+              gemiId,
+              code: "scan-failed",
+              message: error.message || "Metadata loading failed",
+            });
           }
 
           progressBar.increment(); // Scan completed
@@ -209,16 +293,39 @@ export async function processCompanies(gemiIds, outputRoot) {
         })
         .catch((error) => {
           result["processing-status"] = "scan-failed";
+          failures.push({
+            gemiId,
+            code: "scan-failed",
+            message: error?.message || "Scan failed",
+          });
           progressBar.increment(); // Scan failed
           return result;
         });
 
       scanJobs.push(scanJob);
     } catch (error) {
-      progressBar.increment(); // Crawl failed
+      progressBar.increment(); // Crawl attempt completed (failed)
       result["processing-status"] = "crawl-failed";
+      const code = error?.code || "crawl-error";
+      failures.push({
+        gemiId,
+        code,
+        message: error?.message || "Crawl failed",
+      });
       companies.push(result);
-      progressBar.increment(); // Skip scan for failed crawl
+      // Collapse reserved scan slot for this ID (remove one from total)
+      if (currentTotalOperations > progressBar.value) {
+        currentTotalOperations -= 1; // remove the unused scan step
+        try {
+          if (typeof progressBar.setTotal === "function") {
+            progressBar.setTotal(currentTotalOperations);
+          } else if (typeof progressBar.updateTotal === "function") {
+            progressBar.updateTotal(currentTotalOperations);
+          }
+        } catch (_) {
+          // ignore if library doesn't support dynamic total
+        }
+      }
     }
 
     // Continue to next crawler immediately (don't wait for scan to complete)
@@ -269,6 +376,11 @@ export async function processCompanies(gemiIds, outputRoot) {
     ({ "processing-status": _, ...company }) => company
   );
 
-  // Return both cleaned companies and calculated stats
-  return { companies: cleanedCompanies, stats: finalStats };
+  // Return both cleaned companies and calculated stats, plus categorized failures
+  return {
+    companies: cleanedCompanies,
+    stats: finalStats,
+    failures,
+    noDocuments: noDocumentIds,
+  };
 }
