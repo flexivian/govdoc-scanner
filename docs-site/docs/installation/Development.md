@@ -90,19 +90,19 @@ npm start govdoc
 ### Code Structure
 
 - Each app has its own `package.json` and dependencies
-- Shared utilities can be added to the workspace root
+- Shared modules live under `shared/`
 - Use ES modules (`.mjs` files) throughout the project
 
 ### Debugging
 
-- Set `DEBUG=true` in `.env` for verbose logging
+- Set `LOG_LEVEL=debug` in `.env` for verbose logging
 - Use `console.log` liberally during development
 - Check browser developer tools for crawler issues
 
 ### API Usage
 
 - Monitor Gemini API quota usage
-- Use lower concurrency limits during development
+- Use smaller batches (fewer companies/documents) during development
 - Test with small document sets first
 
 ## Contributing
@@ -138,4 +138,4 @@ git push origin feature/your-feature-name
 **Playwright Issues**: Run `npx playwright install chromium`
 **Permission Errors**: Check directory permissions for input/output folders
 **API Failures**: Verify Gemini API key and quota
-**Memory Issues**: Reduce concurrency limits in development
+**Memory Issues**: Process fewer companies/documents per run (split into smaller batches)

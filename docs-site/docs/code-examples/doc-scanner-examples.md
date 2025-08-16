@@ -4,7 +4,7 @@ sidebar_position: 3
 
 # Doc-Scanner Examples
 
-The doc-scanner application processes documents (PDF, DOC, DOCX) to extract comprehensive metadata with chronological processing and intelligent representative tracking using Gemini 2.5 Flash.
+The doc-scanner application processes documents (PDF, DOC, DOCX) to extract comprehensive metadata with chronological processing, intelligent representative tracking, and automatic change detection using Gemini 2.5 Flash Lite.
 
 ## Basic Usage
 
@@ -24,90 +24,184 @@ npm start scanner
 ls apps/doc-scanner/src/data/output/123204604000/
 ```
 
+## Tracked Changes Feature
+
+The scanner automatically detects and summarizes significant changes between document versions:
+
+### Example Output with Tracked Changes
+
+```json
+{
+  "123204604000": {
+    "company-name": "ΠΑΡΑΔΕΙΓΜΑ ΑΕ",
+    "metadata": {
+      "current-snapshot": {
+        "tracked_changes": "• ΠΑΠΑΔΟΠΟΥΛΟΣ ΙΩΑΝΝΗΣ appointed as Διαχειριστής • ΚΩΝΣΤΑΝΤΙΝΟΥ ΜΑΡΙΑ increased ownership to 45%"
+      }
+    },
+    "tracked-changes": {
+      "2019-09-23_initial.pdf": "Initial company registration document",
+      "2020-11-03_amendment.pdf": "• ΠΑΠΑΔΟΠΟΥΛΟΣ ΙΩΑΝΝΗΣ appointed as Διαχειριστής",
+      "2021-12-13_transfer.pdf": "• ΚΩΝΣΤΑΝΤΙΝΟΥ ΜΑΡΙΑ increased ownership to 45% • Company address changed to ΛΕΩΦΟΡΟΣ ΚΗΦΙΣΙΑΣ 200"
+    }
+  }
+}
+```
+
+## Incremental Processing
+
+The system includes intelligent processing optimization that avoids reprocessing documents:
+
+```bash
+# First run - processes all documents
+npm start scanner
+# Enter GEMI ID: 123204604000
+# Output: Processing 3 file(s)...
+
+# Second run - skips processing (no new files)
+npm start scanner
+# Enter GEMI ID: 123204604000
+# Output: ✓ No processing needed. All documents are up to date.
+
+# Adding new document triggers incremental processing
+cp /path/to/2022-06-15_new.pdf apps/doc-scanner/src/data/input/123204604000/
+npm start scanner
+# Enter GEMI ID: 123204604000
+# Output: Found 1 new file(s) to process: 2022-06-15_new.pdf
+```
+
 ## Programmatic Usage
 
-### Process Single Document
+### Process Files for a Company
 
 ```javascript
+import fs from "fs";
 import { processCompanyFiles } from "./apps/doc-scanner/src/processing-logic.mjs";
 import { getMetadataModel } from "./apps/doc-scanner/src/gemini-config.mjs";
 
-async function processDocument(gemiId, inputDir, outputDir) {
+async function processCompany(gemiId, inputDir, outputDir) {
   const model = getMetadataModel();
+  const files = fs
+    .readdirSync(inputDir)
+    .filter((f) => /\.(pdf|docx?)$/i.test(f));
 
-  try {
-    const result = await processCompanyFiles(
-      gemiId,
-      inputDir,
-      outputDir,
-      model
-    );
+  const result = await processCompanyFiles(
+    files,
+    inputDir,
+    outputDir,
+    gemiId,
+    model
+  );
 
-    if (result.status === "success") {
-      console.log("Processing successful:", result.finalMetadata);
-      return result.finalMetadata;
-    } else {
-      console.error("Processing failed:", result.error);
-      throw new Error(result.error);
-    }
-  } catch (error) {
-    console.error("Error processing documents:", error);
-    throw error;
+  if (result.status !== "success") {
+    throw new Error(result.error || "Processing failed");
   }
+  return result.finalMetadata;
 }
 
 // Usage
-const result = await processDocument(
+await processCompany(
+  "123204604000",
+  "apps/doc-scanner/src/data/input/123204604000",
+  "apps/doc-scanner/src/data/output/123204604000"
+);
+```
+
+### Check Processing Requirements
+
+Use the metadata checker to determine if processing is needed:
+
+```javascript
+import { checkExistingMetadata } from "./apps/doc-scanner/src/metadata-checker.mjs";
+import fs from "fs";
+
+function getInputFiles(inputFolder) {
+  return fs
+    .readdirSync(inputFolder)
+    .filter(
+      (file) =>
+        file.endsWith(".pdf") || file.endsWith(".docx") || file.endsWith(".doc")
+    );
+}
+
+async function checkProcessingNeeded(gemiId, inputDir, outputDir) {
+  const inputFiles = getInputFiles(inputDir);
+  const processCheck = checkExistingMetadata(gemiId, outputDir, inputFiles);
+
+  console.log(`Check result: ${processCheck.reason}`);
+
+  if (!processCheck.shouldProcess) {
+    console.log("✓ No processing needed. All documents are up to date.");
+    return { needsProcessing: false, files: [] };
+  }
+
+  console.log(`Processing ${processCheck.filesToProcess.length} file(s)...`);
+  return {
+    needsProcessing: true,
+    files: processCheck.filesToProcess,
+  };
+}
+
+// Usage
+const { needsProcessing, files } = await checkProcessingNeeded(
   "123204604000",
   "./input/123204604000",
   "./output/123204604000"
 );
+
+if (needsProcessing) {
+  // Process only the files that need processing
+  const result = await processCompanyFiles(
+    files, // Only new/updated files
+    "./input/123204604000",
+    "./output/123204604000",
+    "123204604000",
+    getMetadataModel()
+  );
+}
 ```
 
 ### Batch Document Processing
 
 ```javascript
-import fs from "fs/promises";
+import fs from "fs";
 import path from "path";
 import { processCompanyFiles } from "./apps/doc-scanner/src/processing-logic.mjs";
 import { getMetadataModel } from "./apps/doc-scanner/src/gemini-config.mjs";
 
 async function batchProcessCompanies(companiesDir, outputDir) {
-  const companies = await fs.readdir(companiesDir);
   const model = getMetadataModel();
-
+  const gemiIds = fs.readdirSync(companiesDir);
   const results = [];
 
-  for (const gemiId of companies) {
-    const companyInputDir = path.join(companiesDir, gemiId);
-    const companyOutputDir = path.join(outputDir, gemiId);
+  for (const gemiId of gemiIds) {
+    const inputDir = path.join(companiesDir, gemiId);
+    const outDir = path.join(outputDir, gemiId);
+    const files = fs
+      .readdirSync(inputDir)
+      .filter((f) => /\.(pdf|docx?)$/i.test(f));
 
     try {
-      const result = await processCompanyFiles(
+      const res = await processCompanyFiles(
+        files,
+        inputDir,
+        outDir,
         gemiId,
-        companyInputDir,
-        companyOutputDir,
         model
       );
-      results.push({
-        gemiId,
-        status: result.status,
-        data: result.finalMetadata,
-      });
-    } catch (error) {
-      results.push({
-        gemiId,
-        status: "error",
-        error: error.message,
-      });
+      results.push({ gemiId, status: res.status });
+    } catch (e) {
+      results.push({ gemiId, status: "error", error: e.message });
     }
   }
 
   return results;
 }
 
-// Usage
-const results = await batchProcessCompanies("./input", "./output");
+await batchProcessCompanies(
+  "apps/doc-scanner/src/data/input",
+  "apps/doc-scanner/src/data/output"
+);
 ```
 
 ## Output Structure
@@ -171,7 +265,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export function getCustomModel(options = {}) {
   const {
-    modelName = "gemini-2.5-flash-lite-preview-06-17",
+  modelName = "gemini-2.5-flash-lite",
     temperature = 0.1,
     maxTokens = 8192,
   } = options;
@@ -191,18 +285,16 @@ export function getCustomModel(options = {}) {
 
 ### Environment Configuration
 
+See Reference > Configuration for all supported environment variables. Minimum required:
+
 ```bash
-# .env settings for doc-scanner
 GEMINI_API_KEY=your_api_key_here
-GEMINI_CONCURRENCY_LIMIT=15
-NODE_ENV=production
 ```
 
 ## Tips
 
 - Ensure Gemini API key is valid and has sufficient quota
 - **Important**: Name files with date prefixes (YYYY-MM-DD) for chronological processing
-- Use appropriate concurrency limits (default: 15)
 - Monitor API usage to avoid rate limits (using Gemini 2.5 Flash Lite)
 - Check file permissions for input/output directories
 - Documents are processed chronologically to track company evolution

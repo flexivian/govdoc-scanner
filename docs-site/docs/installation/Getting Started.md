@@ -46,9 +46,9 @@ npm start govdoc
 
 The project includes three main applications:
 
-- **CLI Tool**: Complete end-to-end interactive workflow (recommended)
-- **Crawler**: Search and download documents from GEMI portal with enhanced date extraction
-- **Doc-Scanner**: Process documents with AI-powered chronological analysis and representative tracking
+- **CLI Tool** (`govdoc`): Complete end-to-end interactive workflow (recommended for most users)
+- **Crawler** (`crawler`): Search and download documents from GEMI portal with enhanced date extraction
+- **Doc-Scanner** (`scanner`): Process documents with AI-powered chronological analysis, representative tracking, and automatic change detection
 
 ## Individual Application Usage
 
@@ -60,7 +60,7 @@ npm start govdoc
 # - File input, manual entry, or random selection
 # - Automated crawling and document processing
 # - Progress tracking and comprehensive summaries
-# - Output saved to project root ./output/
+# - Output saved to ./output/ at project root
 ```
 
 **Command line mode for automation:**
@@ -81,7 +81,7 @@ npm start govdoc -- --help
 ```bash
 npm start crawler
 # Search for companies or download by GEMI ID
-# Results saved to apps/crawler/src/downloads/
+# Results saved to apps/crawler/src/downloads/ and ids.txt to apps/crawler/src/ids.txt
 ```
 
 ### Doc-Scanner
@@ -91,7 +91,10 @@ npm start scanner
 # Process documents from input directory
 # Requires manual document placement in apps/doc-scanner/src/data/input/
 # Important: Name files with date prefixes (YYYY-MM-DD) for chronological processing
-# Generates comprehensive metadata with representative tracking
+# Features:
+#   - Intelligent processing: skips documents that are already up to date
+#   - Change tracking: automatically summarizes significant changes between versions
+#   - Comprehensive metadata with representative tracking and ownership history
 ```
 
 ## Output Structure
@@ -101,11 +104,18 @@ After processing, find results in:
 ```
 output/
 ├── 123204604000/
-│   ├── 123204604000_final_metadata.json  # Comprehensive company metadata
+│   ├── 123204604000_final_metadata.json  # Comprehensive company metadata with tracked changes
 │   └── document_downloads/
 │       └── *.pdf, *.docx files
 └── govdoc-output.json  # Summary
 ```
+
+The metadata file includes:
+
+- **Current Snapshot**: Latest company state with all extracted information
+- **Tracked Changes**: Document-by-document history of significant changes
+- **Representative Tracking**: Complete ownership and role evolution
+- **Change Summaries**: Human-readable summaries of key modifications
 
 ## Next Steps
 
