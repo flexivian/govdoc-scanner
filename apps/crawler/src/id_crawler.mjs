@@ -5,6 +5,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import axios from "axios";
 import mime from "mime-types";
+import crypto from "crypto";
 
 // ES Module compatible __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -13,6 +14,41 @@ const __dirname = path.dirname(__filename);
 const BASE_URL = "https://publicity.businessportal.gr";
 const PAGE_LOAD_TIMEOUT_IN_MILLISECONDS = 60000;
 const DOWNLOAD_TIMEOUT_AXIOS = 120000;
+
+// Calculate MD5 hash of a file
+function calculateFileHash(filePath) {
+  try {
+    const fileBuffer = fs.readFileSync(filePath);
+    const hashSum = crypto.createHash("md5");
+    hashSum.update(fileBuffer);
+    return hashSum.digest("hex");
+  } catch (error) {
+    return null;
+  }
+}
+
+// Calculate MD5 hash of remote file content
+async function calculateRemoteFileHash(url) {
+  try {
+    const response = await axios({
+      method: "GET",
+      url: url,
+      responseType: "arraybuffer",
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+        Referer: BASE_URL,
+      },
+      timeout: DOWNLOAD_TIMEOUT_AXIOS,
+    });
+
+    const hashSum = crypto.createHash("md5");
+    hashSum.update(Buffer.from(response.data));
+    return hashSum.digest("hex");
+  } catch (error) {
+    return null;
+  }
+}
 
 // Downloads a document using Axios
 async function downloadWithAxios(documentUrl, outputPath) {
@@ -126,20 +162,58 @@ async function extractDownloadLinks(html, downloadDir) {
     const baseFileName = datePrefix + name;
     let out = path.join(downloadDir, baseFileName);
 
-    // Skip if file already exists (check for common extensions)
+    // Check if file already exists and if content is the same (check for common extensions)
     const extensions = [".pdf", ".doc", ".docx"];
-    let fileExists = false;
+    let shouldSkip = false;
+    let existingFilePath = null;
+
     for (const ext of extensions) {
-      if (fs.existsSync(out + ext)) {
-        console.log(
-          `Skipping ${path.basename(out + ext)} - file already exists`
-        );
-        fileExists = true;
+      const potentialPath = out + ext;
+      if (fs.existsSync(potentialPath)) {
+        existingFilePath = potentialPath;
         break;
       }
     }
 
-    if (fileExists) {
+    if (existingFilePath) {
+      console.log(
+        `File ${path.basename(existingFilePath)} already exists, checking if content has changed...`
+      );
+
+      // Calculate hash of existing file
+      const existingFileHash = calculateFileHash(existingFilePath);
+
+      if (existingFileHash) {
+        // Calculate hash of remote file
+        const remoteFileHash = await calculateRemoteFileHash(fullUrl);
+
+        if (remoteFileHash && existingFileHash === remoteFileHash) {
+          console.log(
+            `Skipping ${path.basename(existingFilePath)} - content is identical (MD5: ${existingFileHash})`
+          );
+          shouldSkip = true;
+        } else if (remoteFileHash) {
+          console.log(
+            `Content has changed for ${path.basename(existingFilePath)} - will re-download (Old MD5: ${existingFileHash}, New MD5: ${remoteFileHash})`
+          );
+          // Remove the old file so it can be replaced
+          fs.unlinkSync(existingFilePath);
+        } else {
+          console.log(
+            `Could not verify remote file hash for ${path.basename(existingFilePath)} - will skip to be safe`
+          );
+          shouldSkip = true;
+        }
+      } else {
+        console.log(
+          `Could not calculate hash for existing file ${path.basename(existingFilePath)} - will re-download`
+        );
+        // Remove the corrupted/unreadable file
+        fs.unlinkSync(existingFilePath);
+      }
+    }
+
+    if (shouldSkip) {
       continue;
     }
 
