@@ -3,6 +3,7 @@ import { spawn } from "child_process";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { isValidGemiId } from "./utils.mjs";
 
 import { findAndConfirmMatch } from "./filter_correction.mjs";
 import {
@@ -274,7 +275,7 @@ async function promptForCrawl() {
         name: "gemiId",
         message: "Please enter the GEMI number:",
         validate: (input) =>
-          /^\d+$/.test(input) || "Please enter a valid, numeric GEMI number.",
+          isValidGemiId(input) || "Please enter a valid, numeric GEMI number.",
       },
     ]);
     try {
