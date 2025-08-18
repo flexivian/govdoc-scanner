@@ -5,7 +5,8 @@
   "main": "src/main.js",
   "type": "module",
   "scripts": {
-    "start": "node src/main.mjs"
+    "start": "node src/main.mjs",
+    "test": "node --test test/*.test.mjs"
   },
   "keywords": [
     "document-scanner",

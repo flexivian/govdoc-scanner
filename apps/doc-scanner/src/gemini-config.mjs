@@ -12,7 +12,7 @@ dotenv.config({ path: path.resolve(projectRoot, ".env") });
 export const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 export const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
-export const GEMINI_METADATA_MODEL_NAME = "gemini-2.5-flash-lite-preview-06-17";
+export const GEMINI_METADATA_MODEL_NAME = "gemini-2.5-flash-lite";
 
 // Retry configuration constants
 const MAX_GEMINI_ATTEMPTS = 5;
