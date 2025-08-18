@@ -15,7 +15,6 @@ function sortFilesByDate(files) {
     return 0;
   });
 }
-
 // Check if metadata already exists and determine if we need to process
 export function checkExistingMetadata(gemiId, outputFolder, inputFiles) {
   const metadataPath = path.resolve(
