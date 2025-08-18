@@ -3,6 +3,7 @@ import { existsSync, rmSync } from "fs";
 import fs from "fs";
 import path from "path";
 import { config } from "../../../shared/config/index.mjs";
+import { isValidGemiId } from "./utils.mjs";
 
 // Configs
 const USER_DATA_DIR = "./playwright_profile";
@@ -305,7 +306,10 @@ async function extractResults(page) {
       const href = await linkElement.first().getAttribute("href");
       if (href) {
         const gemiNumber = href.split("/").pop();
-        gemiNumbers.push(gemiNumber.trim());
+        const cleanGemiNumber = gemiNumber.trim();
+        if (isValidGemiId(cleanGemiNumber)) {
+          gemiNumbers.push(cleanGemiNumber);
+        }
       }
     }
   }

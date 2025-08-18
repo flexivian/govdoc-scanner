@@ -4,8 +4,18 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import axios from "axios";
-import mime from "mime-types";
 import { config } from "../../../shared/config/index.mjs";
+import {
+  calculateHash,
+  downloadFileBuffer,
+  getFileExtensionFromHeaders,
+  createHttpHeaders,
+  parseDateToFilePrefix,
+  resolveFilenameConflict,
+  isValidGemiId,
+  findExistingFileWithExtensions,
+  createSafeFilename,
+} from "./utils.mjs";
 
 // ES Module compatible __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -19,6 +29,29 @@ const {
   userAgent: USER_AGENT,
 } = config.crawler;
 
+// Calculate MD5 hash of a file
+function calculateFileHash(filePath) {
+  try {
+    const fileBuffer = fs.readFileSync(filePath);
+    return calculateHash(fileBuffer);
+  } catch (error) {
+    return null;
+  }
+}
+
+// Calculate MD5 hash of remote file content
+async function calculateRemoteFileHash(url) {
+  try {
+    const fileBuffer = await downloadFileBuffer(url, {
+      referer: BASE_URL,
+      timeout: DOWNLOAD_TIMEOUT_AXIOS,
+    });
+    return calculateHash(fileBuffer);
+  } catch (error) {
+    return null;
+  }
+}
+
 // Downloads a document using Axios
 async function downloadWithAxios(documentUrl, outputPath) {
   try {
@@ -26,52 +59,17 @@ async function downloadWithAxios(documentUrl, outputPath) {
       method: "GET",
       url: documentUrl,
       responseType: "stream",
-      headers: {
-        "User-Agent": USER_AGENT,
-        Referer: BASE_URL,
-      },
+      headers: createHttpHeaders(BASE_URL),
       timeout: DOWNLOAD_TIMEOUT_AXIOS,
     });
 
     // Determine extension from response headers if not already present
     let finalOutputPath = outputPath;
     if (!path.extname(outputPath)) {
-      const headers = response.headers;
-      let ext = "";
-
-      // Try Content-Disposition first
-      const cd = headers["content-disposition"];
-      if (cd) {
-        const m = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/.exec(cd);
-        if (m) {
-          ext = path.extname(m[1]).toLowerCase();
-        }
-      }
-
-      // Fallback to Content-Type
-      if (!ext && headers["content-type"]) {
-        const ctype = headers["content-type"].toLowerCase();
-        if (ctype.includes("pdf")) {
-          ext = ".pdf";
-        } else if (ctype.includes("msword")) {
-          ext = ".doc";
-        } else if (ctype.includes("openxmlformats")) {
-          ext = ".docx";
-        } else {
-          const guess = mime.extension(ctype);
-          if (guess) ext = "." + guess;
-        }
-      }
+      const ext = getFileExtensionFromHeaders(response.headers);
 
       if (ext) {
-        finalOutputPath = outputPath + ext;
-
-        // Check for conflicts with the new extension
-        let i = 1;
-        while (fs.existsSync(finalOutputPath)) {
-          const base = outputPath;
-          finalOutputPath = `${base}_(${i++})${ext}`;
-        }
+        finalOutputPath = resolveFilenameConflict(outputPath, ext);
       }
     }
 
@@ -109,41 +107,65 @@ async function extractDownloadLinks(html, downloadDir) {
     seen.add(rel);
 
     const fullUrl = BASE_URL + rel;
-    let name = rel.split("/").pop().split("?")[0] || `file_${seen.size}`;
+    let name = rel.split("/").pop() || `file_${seen.size}`;
 
     // Extract date from the table row containing this download link
-    let datePrefix = "";
     const $row = $(el).closest("tr");
+    let datePrefix = "";
+
     if ($row.length > 0) {
       const $firstCell = $row.find("td").first();
       const dateText = $firstCell.text().trim();
-      // Check if it matches DD/MM/YYYY format
-      const dateMatch = dateText.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-      if (dateMatch) {
-        // Convert DD/MM/YYYY to YYYY-MM-DD format for filename
-        const [, day, month, year] = dateMatch;
-        datePrefix = `${year}-${month}-${day}_`;
-      }
+      datePrefix = parseDateToFilePrefix(dateText);
     }
 
-    // Add date prefix to the filename if we found a date
-    const baseFileName = datePrefix + name;
+    // Create safe filename with date prefix
+    const baseFileName = createSafeFilename(name, datePrefix);
     let out = path.join(downloadDir, baseFileName);
 
-    // Skip if file already exists (check for common extensions)
-    const extensions = [".pdf", ".doc", ".docx"];
-    let fileExists = false;
-    for (const ext of extensions) {
-      if (fs.existsSync(out + ext)) {
+    // Check if file already exists and if content is the same (check for common extensions)
+    let shouldSkip = false;
+    const existingFilePath = findExistingFileWithExtensions(out);
+
+    if (existingFilePath) {
+      console.log(
+        `File ${path.basename(existingFilePath)} already exists, checking if content has changed...`
+      );
+
+      // Calculate hash of existing file
+      const existingFileHash = calculateFileHash(existingFilePath);
+
+      if (existingFileHash) {
+        // Calculate hash of remote file
+        const remoteFileHash = await calculateRemoteFileHash(fullUrl);
+
+        if (remoteFileHash && existingFileHash === remoteFileHash) {
+          console.log(
+            `Skipping ${path.basename(existingFilePath)} - content is identical (MD5: ${existingFileHash})`
+          );
+          shouldSkip = true;
+        } else if (remoteFileHash) {
+          console.log(
+            `Content has changed for ${path.basename(existingFilePath)} - will re-download (Old MD5: ${existingFileHash}, New MD5: ${remoteFileHash})`
+          );
+          // Remove the old file so it can be replaced
+          fs.unlinkSync(existingFilePath);
+        } else {
+          console.log(
+            `Could not verify remote file hash for ${path.basename(existingFilePath)} - will skip to be safe`
+          );
+          shouldSkip = true;
+        }
+      } else {
         console.log(
-          `Skipping ${path.basename(out + ext)} - file already exists`
+          `Could not calculate hash for existing file ${path.basename(existingFilePath)} - will re-download`
         );
-        fileExists = true;
-        break;
+        // Remove the corrupted/unreadable file
+        fs.unlinkSync(existingFilePath);
       }
     }
 
-    if (fileExists) {
+    if (shouldSkip) {
       continue;
     }
 
@@ -368,7 +390,7 @@ async function main() {
 
   if (idIndex !== -1 && args[idIndex + 1]) {
     const gemiId = args[idIndex + 1].trim();
-    if (!/^\d+$/.test(gemiId)) {
+    if (!isValidGemiId(gemiId)) {
       console.error("Invalid GEMI ID format. Please enter numbers only.");
       return;
     }
@@ -384,7 +406,7 @@ async function main() {
       gemiIds = fileContent
         .split("\n")
         .map((id) => id.trim())
-        .filter((id) => /^\d+$/.test(id));
+        .filter((id) => isValidGemiId(id));
       console.log(`Loaded ${gemiIds.length} valid GEMI IDs from ${filePath}`);
     } catch (e) {
       console.error(`Error reading or parsing ${filePath}:`, e.message);
