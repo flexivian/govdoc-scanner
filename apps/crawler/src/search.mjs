@@ -2,6 +2,7 @@ import { chromium } from "playwright";
 import { existsSync, rmSync } from "fs";
 import fs from "fs";
 import path from "path";
+import { DEFAULT_USER_AGENT, isValidGemiId } from "./utils.mjs";
 
 // Configs
 const USER_DATA_DIR = "./playwright_profile";
@@ -58,8 +59,7 @@ async function main() {
     process.exit(1);
   }
   const context = await browser.newContext({
-    userAgent:
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36",
+    userAgent: DEFAULT_USER_AGENT,
   });
   const page = await context.newPage();
 
@@ -305,7 +305,10 @@ async function extractResults(page) {
       const href = await linkElement.first().getAttribute("href");
       if (href) {
         const gemiNumber = href.split("/").pop();
-        gemiNumbers.push(gemiNumber.trim());
+        const cleanGemiNumber = gemiNumber.trim();
+        if (isValidGemiId(cleanGemiNumber)) {
+          gemiNumbers.push(cleanGemiNumber);
+        }
       }
     }
   }
