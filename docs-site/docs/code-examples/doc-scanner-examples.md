@@ -4,7 +4,7 @@ sidebar_position: 3
 
 # Doc-Scanner Examples
 
-The doc-scanner application processes documents (PDF, DOC, DOCX) to extract comprehensive metadata with chronological processing and intelligent representative tracking using Gemini 2.5 Flash.
+The doc-scanner application processes documents (PDF, DOC, DOCX) to extract comprehensive metadata with chronological processing, intelligent representative tracking, and automatic change detection using Gemini 2.5 Flash.
 
 ## Basic Usage
 
@@ -22,6 +22,52 @@ npm start scanner
 
 # 3. Find comprehensive results in output directory
 ls apps/doc-scanner/src/data/output/123204604000/
+```
+
+## Tracked Changes Feature
+
+The scanner automatically detects and summarizes significant changes between document versions:
+
+### Example Output with Tracked Changes
+
+```json
+{
+  "123204604000": {
+    "company-name": "ΠΑΡΑΔΕΙΓΜΑ ΑΕ",
+    "metadata": {
+      "current-snapshot": {
+        "tracked_changes": "• ΠΑΠΑΔΟΠΟΥΛΟΣ ΙΩΑΝΝΗΣ appointed as Διαχειριστής • ΚΩΝΣΤΑΝΤΙΝΟΥ ΜΑΡΙΑ increased ownership to 45%"
+      }
+    },
+    "tracked-changes": {
+      "2019-09-23_initial.pdf": "Initial company registration document",
+      "2020-11-03_amendment.pdf": "• ΠΑΠΑΔΟΠΟΥΛΟΣ ΙΩΑΝΝΗΣ appointed as Διαχειριστής",
+      "2021-12-13_transfer.pdf": "• ΚΩΝΣΤΑΝΤΙΝΟΥ ΜΑΡΙΑ increased ownership to 45% • Company address changed to ΛΕΩΦΟΡΟΣ ΚΗΦΙΣΙΑΣ 200"
+    }
+  }
+}
+```
+
+## Incremental Processing
+
+The system includes intelligent processing optimization that avoids reprocessing documents:
+
+```bash
+# First run - processes all documents
+npm start scanner
+# Enter GEMI ID: 123204604000
+# Output: Processing 3 file(s)...
+
+# Second run - skips processing (no new files)
+npm start scanner
+# Enter GEMI ID: 123204604000
+# Output: ✓ No processing needed. All documents are up to date.
+
+# Adding new document triggers incremental processing
+cp /path/to/2022-06-15_new.pdf apps/doc-scanner/src/data/input/123204604000/
+npm start scanner
+# Enter GEMI ID: 123204604000
+# Output: Found 1 new file(s) to process: 2022-06-15_new.pdf
 ```
 
 ## Programmatic Usage
@@ -62,6 +108,60 @@ const result = await processDocument(
   "./input/123204604000",
   "./output/123204604000"
 );
+```
+
+### Check Processing Requirements
+
+Use the metadata checker to determine if processing is needed:
+
+```javascript
+import { checkExistingMetadata } from "./apps/doc-scanner/src/metadata-checker.mjs";
+import fs from "fs";
+
+function getInputFiles(inputFolder) {
+  return fs
+    .readdirSync(inputFolder)
+    .filter(
+      (file) =>
+        file.endsWith(".pdf") || file.endsWith(".docx") || file.endsWith(".doc")
+    );
+}
+
+async function checkProcessingNeeded(gemiId, inputDir, outputDir) {
+  const inputFiles = getInputFiles(inputDir);
+  const processCheck = checkExistingMetadata(gemiId, outputDir, inputFiles);
+
+  console.log(`Check result: ${processCheck.reason}`);
+
+  if (!processCheck.shouldProcess) {
+    console.log("✓ No processing needed. All documents are up to date.");
+    return { needsProcessing: false, files: [] };
+  }
+
+  console.log(`Processing ${processCheck.filesToProcess.length} file(s)...`);
+  return {
+    needsProcessing: true,
+    files: processCheck.filesToProcess,
+  };
+}
+
+// Usage
+const { needsProcessing, files } = await checkProcessingNeeded(
+  "123204604000",
+  "./input/123204604000",
+  "./output/123204604000"
+);
+
+if (needsProcessing) {
+  // Process only the files that need processing
+  const result = await processCompanyFiles(
+    files, // Only new/updated files
+    "./input/123204604000",
+    "./output/123204604000",
+    "123204604000",
+    getMetadataModel()
+  );
+}
 ```
 
 ### Batch Document Processing
@@ -129,7 +229,7 @@ apps/doc-scanner/src/data/output/123204604000/
 
 Each processed company produces comprehensive JSON with enhanced schema:
 
-````json
+```json
 {
   "123204604000": {
     "company-name": "ALPHA BANK AE",
@@ -161,6 +261,7 @@ Each processed company produces comprehensive JSON with enhanced schema:
     }
   }
 }
+```
 
 ## Configuration
 
@@ -187,7 +288,28 @@ export function getCustomModel(options = {}) {
     },
   });
 }
-````
+```
+
+### Optimized Model Parameters
+
+The doc-scanner uses optimized parameters for structured data extraction to ensure consistent, deterministic output:
+
+```javascript
+const config = {
+  responseMimeType: "application/json",
+  responseSchema: CompanyEssentialMetadata,
+
+  temperature: 0.1,
+  topK: 1,
+  topP: 0.8,
+};
+```
+
+**Parameter Explanations:**
+
+- **`temperature: 0.1`**: Controls randomness in token selection during response generation. Lower temperatures (0.0-0.3) are ideal for structured data extraction as they produce more deterministic, consistent outputs. A temperature of 0 is completely deterministic, always selecting the highest probability token.
+- **`topK: 1`**: Limits token selection to the top K most probable tokens. Setting `topK: 1` implements greedy decoding, always selecting the single most probable token at each step, ensuring maximum consistency for structured outputs.
+- **`topP: 0.8`**: Uses nucleus sampling - selects from the smallest set of tokens whose cumulative probability exceeds the topP threshold. For example, if tokens have probabilities [0.4, 0.3, 0.2, 0.1], `topP: 0.8` would consider only the first three tokens (0.4+0.3+0.1=0.8), excluding the least probable option for more focused responses.
 
 ### Environment Configuration
 

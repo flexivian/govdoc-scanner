@@ -87,6 +87,8 @@ Processing priority: Accuracy over completeness
 
 Apply Greek corporate law interpretation. When uncertain about representative status, err on the side of exclusion. Return null for any field where information is not explicitly stated or you have any doubt.
 
+**IMPORTANT**: This is an initial document extraction. Set the "tracked_changes" field to null since there is no previous document for comparison.
+
 Follow the JSON schema precisely. All Greek text must remain in original Greek characters.`;
 }
 
@@ -136,6 +138,8 @@ For each person in the new document:
 
 #### SPECIFIC STATUS DETERMINATION RULES
 
+**IMPORTANT**: DO NOT remove representatives from the metadata even if they leave the company. Only update their status based on the document's explicit actions.
+
 **Set is_active = TRUE when document shows:**
 - "εκλέγεται" / "εκλέχθηκε" (elected)
 - "διορίζεται" / "διορίστηκε" (appointed) 
@@ -150,6 +154,7 @@ For each person in the new document:
 - "αντικαθίσταται" (is replaced)
 - "μεταβιβάζει το σύνολο των μεριδίων" (transfers all shares)
 - "παύει" / "λήγει η θητεία" (ceases/term expires)
+
 
 ### STEP 4: OWNERSHIP & CAPITAL TRACKING
 
@@ -169,6 +174,24 @@ For each person in the new document:
 4. ✓ Inactive representatives marked correctly
 5. ✓ Document date updated to: ${extractedDate || "Unknown"}
 
+### STEP 6: TRACKED CHANGES GENERATION
+
+**Generate a concise summary of key changes** for the tracked_changes field:
+- Compare the NEW document data with the EXISTING metadata
+- **Include only significant changes:**
+  - Representative appointments: "• [LASTNAME FIRSTNAME] entered the company as [ROLE]."
+  - Representative departures: "• [LASTNAME FIRSTNAME] departed from the company"
+  - Role changes: "• [LASTNAME FIRSTNAME] role changed from [OLD_ROLE] to [NEW_ROLE]"
+  - Capital share transfers: "• [OLD_OWNER LASTNAME FIRSTNAME] transferred [AMOUNT/PERCENTAGE] to [NEW_OWNER LASTNAME FIRSTNAME]"
+  - Address updates: "• Company address changed to [NEW_ADDRESS]"
+  - Company name changes: "• Company name changed to [NEW_NAME]"
+  - Capital modifications: "• Share capital modified"
+
+**Format as bulleted list using Greek names and roles exactly as they appear.**
+**Example output:** "• ΠΑΠΑΔΟΠΟΥΛΟΣ ΙΩΑΝΝΗΣ appointed as Διαχειριστής • ΑΝΑΣΤΑΣΗΣ ΚΥΡΙΑΖΟΣ departed from the company and transfered 20% to ΠΑΠΑΔΟΠΟΥΛΟΥ ΜΑΡΙΑ"
+Do not add '\n' at the end of each bullet point.
+**Exclude minor changes** like document date updates or formatting corrections.
+
 ## MERGE EXECUTION STRATEGY
 
 1. **Preserve existing valid data** - don't delete good information
@@ -176,6 +199,7 @@ For each person in the new document:
 3. **Maintain representative array integrity** - exactly one entry per person
 4. **Update chronologically relevant fields** only
 5. **Keep null values** for uncertain information
+6. **Generate tracked_changes summary** - document all significant modifications
 
 ## EXCLUSION CRITERIA (DO NOT INCLUDE)
 - Legal advisors (δικηγόροι) signing documents
@@ -191,5 +215,5 @@ ${JSON.stringify(existingMetadata, null, 2)}
 
 **NEW DOCUMENT DATE:** ${extractedDate || "Unknown"}
 
-Return the complete updated metadata with representative array containing NO duplicates. Each person should appear exactly once with their most current status and information.`;
+Return the complete updated metadata with representative array containing NO duplicates. Each person should appear exactly once with their most current status and information. **CRITICAL**: Include a comprehensive tracked_change summary highlighting all significant differences between the existing and new data.`;
 }
