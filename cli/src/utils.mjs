@@ -78,20 +78,48 @@ function formatDate(date) {
  */
 function runScript(scriptPath, args) {
   return new Promise((resolve, reject) => {
+    let stderr = "";
+    let stdout = "";
     const child = spawn("node", [scriptPath, ...args], {
-      stdio: "pipe",
+      stdio: ["ignore", "pipe", "pipe"],
       cwd: path.dirname(scriptPath),
+      env: process.env,
+    });
+
+    child.stdout.on("data", (d) => {
+      stdout += d.toString();
+    });
+    child.stderr.on("data", (d) => {
+      stderr += d.toString();
     });
 
     child.on("close", (code) => {
       if (code === 0) {
-        resolve();
+        resolve({ code, stdout, stderr });
       } else {
-        reject(new Error(`Script exited with code ${code}`));
+        // Attempt to parse structured error marker
+        const markerIndex = stderr.lastIndexOf("__SEARCH_ERROR__");
+        if (markerIndex !== -1) {
+          const jsonPart = stderr.substring(markerIndex + 16).trim();
+          try {
+            const parsed = JSON.parse(jsonPart);
+            const err = new Error(parsed.message || "Search script failed");
+            err.code = parsed.code || "search-error";
+            return reject(err);
+          } catch (_) {
+            // fall through
+          }
+        }
+        const err = new Error(
+          `Search script exited with code ${code}: ${stderr || stdout}`
+        );
+        err.code = "search-error";
+        reject(err);
       }
     });
 
     child.on("error", (error) => {
+      error.code = error.code || "search-error";
       reject(error);
     });
   });
@@ -160,6 +188,7 @@ export async function getRandomCompanies(count) {
     }
   } catch (error) {
     console.error(`Error running search script: ${error.message}`);
-    return [];
+    // Re-throw with code so caller can differentiate
+    throw error;
   }
 }

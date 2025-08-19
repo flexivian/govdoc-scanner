@@ -109,35 +109,4 @@ export async function promptRandomCount() {
   return count;
 }
 
-/**
- * Confirmation prompt before starting processing
- */
-export async function promptConfirmation(gemiIds, mode) {
-  let message = "";
-
-  switch (mode) {
-    case "file":
-      message = `Process ${gemiIds.length} GEMI ID(s) from file?`;
-      break;
-    case "manual":
-      message = `Process ${gemiIds.length} manually entered GEMI ID(s)?`;
-      break;
-    case "random":
-      message = `Process ${gemiIds.length} random companies?`;
-      break;
-    default:
-      message = `Process ${gemiIds.length} companies?`;
-      break;
-  }
-
-  const { confirmed } = await inquirer.prompt([
-    {
-      type: "confirm",
-      name: "confirmed",
-      message: message,
-      default: true,
-    },
-  ]);
-
-  return confirmed;
-}
+// Confirmation removed – processing begins immediately after input selection.

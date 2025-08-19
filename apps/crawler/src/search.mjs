@@ -47,8 +47,17 @@ async function main() {
     rmSync(USER_DATA_DIR, { recursive: true, force: true });
   }
 
-  // Launch browser with custom viewport and user agent
-  const browser = await chromium.launch({ headless: true });
+  let browser;
+  try {
+    browser = await chromium.launch({ headless: true });
+  } catch (e) {
+    const errPayload = {
+      code: "browser-launch-failed",
+      message: `Failed to launch browser: ${e.message}`,
+    };
+    console.error("__SEARCH_ERROR__" + JSON.stringify(errPayload));
+    process.exit(1);
+  }
   const context = await browser.newContext({
     userAgent: DEFAULT_USER_AGENT,
   });
@@ -56,13 +65,22 @@ async function main() {
 
   try {
     // Navigate to site
-    await page.goto(URL, { waitUntil: "domcontentloaded" });
-    console.log(`Navigated to ${URL}`);
-
-    // Wait for the page to be fully initialized
-    console.log("Waiting for reCAPTCHA badge...");
-    await page.waitForSelector("div.grecaptcha-badge", { timeout: 20000 });
-    console.log("Page appears to be fully ready.");
+    try {
+      await page.goto(URL, { waitUntil: "domcontentloaded", timeout: 30000 });
+      console.log(`Navigated to ${URL}`);
+      console.log("Waiting for reCAPTCHA badge...");
+      await page.waitForSelector("div.grecaptcha-badge", { timeout: 20000 });
+      console.log("Page appears to be fully ready.");
+    } catch (e) {
+      const errPayload = {
+        code: "site-navigation-timeout",
+        message: e?.message?.includes("reCAPTCHA")
+          ? "Site content did not load required elements in time"
+          : `Failed to navigate or load site: ${e.message}`,
+      };
+      console.error("__SEARCH_ERROR__" + JSON.stringify(errPayload));
+      process.exit(1);
+    }
 
     // Set filters and perform the search
     await equipFilters(page, filters);
@@ -83,7 +101,15 @@ async function main() {
     fs.writeFileSync(filePath, allResults.join("\n"), "utf-8");
     console.log("Results written to ids.txt");
   } catch (e) {
-    console.error(`An error occurred in the script: ${e}`);
+    if (e && e.code) {
+      // Already emitted structured error earlier; just ensure non-zero exit
+      process.exit(1);
+    }
+    const errPayload = {
+      code: "search-error",
+      message: e?.message || String(e),
+    };
+    console.error("__SEARCH_ERROR__" + JSON.stringify(errPayload));
     process.exit(1);
   } finally {
     console.log("Closing browser.");
@@ -120,8 +146,9 @@ async function performSearch(page, searchTerm) {
   ]);
 
   if (result === "no-results") {
-    console.log("No results found with these filters/search term.");
-    throw new Error("No results found.");
+    const err = new Error("No results found.");
+    err.code = "no-search-results";
+    throw err;
   } else if (result === "results") {
     console.log("Initial results loaded.");
   } else {
