@@ -58,7 +58,7 @@ GEMINI_API_KEY=your_gemini_api_key_here
 
 2. **Run the Tool** (choose one of the following)
 
-   **🚀 Most Common Usage - Interactive Workflow:**
+   **Most Common Usage - Interactive Workflow:**
 
    ```sh
    npm start govdoc
@@ -66,19 +66,19 @@ GEMINI_API_KEY=your_gemini_api_key_here
 
    This runs an interactive CLI that guides you through the complete workflow. Use `--` to pass args.
 
-   **🔍 Just Search & Download Documents:**
+   **Just Search & Download Documents:**
 
    ```sh
    npm start crawler
    ```
 
-   **📄 Just Process Existing Documents:**
+   **Just Process Existing Documents:**
 
    ```sh
    npm start scanner
    ```
 
-   **❓ Get Help:**
+   **Get Help:**
 
    ```sh
    npm start help
@@ -126,7 +126,7 @@ Both modes:
 
 ### 3. Manual Workflow
 
-If you prefer to run each step separately:
+If you prefer to run each step separately, make sure to use `LOG_LEVEL=DEBUG` for detailed output when running the separate apps:
 
 **Step 1: Search & Download**
 

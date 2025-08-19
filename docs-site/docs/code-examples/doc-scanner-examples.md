@@ -78,25 +78,50 @@ npm start scanner
 import fs from "fs";
 import { processCompanyFiles } from "./apps/doc-scanner/src/processing-logic.mjs";
 import { getMetadataModel } from "./apps/doc-scanner/src/gemini-config.mjs";
+import { createLogger } from "./shared/logging/index.mjs";
+import { validateConfig, validateApiKey } from "./shared/config/validator.mjs";
+import { FileProcessingError } from "./shared/errors/index.mjs";
+
+const logger = createLogger("DOC-PROCESSOR");
 
 async function processCompany(gemiId, inputDir, outputDir) {
-  const model = getMetadataModel();
-  const files = fs
-    .readdirSync(inputDir)
-    .filter((f) => /\.(pdf|docx?)$/i.test(f));
+  try {
+    // Validate configuration and API access
+    validateConfig();
+    const apiResult = await validateApiKey();
+    if (!apiResult.ok) {
+      logger.error(`API validation failed: ${apiResult.reason}`);
+      throw new Error(`API validation failed: ${apiResult.reason}`);
+    }
 
-  const result = await processCompanyFiles(
-    files,
-    inputDir,
-    outputDir,
-    gemiId,
-    model
-  );
+    const model = getMetadataModel();
+    const files = fs
+      .readdirSync(inputDir)
+      .filter((f) => /\.(pdf|docx?)$/i.test(f));
 
-  if (result.status !== "success") {
-    throw new Error(result.error || "Processing failed");
+    logger.info(`Processing ${files.length} files for company ${gemiId}`);
+
+    const result = await processCompanyFiles(
+      files,
+      inputDir,
+      outputDir,
+      gemiId,
+      model
+    );
+
+    if (result.status !== "success") {
+      throw new FileProcessingError(
+        result.error || "Processing failed",
+        inputDir
+      );
+    }
+
+    logger.info(`✅ Successfully processed company ${gemiId}`);
+    return result.finalMetadata;
+  } catch (error) {
+    logger.error(`❌ Failed to process company ${gemiId}`, error);
+    throw error;
   }
-  return result.finalMetadata;
 }
 
 // Usage
@@ -113,7 +138,10 @@ Use the metadata checker to determine if processing is needed:
 
 ```javascript
 import { checkExistingMetadata } from "./apps/doc-scanner/src/metadata-checker.mjs";
+import { createLogger } from "./shared/logging/index.mjs";
 import fs from "fs";
+
+const logger = createLogger("METADATA-CHECKER");
 
 function getInputFiles(inputFolder) {
   return fs
@@ -125,17 +153,19 @@ function getInputFiles(inputFolder) {
 }
 
 async function checkProcessingNeeded(gemiId, inputDir, outputDir) {
+  logger.debug(`Checking processing requirements for ${gemiId}`);
+
   const inputFiles = getInputFiles(inputDir);
   const processCheck = checkExistingMetadata(gemiId, outputDir, inputFiles);
 
-  console.log(`Check result: ${processCheck.reason}`);
+  logger.info(`Check result: ${processCheck.reason}`);
 
   if (!processCheck.shouldProcess) {
-    console.log("✓ No processing needed. All documents are up to date.");
+    logger.info("✓ No processing needed. All documents are up to date.");
     return { needsProcessing: false, files: [] };
   }
 
-  console.log(`Processing ${processCheck.filesToProcess.length} file(s)...`);
+  logger.info(`Processing ${processCheck.filesToProcess.length} file(s)...`);
   return {
     needsProcessing: true,
     files: processCheck.filesToProcess,
@@ -168,34 +198,77 @@ import fs from "fs";
 import path from "path";
 import { processCompanyFiles } from "./apps/doc-scanner/src/processing-logic.mjs";
 import { getMetadataModel } from "./apps/doc-scanner/src/gemini-config.mjs";
+import { createLogger } from "./shared/logging/index.mjs";
+import { progressManager } from "./shared/progress/index.mjs";
+import { setGlobalProgressManager } from "./shared/logging/index.mjs";
+import { validateConfig, validateApiKey } from "./shared/config/validator.mjs";
+
+const logger = createLogger("BATCH-PROCESSOR");
 
 async function batchProcessCompanies(companiesDir, outputDir) {
-  const model = getMetadataModel();
-  const gemiIds = fs.readdirSync(companiesDir);
-  const results = [];
-
-  for (const gemiId of gemiIds) {
-    const inputDir = path.join(companiesDir, gemiId);
-    const outDir = path.join(outputDir, gemiId);
-    const files = fs
-      .readdirSync(inputDir)
-      .filter((f) => /\.(pdf|docx?)$/i.test(f));
-
-    try {
-      const res = await processCompanyFiles(
-        files,
-        inputDir,
-        outDir,
-        gemiId,
-        model
-      );
-      results.push({ gemiId, status: res.status });
-    } catch (e) {
-      results.push({ gemiId, status: "error", error: e.message });
+  try {
+    // Setup infrastructure
+    validateConfig();
+    const apiResult = await validateApiKey();
+    if (!apiResult.ok) {
+      logger.error(`API validation failed: ${apiResult.reason}`);
+      throw new Error(`API validation failed: ${apiResult.reason}`);
     }
-  }
 
-  return results;
+    // Setup progress tracking with logging integration
+    setGlobalProgressManager(progressManager);
+
+    const model = getMetadataModel();
+    const gemiIds = fs.readdirSync(companiesDir);
+    const results = [];
+
+    logger.info(`Starting batch processing of ${gemiIds.length} companies`);
+
+    // Create progress bar
+    const progressBar = progressManager.createBar(gemiIds.length, {
+      format: "Processing |{bar}| {percentage}% | {value}/{total} | {status}",
+    });
+
+    for (let i = 0; i < gemiIds.length; i++) {
+      const gemiId = gemiIds[i];
+      const inputDir = path.join(companiesDir, gemiId);
+      const outDir = path.join(outputDir, gemiId);
+
+      try {
+        const files = fs
+          .readdirSync(inputDir)
+          .filter((f) => /\.(pdf|docx?)$/i.test(f));
+
+        logger.debug(`Processing ${files.length} files for ${gemiId}`);
+
+        const res = await processCompanyFiles(
+          files,
+          inputDir,
+          outDir,
+          gemiId,
+          model
+        );
+
+        results.push({ gemiId, status: res.status });
+        logger.info(`✅ Successfully processed ${gemiId}`);
+      } catch (error) {
+        logger.error(`❌ Failed to process ${gemiId}`, error);
+        results.push({ gemiId, status: "error", error: error.message });
+      }
+
+      progressManager.update(i + 1, `Completed ${gemiId}`);
+    }
+
+    progressManager.stop();
+    logger.info(
+      `Batch processing completed. ${results.length} companies processed`
+    );
+
+    return results;
+  } catch (error) {
+    logger.error("Batch processing failed", error);
+    throw error;
+  }
 }
 
 await batchProcessCompanies(
@@ -266,7 +339,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export function getCustomModel(options = {}) {
   const {
-  modelName = "gemini-2.5-flash-lite",
+    modelName = "gemini-2.5-flash-lite",
     temperature = 0.1,
     maxTokens = 8192,
   } = options;

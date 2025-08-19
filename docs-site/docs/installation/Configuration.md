@@ -79,19 +79,19 @@ For development with verbose logging:
 
 ### Common Issues
 
-**❌ "GEMINI_API_KEY is required"**
+**"GEMINI_API_KEY is required"**
 
 - Ensure `.env` file exists in project root
 - Verify API key is set correctly
 - Check API key is valid at [Google AI Studio](https://aistudio.google.com/app/apikey)
 
-**❌ "Configuration validation failed"**
+**"Configuration validation failed"**
 
 - Check numeric values are within valid ranges
 - Verify URL formats are correct
 - Ensure boolean values are "true" or "false"
 
-**❌ "API validation failed"**
+**"API validation failed"**
 
 - Test API key manually at Google AI Studio
 - Check internet connectivity

@@ -34,14 +34,27 @@ npm start crawler
 ```javascript
 // From a script in the repo root
 import { runCrawlerForGemiIds } from "./apps/crawler/src/id_crawler.mjs";
+import { createLogger } from "./shared/logging/index.mjs";
+import { validateConfig, validateApiKey } from "./shared/config/validator.mjs";
+
+const logger = createLogger("CRAWLER-SCRIPT");
 
 async function downloadDocuments(gemiIds, outputDir) {
   try {
+    // Validate configuration first
+    validateConfig();
+    const apiResult = await validateApiKey();
+    if (!apiResult.ok) {
+      logger.error(`API validation failed: ${apiResult.reason}`);
+      throw new Error(`API validation failed: ${apiResult.reason}`);
+    }
+
+    logger.info(`Starting download for ${gemiIds.length} companies`);
     const results = await runCrawlerForGemiIds(gemiIds, outputDir);
-    console.log("Download results:", results);
+    logger.info("Download completed successfully");
     return results;
   } catch (error) {
-    console.error("Download failed:", error);
+    logger.error("Download failed", error);
     throw error;
   }
 }
@@ -131,13 +144,50 @@ npm start crawler
 
 ## Error Handling
 
-The crawler handles common issues automatically:
+The crawler handles common issues automatically with proper logging:
+
+```javascript
+import { createLogger } from "./shared/logging/index.mjs";
+import {
+  DocumentDownloadError,
+  BrowserAutomationError,
+} from "./shared/errors/index.mjs";
+
+const logger = createLogger("CRAWLER-ERROR-HANDLER");
+
+// Example error handling in crawler operations
+async function safeDownload(url, retries = 3) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      logger.debug(`Download attempt ${attempt}/${retries} for ${url}`);
+      const result = await downloadFile(url);
+      logger.info(`✅ Successfully downloaded ${url}`);
+      return result;
+    } catch (error) {
+      logger.warn(`⚠️ Attempt ${attempt} failed for ${url}: ${error.message}`);
+
+      if (attempt === retries) {
+        logger.error(`❌ All ${retries} attempts failed for ${url}`, error);
+        throw new DocumentDownloadError(
+          `Failed after ${retries} attempts`,
+          url
+        );
+      }
+
+      // Exponential backoff
+      await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
+    }
+  }
+}
+```
+
+Built-in error handling includes:
 
 - Network timeouts with retry logic and enhanced reliability
 - Rate limiting with exponential backoff
-- Invalid document formats (skipped)
-- Browser crashes (automatic restart)
-- Failed downloads with robust retry mechanism
+- Invalid document formats (skipped with logging)
+- Browser crashes (automatic restart with error tracking)
+- Failed downloads with robust retry mechanism and detailed logging
 
 ## Tips
 

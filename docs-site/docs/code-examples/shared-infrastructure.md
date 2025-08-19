@@ -77,13 +77,18 @@ logger.error("Error messages", optionalErrorObject);
 ```javascript
 import { createLogger } from "../../shared/logging/index.mjs";
 import { progressManager } from "../../shared/progress/index.mjs";
+import { setGlobalProgressManager } from "../../shared/logging/index.mjs";
 
+// Setup logging with progress integration
+setGlobalProgressManager(progressManager);
 const logger = createLogger("FILE-PROCESSOR");
 
 async function processFiles(files) {
   logger.info(`Starting to process ${files.length} files`);
 
-  const bar = progressManager.createBar(files.length);
+  const progressBar = progressManager.createBar(files.length, {
+    format: "Processing |{bar}| {percentage}% | {value}/{total} | {status}",
+  });
 
   for (let i = 0; i < files.length; i++) {
     // These logs are automatically buffered during progress
@@ -132,11 +137,14 @@ progressManager.stop();
 ```javascript
 import { progressManager } from "../../shared/progress/index.mjs";
 import { createLogger } from "../../shared/logging/index.mjs";
+import { setGlobalProgressManager } from "../../shared/logging/index.mjs";
 
+// Setup progress-aware logging
+setGlobalProgressManager(progressManager);
 const logger = createLogger("DOWNLOADER");
 
 async function downloadFiles(urls) {
-  const bar = progressManager.createBar(urls.length, {
+  const progressBar = progressManager.createBar(urls.length, {
     format: "Downloading |{bar}| {percentage}% | {value}/{total} | {status}",
     barCompleteChar: "█",
     barIncompleteChar: "░",
@@ -145,17 +153,16 @@ async function downloadFiles(urls) {
   for (let i = 0; i < urls.length; i++) {
     try {
       await downloadFile(urls[i]);
+      logger.info(`✅ Downloaded ${urls[i]}`); // Automatically buffered during progress
       progressManager.update(i + 1, `Downloaded ${urls[i]}`);
     } catch (error) {
-      // Show error immediately without disrupting progress bar
-      progressManager.showError(
-        `Failed to download ${urls[i]}: ${error.message}`
-      );
+      // Errors bypass buffering and show immediately
+      logger.error(`❌ Failed to download ${urls[i]}`, error);
       progressManager.update(i + 1, `Failed: ${urls[i]}`);
     }
   }
 
-  progressManager.stop();
+  progressManager.stop(); // Flushes all buffered logs
 }
 ```
 
@@ -196,13 +203,19 @@ const logger = createLogger("DOWNLOADER");
 
 async function downloadDocument(url) {
   try {
+    logger.debug(`Attempting to download: ${url}`);
     const response = await fetch(url);
+
     if (!response.ok) {
-      throw new DocumentDownloadError(
+      const error = new DocumentDownloadError(
         `HTTP ${response.status}: ${response.statusText}`,
         url
       );
+      logger.error(`Download failed for ${url}`, error);
+      throw error;
     }
+
+    logger.info(`✅ Successfully downloaded ${url}`);
     return await response.blob();
   } catch (error) {
     if (error instanceof DocumentDownloadError) {
@@ -210,7 +223,9 @@ async function downloadDocument(url) {
       throw error; // Re-throw with context preserved
     } else {
       // Convert unknown errors to structured errors
-      throw new DocumentDownloadError(error.message, url);
+      const structuredError = new DocumentDownloadError(error.message, url);
+      logger.error(`Unexpected error during download`, structuredError);
+      throw structuredError;
     }
   }
 }
@@ -238,6 +253,7 @@ async function initializeApplication() {
   try {
     validateConfig();
   } catch (error) {
+    // Use console.error for initialization errors before logger is set up
     console.error(`❌ Configuration Error: ${error.message}`);
     process.exit(1);
   }
@@ -256,6 +272,10 @@ async function initializeApplication() {
   logger.info("Application initialized successfully");
   logger.info(`Using model: ${config.api.gemini.modelName}`);
   logger.info(`Output directory: ${config.processing.outputDir}`);
+
+  if (apiResult.warning) {
+    logger.warn(`API Warning: ${apiResult.warning}`);
+  }
 
   return { logger, config };
 }

@@ -45,9 +45,9 @@ const sidebars = {
       label: "GSoC",
       items: [
         {
-          type: "category",
+          type: "doc",
+          id: "gsoc/2025/overview",
           label: "2025",
-          items: ["gsoc/2025/overview"],
         },
       ],
     },

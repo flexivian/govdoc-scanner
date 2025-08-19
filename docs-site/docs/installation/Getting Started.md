@@ -76,6 +76,8 @@ npm start govdoc -- --company-random 10
 npm start govdoc -- --help
 ```
 
+If you prefer to run each step separately(crawler -> scanner), make sure to use `LOG_LEVEL=DEBUG` for detailed output when running the separate apps:
+
 ### Crawler
 
 ```bash
@@ -128,3 +130,4 @@ The metadata file includes:
 - **API Key Issues**: Ensure valid Gemini API key in `.env` file
 - **Browser Issues**: Run `npx playwright install chromium`
 - **Permissions**: Check write access to output directories
+- **Debug Mode**: Use `LOG_LEVEL=DEBUG` environment variable for detailed logging and troubleshooting
