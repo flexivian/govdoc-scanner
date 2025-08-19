@@ -299,8 +299,7 @@ async function fetchCompanyDocuments(context, gemiId, downloadPath) {
       return { success: true, downloadDir };
     }
   } catch (error) {
-    // Use a simpler warning during progress to avoid terminal interference
-    logger.warn(`Processing failed for GEMI ID ${gemiId}: ${error.message}`);
+    logger.error(`Processing failed for GEMI ID ${gemiId}: ${error.message}`);
     // Map common crawler error scenarios to stable codes
     let code = error.code || "crawl-error";
     if (!code) {
