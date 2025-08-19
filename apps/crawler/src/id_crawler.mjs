@@ -143,7 +143,7 @@ async function extractDownloadLinks(html, downloadDir) {
         const remoteFileHash = await calculateRemoteFileHash(fullUrl);
 
         if (remoteFileHash && existingFileHash === remoteFileHash) {
-          logger.debug(
+          logger.info(
             `Skipping ${path.basename(existingFilePath)} - content is identical (MD5: ${existingFileHash})`
           );
           shouldSkip = true;
