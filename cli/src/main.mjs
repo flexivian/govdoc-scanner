@@ -9,7 +9,11 @@ import {
 } from "./prompts.mjs";
 import { loadInputFile, writeOutput, getRandomCompanies } from "./utils.mjs";
 import { processCompanies } from "./processor.mjs";
-import { validateApiKeyOnline } from "../../apps/doc-scanner/src/gemini-config.mjs";
+import {
+  validateConfig,
+  validateApiKey,
+} from "../../shared/config/validator.mjs";
+
 // Map failure codes to concise messages for summary listing
 function mapFailureCodeToMessage(code) {
   switch (code) {
@@ -121,10 +125,19 @@ async function main() {
     process.exit(0);
   }
 
+  // Validate configuration at startup
+  try {
+    validateConfig();
+    console.log("✅ Configuration validated successfully");
+  } catch (error) {
+    console.error(`❌ Configuration Error: ${error.message}`);
+    process.exit(1);
+  }
+
   // Check if any command line arguments were provided
   const hasArgs = args.input || args.companyRandom !== null;
   // Early API key validation
-  const online = await validateApiKeyOnline();
+  const online = await validateApiKey();
   if (!online.ok) {
     console.error(`\n❌ Invalid API key: ${online.reason}`);
     process.exit(1);

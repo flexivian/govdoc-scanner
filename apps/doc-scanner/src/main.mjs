@@ -3,7 +3,8 @@ import path from "path";
 import readline from "readline";
 import { fileURLToPath } from "url";
 
-import { getMetadataModel, validateApiKeyOnline } from "./gemini-config.mjs";
+import { getMetadataModel } from "./gemini-config.mjs";
+import { validateApiKey } from "../../../shared/config/validator.mjs";
 import { processCompanyFiles } from "./processing-logic.mjs";
 import { checkExistingMetadata } from "./metadata-checker.mjs";
 import { exit } from "process";
@@ -63,7 +64,7 @@ async function main() {
   });
 
   try {
-    const online = await validateApiKeyOnline();
+    const online = await validateApiKey();
     if (!online.ok) {
       console.error(`\n❌ Invalid API key: ${online.reason}`);
       rl.close();

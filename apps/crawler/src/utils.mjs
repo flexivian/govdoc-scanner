@@ -3,15 +3,12 @@ import axios from "axios";
 import mime from "mime-types";
 import path from "path";
 import fs from "fs";
-
-// Default HTTP headers for requests
-export const DEFAULT_USER_AGENT =
-  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36";
+import { config } from "../../../shared/config/index.mjs";
 
 // Create common HTTP headers
 export function createHttpHeaders(referer = null) {
   return {
-    "User-Agent": DEFAULT_USER_AGENT,
+    "User-Agent": config.crawler.userAgent,
     ...(referer && { Referer: referer }),
   };
 }
@@ -25,7 +22,7 @@ export function calculateHash(buffer) {
 
 // Download file content as buffer from remote URL
 export async function downloadFileBuffer(url, options = {}) {
-  const { userAgent = DEFAULT_USER_AGENT, referer, timeout = 120000 } = options;
+  const { referer, timeout = config.crawler.downloadTimeoutMs } = options;
 
   const response = await axios({
     method: "GET",

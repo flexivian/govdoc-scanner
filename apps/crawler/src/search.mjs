@@ -2,11 +2,12 @@ import { chromium } from "playwright";
 import { existsSync, rmSync } from "fs";
 import fs from "fs";
 import path from "path";
-import { DEFAULT_USER_AGENT, isValidGemiId } from "./utils.mjs";
+import { config } from "../../../shared/config/index.mjs";
+import { isValidGemiId } from "./utils.mjs";
 
 // Configs
 const USER_DATA_DIR = "./playwright_profile";
-const URL = "https://publicity.businessportal.gr/";
+const URL = config.crawler.baseUrl;
 
 function parseArgs() {
   const args = process.argv.slice(2);
@@ -49,7 +50,7 @@ async function main() {
 
   let browser;
   try {
-    browser = await chromium.launch({ headless: true });
+    browser = await chromium.launch({ headless: config.crawler.headless });
   } catch (e) {
     const errPayload = {
       code: "browser-launch-failed",
@@ -59,7 +60,7 @@ async function main() {
     process.exit(1);
   }
   const context = await browser.newContext({
-    userAgent: DEFAULT_USER_AGENT,
+    userAgent: config.crawler.userAgent,
   });
   const page = await context.newPage();
 

@@ -4,6 +4,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import axios from "axios";
+import { config } from "../../../shared/config/index.mjs";
 import {
   calculateHash,
   downloadFileBuffer,
@@ -14,16 +15,19 @@ import {
   isValidGemiId,
   findExistingFileWithExtensions,
   createSafeFilename,
-  DEFAULT_USER_AGENT,
 } from "./utils.mjs";
 
 // ES Module compatible __dirname
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const BASE_URL = "https://publicity.businessportal.gr";
-const PAGE_LOAD_TIMEOUT_IN_MILLISECONDS = 60000;
-const DOWNLOAD_TIMEOUT_AXIOS = 120000;
+// Import crawler configuration from centralized config
+const {
+  baseUrl: BASE_URL,
+  pageLoadTimeoutMs: PAGE_LOAD_TIMEOUT_IN_MILLISECONDS,
+  downloadTimeoutMs: DOWNLOAD_TIMEOUT_AXIOS,
+  userAgent: USER_AGENT,
+} = config.crawler;
 
 // Calculate MD5 hash of a file
 function calculateFileHash(filePath) {
@@ -318,7 +322,7 @@ export async function runCrawlerForGemiIds(gemiIds, outputBaseDir) {
   try {
     try {
       browser = await chromium.launch({
-        headless: true,
+        headless: config.crawler.headless,
         args: [
           "--no-sandbox",
           "--disable-setuid-sandbox",
@@ -334,7 +338,7 @@ export async function runCrawlerForGemiIds(gemiIds, outputBaseDir) {
     }
 
     const context = await browser.newContext({
-      userAgent: DEFAULT_USER_AGENT,
+      userAgent: USER_AGENT,
     });
 
     for (const [index, gemiId] of gemiIds.entries()) {
