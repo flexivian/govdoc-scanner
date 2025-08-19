@@ -143,7 +143,7 @@ async function extractDownloadLinks(html, downloadDir) {
         const remoteFileHash = await calculateRemoteFileHash(fullUrl);
 
         if (remoteFileHash && existingFileHash === remoteFileHash) {
-          logger.debug(
+          logger.info(
             `Skipping ${path.basename(existingFilePath)} - content is identical (MD5: ${existingFileHash})`
           );
           shouldSkip = true;
@@ -299,8 +299,7 @@ async function fetchCompanyDocuments(context, gemiId, downloadPath) {
       return { success: true, downloadDir };
     }
   } catch (error) {
-    // Use a simpler warning during progress to avoid terminal interference
-    logger.warn(`Processing failed for GEMI ID ${gemiId}: ${error.message}`);
+    logger.error(`Processing failed for GEMI ID ${gemiId}: ${error.message}`);
     // Map common crawler error scenarios to stable codes
     let code = error.code || "crawl-error";
     if (!code) {
