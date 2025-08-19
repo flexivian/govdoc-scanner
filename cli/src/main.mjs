@@ -294,7 +294,7 @@ async function runInteractiveMode() {
         process.exit(1);
     }
 
-    // 3. Process the companies (confirmation removed)
+    // 3. Process the companies
     console.log(`\n🚀 Starting processing of ${gemiIds.length} companies...\n`);
 
     const outputRoot = path.join(projectRoot, "output");

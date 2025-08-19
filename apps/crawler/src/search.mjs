@@ -4,6 +4,7 @@ import fs from "fs";
 import path from "path";
 import { config } from "../../../shared/config/index.mjs";
 import { createLogger } from "../../../shared/logging/index.mjs";
+import { isValidGemiId } from "./utils.mjs";
 
 const logger = createLogger("SEARCH");
 
@@ -70,10 +71,10 @@ async function main() {
     // Navigate to site
     try {
       await page.goto(URL, { waitUntil: "domcontentloaded", timeout: 30000 });
-      console.log(`Navigated to ${URL}`);
-      console.log("Waiting for reCAPTCHA badge...");
+      logger.info(`Navigated to ${URL}`);
+      logger.debug("Waiting for reCAPTCHA badge...");
       await page.waitForSelector("div.grecaptcha-badge", { timeout: 20000 });
-      console.log("Page appears to be fully ready.");
+      logger.info("Page appears to be fully ready.");
     } catch (e) {
       const errPayload = {
         code: "site-navigation-timeout",
@@ -92,8 +93,8 @@ async function main() {
     await performSearch(page, searchTerm);
     const allResults = await scrapeAllPages(page);
 
-    console.log("\nFinal Search Results:");
-    console.log(
+    logger.info("\nFinal Search Results:");
+    logger.info(
       `\nSuccessfully scraped a total of ${allResults.length} companies from all pages.`
     );
 
@@ -102,7 +103,7 @@ async function main() {
 
     fs.writeFileSync(filePath, "", "utf-8"); // Clear file first
     fs.writeFileSync(filePath, allResults.join("\n"), "utf-8");
-    console.log("Results written to ids.txt");
+    logger.info("Results written to ids.txt");
   } catch (e) {
     if (e && e.code) {
       // Already emitted structured error earlier; just ensure non-zero exit
@@ -115,14 +116,14 @@ async function main() {
     console.error("__SEARCH_ERROR__" + JSON.stringify(errPayload));
     process.exit(1);
   } finally {
-    console.log("Closing browser.");
+    logger.debug("Closing browser.");
     await browser.close();
   }
 }
 
 // Fills the search box and triggers the search
 async function performSearch(page, searchTerm) {
-  console.log(`Performing search for: "${searchTerm}"`);
+  logger.info(`Performing search for: "${searchTerm}"`);
   const searchInputSelector = "#AutocompleteSearchItem";
 
   await page.waitForSelector(searchInputSelector);
@@ -153,16 +154,16 @@ async function performSearch(page, searchTerm) {
     err.code = "no-search-results";
     throw err;
   } else if (result === "results") {
-    console.log("Initial results loaded.");
+    logger.debug("Initial results loaded.");
   } else {
-    console.log("Timed out waiting for search results.");
+    logger.error("Timed out waiting for search results.");
     throw new Error("Timed out waiting for search results.");
   }
 }
 
 // Applies filter values based on provided config
 async function equipFilters(page, filters) {
-  console.log("Equipping filters...");
+  logger.debug("Equipping filters...");
   const filterButtonSelector =
     "button.MuiButtonBase-root.MuiButton-root.MuiButton-textPrimary";
 
@@ -262,20 +263,22 @@ async function equipFilters(page, filters) {
 
 // Loops through result pages and extracts all company IDs
 async function scrapeAllPages(page) {
-  console.log("\nStarting multi-page scrape...");
+  logger.info("\nStarting multi-page scrape...");
   const allGemiNumbers = [];
   let pageNum = 1;
 
   const nextButtonSelector = 'button[aria-label="Go to next page"]';
 
   while (true) {
-    console.log(`--- Scraping page ${pageNum} ---`);
+    logger.debug(`--- Scraping page ${pageNum} ---`);
     await page.waitForSelector("div.MuiPaper-root.MuiCard-root", {
       timeout: 10000,
     });
 
     const currentPageResults = await extractResults(page);
-    console.log(`    Found ${currentPageResults.length} results on this page.`);
+    logger.debug(
+      `    Found ${currentPageResults.length} results on this page.`
+    );
     allGemiNumbers.push(...currentPageResults);
 
     const nextButton = page.locator(nextButtonSelector).first();
@@ -296,7 +299,7 @@ async function scrapeAllPages(page) {
 
 // Extracts GEMI numbers from cards on the current page
 async function extractResults(page) {
-  console.log("Extracting GEMI numbers from current page...");
+  logger.debug("Extracting GEMI numbers from current page...");
   const cardSelector = "div.MuiPaper-root.MuiCard-root";
 
   const cardLocators = await page.locator(cardSelector).all();
@@ -308,7 +311,10 @@ async function extractResults(page) {
       const href = await linkElement.first().getAttribute("href");
       if (href) {
         const gemiNumber = href.split("/").pop();
-        gemiNumbers.push(gemiNumber.trim());
+        const cleanGemiNumber = gemiNumber.trim();
+        if (isValidGemiId(cleanGemiNumber)) {
+          gemiNumbers.push(cleanGemiNumber);
+        }
       }
     }
   }

@@ -223,7 +223,7 @@ apps/doc-scanner/src/data/output/123204604000/
 
 Each processed company produces comprehensive JSON with enhanced schema:
 
-````json
+```json
 {
   "123204604000": {
     "company-name": "ALPHA BANK AE",
@@ -255,6 +255,7 @@ Each processed company produces comprehensive JSON with enhanced schema:
     }
   }
 }
+```
 
 ## Configuration
 
@@ -281,7 +282,28 @@ export function getCustomModel(options = {}) {
     },
   });
 }
-````
+```
+
+### Optimized Model Parameters
+
+The doc-scanner uses optimized parameters for structured data extraction to ensure consistent, deterministic output:
+
+```javascript
+const config = {
+  responseMimeType: "application/json",
+  responseSchema: CompanyEssentialMetadata,
+
+  temperature: 0.1,
+  topK: 1,
+  topP: 0.8,
+};
+```
+
+**Parameter Explanations:**
+
+- **`temperature: 0.1`**: Controls randomness in token selection during response generation. Lower temperatures (0.0-0.3) are ideal for structured data extraction as they produce more deterministic, consistent outputs. A temperature of 0 is completely deterministic, always selecting the highest probability token.
+- **`topK: 1`**: Limits token selection to the top K most probable tokens. Setting `topK: 1` implements greedy decoding, always selecting the single most probable token at each step, ensuring maximum consistency for structured outputs.
+- **`topP: 0.8`**: Uses nucleus sampling - selects from the smallest set of tokens whose cumulative probability exceeds the topP threshold. For example, if tokens have probabilities [0.4, 0.3, 0.2, 0.1], `topP: 0.8` would consider only the first three tokens (0.4+0.3+0.1=0.8), excluding the least probable option for more focused responses.
 
 ### Environment Configuration
 

@@ -3,9 +3,6 @@ node_modules/
 
 .env
 **/.env
-# Docusaurus
-docs-site/.docusaurus/
-docs-site/build/
 
 # Docusaurus
 docs-site/.docusaurus/

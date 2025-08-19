@@ -108,5 +108,3 @@ export async function promptRandomCount() {
 
   return count;
 }
-
-// Confirmation removed – processing begins immediately after input selection.

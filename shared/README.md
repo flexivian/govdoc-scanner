@@ -19,6 +19,16 @@ shared/
 
 ## Environment Configuration
 
+The shared configuration system loads environment variables from a `.env` file in your project root.
+
+Create a `.env` file in your project root directory and add your configuration values. You can copy the provided `.env.example` file as a starting point:
+
+```bash
+cp .env.example .env
+```
+
+Then edit the `.env` file with your actual configuration values.
+
 ### Log Levels
 
 ```bash
