@@ -2,7 +2,13 @@ import fs from "fs/promises";
 import { spawn } from "child_process";
 import path from "path";
 import { fileURLToPath } from "url";
+import { createLogger } from "../../shared/logging/index.mjs";
+import {
+  FileProcessingError,
+  ValidationError,
+} from "../../shared/errors/index.mjs";
 
+const logger = createLogger("CLI-UTILS");
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -30,15 +36,27 @@ export async function loadInputFile(filePath) {
     }
 
     if (gemiIds.length === 0) {
-      throw new Error("No valid GEMI IDs found in input file");
+      throw new ValidationError(
+        "No valid GEMI IDs found in input file",
+        "gemi_ids"
+      );
     }
 
     return gemiIds.map(String);
   } catch (error) {
     if (error.code === "ENOENT") {
-      throw new Error(`Input file not found: ${filePath}`);
+      throw new FileProcessingError(
+        `Input file not found: ${filePath}`,
+        filePath
+      );
     }
-    throw new Error(`Error reading input file: ${error.message}`);
+    if (error instanceof ValidationError) {
+      throw error; // Re-throw validation errors as-is
+    }
+    throw new FileProcessingError(
+      `Error reading input file: ${error.message}`,
+      filePath
+    );
   }
 }
 
@@ -51,7 +69,7 @@ export async function writeOutput(companies, outputPath) {
   };
 
   await fs.writeFile(outputPath, JSON.stringify(output, null, 2), "utf-8");
-  console.log(`\nOutput written to: ${outputPath}`);
+  logger.info(`Output written to: ${outputPath}`);
 }
 
 /**
@@ -181,13 +199,11 @@ export async function getRandomCompanies(count) {
 
       return gemiIds;
     } catch (readError) {
-      console.warn(
-        `Warning: Could not read results file: ${readError.message}`
-      );
+      logger.warn(`Warning: Could not read results file: ${readError.message}`);
       return [];
     }
   } catch (error) {
-    console.error(`Error running search script: ${error.message}`);
+    logger.error(`Error running search script: ${error.message}`);
     // Re-throw with code so caller can differentiate
     throw error;
   }

@@ -1,5 +1,8 @@
 import fs from "fs";
 import path from "path";
+import { createLogger } from "../../../shared/logging/index.mjs";
+
+const logger = createLogger("METADATA-CHECKER");
 
 // Regex pattern to extract date from filename in YYYY-MM-DD format at the start
 const DATE_PREFIX_PATTERN = /^(\d{4}-\d{2}-\d{2})/;
@@ -86,7 +89,7 @@ export function checkExistingMetadata(gemiId, outputFolder, inputFiles) {
       reason: `Found ${newFiles.length} new file(s) to process: ${newFiles.join(", ")}`,
     };
   } catch (error) {
-    console.warn(`Error reading existing metadata: ${error.message}`);
+    logger.warn(`Error reading existing metadata: ${error.message}`);
     return {
       shouldProcess: true,
       filesToProcess: inputFiles,

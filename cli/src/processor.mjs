@@ -1,61 +1,20 @@
 import fs from "fs/promises";
 import path from "path";
-import cliProgress from "cli-progress";
 
 import { runCrawlerForGemiIds } from "../../apps/crawler/src/id_crawler.mjs";
 import { processCompanyFiles } from "../../apps/doc-scanner/src/processing-logic.mjs";
 import { getMetadataModel } from "../../apps/doc-scanner/src/gemini-config.mjs";
 import { checkExistingMetadata } from "../../apps/doc-scanner/src/metadata-checker.mjs";
+import {
+  createLogger,
+  setGlobalProgressManager,
+} from "../../shared/logging/index.mjs";
+import { progressManager } from "../../shared/progress/index.mjs";
+
+const logger = createLogger("CLI-PROCESSOR");
 
 /**
- * Global suppression state to handle parallel operations
- */
-let suppressionCount = 0;
-let originalConsole = null;
-
-/**
- * Start global output suppression (console methods only)
- */
-function startGlobalSuppression() {
-  if (suppressionCount === 0) {
-    // First suppression - store originals and suppress console methods only
-    originalConsole = {
-      log: console.log,
-      error: console.error,
-      warn: console.warn,
-      info: console.info,
-      debug: console.debug,
-    };
-
-    // Suppress only console methods, not stdout/stderr (to allow progress bar)
-    console.log = () => {};
-    console.error = () => {};
-    console.warn = () => {};
-    console.info = () => {};
-    console.debug = () => {};
-  }
-  suppressionCount++;
-}
-
-/**
- * End global output suppression
- */
-function endGlobalSuppression() {
-  suppressionCount--;
-  if (suppressionCount === 0) {
-    // Last suppression - restore originals
-    console.log = originalConsole.log;
-    console.error = originalConsole.error;
-    console.warn = originalConsole.warn;
-    console.info = originalConsole.info;
-    console.debug = originalConsole.debug;
-
-    originalConsole = null;
-  }
-}
-
-/**
- * Suppress console output while running doc-scanner
+ * Process company files with structured error handling
  */
 async function runDocScannerSilently(
   files,
@@ -64,8 +23,6 @@ async function runDocScannerSilently(
   gemiId,
   metadataModel
 ) {
-  startGlobalSuppression();
-
   try {
     return await processCompanyFiles(
       files,
@@ -74,21 +31,21 @@ async function runDocScannerSilently(
       gemiId,
       metadataModel
     );
-  } finally {
-    endGlobalSuppression();
+  } catch (error) {
+    // Don't log detailed errors during progress - they'll be shown in summary
+    throw error;
   }
 }
 
 /**
- * Suppress console output while running crawler
+ * Run crawler with structured error handling
  */
 async function runCrawlerSilently(gemiIds, outputRoot) {
-  startGlobalSuppression();
-
   try {
     return await runCrawlerForGemiIds(gemiIds, outputRoot);
-  } finally {
-    endGlobalSuppression();
+  } catch (error) {
+    // Don't log detailed errors during progress - they'll be shown in summary
+    throw error;
   }
 }
 
@@ -101,18 +58,17 @@ export async function processCompanies(gemiIds, outputRoot) {
   const failures = [];
   const noDocumentIds = [];
   let currentTotalOperations = gemiIds.length * 2; // crawl + potential scan each
+  const progressCounter = { value: 0 }; // Use object for shared reference
 
-  // Create progress bar for total operations (crawl + scan per company)
-  const totalOperations = gemiIds.length * 2;
-  const progressBar = new cliProgress.SingleBar(
-    {
-      format: "Progress |{bar}| {percentage}% | {value}/{total} operations",
-      etaBuffer: 0,
-    },
-    cliProgress.Presets.shades_classic
-  );
+  logger.info(`Starting processing of ${gemiIds.length} companies`);
 
-  progressBar.start(currentTotalOperations, 0);
+  // Set up progress-aware logging
+  setGlobalProgressManager(progressManager);
+
+  // Create progress bar using new progress manager
+  const progressBar = progressManager.createBar(currentTotalOperations, {
+    format: "Progress |{bar}| {percentage}% | {value}/{total} operations",
+  });
 
   // Process each GEMI ID serially for crawling, but start scanning immediately when ready
   for (const gemiId of gemiIds) {
@@ -132,7 +88,8 @@ export async function processCompanies(gemiIds, outputRoot) {
     try {
       // 1. Run crawler for this GEMI ID (serial)
       const crawlMap = await runCrawlerSilently([gemiId], outputRoot);
-      progressBar.increment(); // Crawl completed
+      progressCounter.value++;
+      progressManager.update(progressCounter.value, `Crawled ${gemiId}`); // Crawl completed
 
       // Structured crawl result expected
       const entry = crawlMap[gemiId];
@@ -149,7 +106,11 @@ export async function processCompanies(gemiIds, outputRoot) {
           message: crawlErrorMessage,
         });
         companies.push(result);
-        progressBar.increment(); // Skip scan when crawl fails
+        progressCounter.value++;
+        progressManager.update(
+          progressCounter.value,
+          `Skipped scan for ${gemiId} (crawl failed)`
+        ); // Skip scan when crawl fails
         continue;
       }
 
@@ -169,7 +130,11 @@ export async function processCompanies(gemiIds, outputRoot) {
         result["processing-status"] = "no-documents";
         noDocumentIds.push(gemiId);
         companies.push(result);
-        progressBar.increment(); // Skip scan - no files (we still count placeholder scan op)
+        progressCounter.value++;
+        progressManager.update(
+          progressCounter.value,
+          `No documents for ${gemiId}`
+        ); // Skip scan - no files (we still count placeholder scan op)
         continue;
       }
 
@@ -221,7 +186,11 @@ export async function processCompanies(gemiIds, outputRoot) {
         }
 
         companies.push(result);
-        progressBar.increment(); // Skip scan - already up to date
+        progressCounter.value++;
+        progressManager.update(
+          progressCounter.value,
+          `${gemiId} already up to date`
+        ); // Skip scan - already up to date
         continue;
       }
 
@@ -288,7 +257,8 @@ export async function processCompanies(gemiIds, outputRoot) {
             });
           }
 
-          progressBar.increment(); // Scan completed
+          progressCounter.value++;
+          progressManager.update(progressCounter.value, `Scanned ${gemiId}`); // Scan completed
           return result;
         })
         .catch((error) => {
@@ -298,13 +268,21 @@ export async function processCompanies(gemiIds, outputRoot) {
             code: "scan-failed",
             message: error?.message || "Scan failed",
           });
-          progressBar.increment(); // Scan failed
+          progressCounter.value++;
+          progressManager.update(
+            progressCounter.value,
+            `Scan failed for ${gemiId}`
+          ); // Scan failed
           return result;
         });
 
       scanJobs.push(scanJob);
     } catch (error) {
-      progressBar.increment(); // Crawl attempt completed (failed)
+      progressCounter.value++;
+      progressManager.update(
+        progressCounter.value,
+        `Crawl failed for ${gemiId}`
+      ); // Crawl attempt completed (failed)
       result["processing-status"] = "crawl-failed";
       const code = error?.code || "crawl-error";
       failures.push({
@@ -313,19 +291,6 @@ export async function processCompanies(gemiIds, outputRoot) {
         message: error?.message || "Crawl failed",
       });
       companies.push(result);
-      // Collapse reserved scan slot for this ID (remove one from total)
-      if (currentTotalOperations > progressBar.value) {
-        currentTotalOperations -= 1; // remove the unused scan step
-        try {
-          if (typeof progressBar.setTotal === "function") {
-            progressBar.setTotal(currentTotalOperations);
-          } else if (typeof progressBar.updateTotal === "function") {
-            progressBar.updateTotal(currentTotalOperations);
-          }
-        } catch (_) {
-          // ignore if library doesn't support dynamic total
-        }
-      }
     }
 
     // Continue to next crawler immediately (don't wait for scan to complete)
@@ -350,7 +315,10 @@ export async function processCompanies(gemiIds, outputRoot) {
     }
   }
 
-  progressBar.stop();
+  progressManager.stop();
+  logger.info(
+    `Processing completed. Success: ${companies.filter((c) => c["processing-status"] === "successful").length}/${companies.length}`
+  );
 
   // Calculate final stats based on processing-status of all companies
   const finalStats = {

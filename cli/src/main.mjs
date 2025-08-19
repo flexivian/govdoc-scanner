@@ -13,6 +13,10 @@ import {
   validateConfig,
   validateApiKey,
 } from "../../shared/config/validator.mjs";
+import { createLogger } from "../../shared/logging/index.mjs";
+import { progressManager } from "../../shared/progress/index.mjs";
+
+const logger = createLogger("CLI-MAIN");
 
 // Map failure codes to concise messages for summary listing
 function mapFailureCodeToMessage(code) {
@@ -154,25 +158,40 @@ async function main() {
 }
 
 /**
- * Run in command line mode with provided arguments
+ * Print processing summary with proper terminal cleanup
  */
-function printSummary(stats, failures, noDocs = []) {
+async function printSummary(stats, failures, noDocs = []) {
+  // Force stop and clear progress bar completely
+  progressManager.forceStop();
+
+  // Longer delay to ensure all async error logging is complete
+  await new Promise((resolve) => setTimeout(resolve, 300));
+
   const totalProcessed = stats.successful + stats.noDocuments + stats.failed;
-  console.log(`\n📊 Summary:`);
-  console.log(`  Total processed: ${totalProcessed}`);
-  console.log(`  Successfully scanned: ${stats.successful}`);
-  if (stats.noDocuments > 0)
-    console.log(`  No documents found: ${stats.noDocuments}`);
-  console.log(`  Failed: ${stats.failed}`);
+
+  // Clear any remaining terminal artifacts and start fresh
+  process.stdout.write(`\n\n📊 Summary:\n`);
+  process.stdout.write(`  Total processed: ${totalProcessed}\n`);
+  process.stdout.write(`  Successfully scanned: ${stats.successful}\n`);
+
+  if (stats.noDocuments > 0) {
+    process.stdout.write(`  No documents found: ${stats.noDocuments}\n`);
+  }
+
+  process.stdout.write(`  Failed: ${stats.failed}\n`);
+
   if (failures.length > 0) {
     const lines = failures.map(
       (f) => `    - ${f.gemiId} ${mapFailureCodeToMessage(f.code)}`
     );
-    console.log(lines.join("\n"));
+    process.stdout.write(lines.join("\n") + "\n");
   }
+
   if (noDocs.length > 0) {
-    console.log("  Companies with no documents:");
-    for (const id of noDocs) console.log(`    - ${id}`);
+    process.stdout.write("  Companies with no documents:\n");
+    for (const id of noDocs) {
+      process.stdout.write(`    - ${id}\n`);
+    }
   }
 }
 
@@ -215,14 +234,18 @@ async function runCommandLineMode(args) {
     const noDocs = result.noDocuments || [];
 
     // Write output and show summary
-    const outputFile = path.join(outputRoot, "govdoc-output.json");
-    await writeOutput(companies, outputFile);
+    if (stats.successful > 0) {
+      const outputFile = path.join(outputRoot, "govdoc-output.json");
+      await writeOutput(companies, outputFile);
+    }
 
     // Print summary using stats from processor
-    printSummary(stats, failures, noDocs);
+    await printSummary(stats, failures, noDocs);
 
-    console.log(`\n🎉 Processing completed.`);
+    process.stdout.write(`\n🎉 Processing completed.\n`);
   } catch (error) {
+    // Ensure progress bar is stopped on error
+    progressManager.forceStop();
     console.error(`\n❌ Error: ${error.message}`);
     process.exit(1);
   }
@@ -271,7 +294,7 @@ async function runInteractiveMode() {
         process.exit(1);
     }
 
-    // 3. Process the companies (confirmation removed)
+    // 3. Process the companies
     console.log(`\n🚀 Starting processing of ${gemiIds.length} companies...\n`);
 
     const outputRoot = path.join(projectRoot, "output");
@@ -288,10 +311,12 @@ async function runInteractiveMode() {
     }
 
     // Print summary using stats from processor
-    printSummary(stats, failures, noDocs);
+    await printSummary(stats, failures, noDocs);
 
-    console.log(`\n🎉 Processing completed.`);
+    process.stdout.write(`\n🎉 Processing completed.\n`);
   } catch (error) {
+    // Ensure progress bar is stopped on error
+    progressManager.forceStop();
     console.error(`\n❌ Error: ${error.message}`);
     process.exit(1);
   }
@@ -299,6 +324,8 @@ async function runInteractiveMode() {
 
 // Run the CLI
 main().catch((err) => {
+  // Ensure progress bar is stopped on unexpected error
+  progressManager.forceStop();
   console.error("Unexpected error:", err.message);
   process.exit(1);
 });

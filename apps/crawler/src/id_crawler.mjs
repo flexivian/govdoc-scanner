@@ -5,6 +5,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import axios from "axios";
 import { config } from "../../../shared/config/index.mjs";
+import { createLogger } from "../../../shared/logging/index.mjs";
 import {
   calculateHash,
   downloadFileBuffer,
@@ -16,6 +17,8 @@ import {
   findExistingFileWithExtensions,
   createSafeFilename,
 } from "./utils.mjs";
+
+const logger = createLogger("CRAWLER");
 
 // ES Module compatible __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -128,7 +131,7 @@ async function extractDownloadLinks(html, downloadDir) {
     const existingFilePath = findExistingFileWithExtensions(out);
 
     if (existingFilePath) {
-      console.log(
+      logger.info(
         `File ${path.basename(existingFilePath)} already exists, checking if content has changed...`
       );
 
@@ -140,24 +143,24 @@ async function extractDownloadLinks(html, downloadDir) {
         const remoteFileHash = await calculateRemoteFileHash(fullUrl);
 
         if (remoteFileHash && existingFileHash === remoteFileHash) {
-          console.log(
+          logger.info(
             `Skipping ${path.basename(existingFilePath)} - content is identical (MD5: ${existingFileHash})`
           );
           shouldSkip = true;
         } else if (remoteFileHash) {
-          console.log(
+          logger.info(
             `Content has changed for ${path.basename(existingFilePath)} - will re-download (Old MD5: ${existingFileHash}, New MD5: ${remoteFileHash})`
           );
           // Remove the old file so it can be replaced
           fs.unlinkSync(existingFilePath);
         } else {
-          console.log(
+          logger.warn(
             `Could not verify remote file hash for ${path.basename(existingFilePath)} - will skip to be safe`
           );
           shouldSkip = true;
         }
       } else {
-        console.log(
+        logger.warn(
           `Could not calculate hash for existing file ${path.basename(existingFilePath)} - will re-download`
         );
         // Remove the corrupted/unreadable file
@@ -189,21 +192,21 @@ async function downloadAll(documentLinks) {
         documentInfo.path
       );
       downloadedCount++;
-      console.log(
+      logger.info(
         `Downloaded: ${downloadedCount}/${documentLinks.length} - ${path.basename(actualPath)}`
       );
     } catch (err) {
-      console.error(
-        `\nFailed to download document from ${documentInfo.sourceUrl}: ${err.message}`
+      logger.error(
+        `Failed to download document from ${documentInfo.sourceUrl}`,
+        err
       );
       failedDownloads.push(documentInfo);
     }
   }
-  console.log(); // New line after progress
 
   // Retry failed downloads
   if (failedDownloads.length > 0) {
-    console.log(`\nRetrying ${failedDownloads.length} failed downloads...`);
+    logger.info(`Retrying ${failedDownloads.length} failed downloads...`);
     let retrySuccessCount = 0;
 
     for (let i = 0; i < failedDownloads.length; i++) {
@@ -217,12 +220,10 @@ async function downloadAll(documentLinks) {
         downloadedCount++;
         retrySuccessCount++;
       } catch (err) {
-        console.error(
-          `\n✗ Retry failed for ${documentInfo.sourceUrl}: ${err.message}`
-        );
+        logger.error(`Retry failed for ${documentInfo.sourceUrl}`, err);
       }
     }
-    console.log(
+    logger.info(
       `\nRetry completed: ${retrySuccessCount}/${failedDownloads.length} successful`
     );
   }
@@ -230,7 +231,7 @@ async function downloadAll(documentLinks) {
   const totalAttempted = documentLinks.length;
   const finalFailedCount = totalAttempted - downloadedCount;
   if (finalFailedCount > 0) {
-    console.log(`  Failed downloads: ${finalFailedCount}`);
+    logger.warn(`Failed downloads: ${finalFailedCount}`);
   }
 
   return downloadedCount;
@@ -288,17 +289,17 @@ async function fetchCompanyDocuments(context, gemiId, downloadPath) {
       if (!fs.existsSync(downloadDir)) {
         fs.mkdirSync(downloadDir, { recursive: true });
       }
-      console.log(
+      logger.info(
         `Found ${downloadLinks.length} Document(s). Saving to: ${downloadDir}`
       );
       await downloadAll(downloadLinks);
       return { success: true, downloadDir };
     } else {
-      console.log("No Documents found to download.");
+      logger.info("No Documents found to download.");
       return { success: true, downloadDir };
     }
   } catch (error) {
-    console.error(`Error processing GEMI ID ${gemiId}: ${error.message}`);
+    logger.error(`Processing failed for GEMI ID ${gemiId}: ${error.message}`);
     // Map common crawler error scenarios to stable codes
     let code = error.code || "crawl-error";
     if (!code) {
@@ -342,9 +343,7 @@ export async function runCrawlerForGemiIds(gemiIds, outputBaseDir) {
     });
 
     for (const [index, gemiId] of gemiIds.entries()) {
-      console.log(
-        `\n--- Processing ${index + 1}/${gemiIds.length}: ${gemiId} ---`
-      );
+      logger.info(`Processing ${index + 1}/${gemiIds.length}: ${gemiId}`);
 
       // Construct the final, desired download path
       const gemiDownloadPath = path.join(
@@ -371,7 +370,7 @@ export async function runCrawlerForGemiIds(gemiIds, outputBaseDir) {
       }
     }
   } catch (error) {
-    console.error("A critical error occurred during crawling:", error);
+    logger.error("A critical error occurred during crawling", error);
     // Re-throw to allow caller to categorize (e.g., browser-launch-failed)
     throw error;
   } finally {
@@ -391,14 +390,14 @@ async function main() {
   if (idIndex !== -1 && args[idIndex + 1]) {
     const gemiId = args[idIndex + 1].trim();
     if (!isValidGemiId(gemiId)) {
-      console.error("Invalid GEMI ID format. Please enter numbers only.");
+      logger.error("Invalid GEMI ID format. Please enter numbers only.");
       return;
     }
     gemiIds.push(gemiId);
   } else if (fileIndex !== -1 && args[fileIndex + 1]) {
     const filePath = args[fileIndex + 1];
     if (!fs.existsSync(filePath)) {
-      console.error(`Error: File not found at ${filePath}`);
+      logger.error(`Error: File not found at ${filePath}`);
       return;
     }
     try {
@@ -407,18 +406,18 @@ async function main() {
         .split("\n")
         .map((id) => id.trim())
         .filter((id) => isValidGemiId(id));
-      console.log(`Loaded ${gemiIds.length} valid GEMI IDs from ${filePath}`);
+      logger.info(`Loaded ${gemiIds.length} valid GEMI IDs from ${filePath}`);
     } catch (e) {
-      console.error(`Error reading or parsing ${filePath}:`, e.message);
+      logger.error(`Error reading or parsing ${filePath}`, e);
       return;
     }
   } else {
-    console.log("This script should be run via npm start.");
+    logger.info("This script should be run via npm start.");
     return;
   }
 
   if (gemiIds.length === 0) {
-    console.log("No valid GEMI IDs to process.");
+    logger.info("No valid GEMI IDs to process.");
     return;
   }
 
@@ -428,6 +427,6 @@ async function main() {
 // Check if the script is being run directly
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   main().catch((err) => {
-    console.error("An unexpected error occurred in main:", err.message);
+    logger.error("An unexpected error occurred in main", err);
   });
 }

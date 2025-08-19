@@ -9,6 +9,9 @@ import {
   getInitialExtractionPrompt,
   getMergeMetadataPrompt,
 } from "./prompts.mjs";
+import { createLogger } from "../../../shared/logging/index.mjs";
+
+const logger = createLogger("DOC-SCANNER-PROCESSING");
 
 const MIME_TYPE_TEXT_PLAIN = "text/plain";
 const MIME_TYPE_PDF = "application/pdf";
@@ -250,10 +253,10 @@ export async function processCompanyFiles(
         }
       }
 
-      console.log("Loaded existing metadata, processing new files only");
+      logger.debug("Loaded existing metadata, processing new files only");
     } catch (err) {
       // File doesn't exist or is invalid, start fresh
-      console.log("No existing final metadata found, starting fresh");
+      logger.debug("No existing final metadata found, starting fresh");
       hasExistingMetadata = false;
     }
 
@@ -271,7 +274,7 @@ export async function processCompanyFiles(
     for (let i = 0; i < sortedFiles.length; i++) {
       const fileName = sortedFiles[i];
       try {
-        console.log(`Processing: ${fileName} (${i + 1}/${sortedFiles.length})`);
+        logger.info(`Processing: ${fileName} (${i + 1}/${sortedFiles.length})`);
         const filePath = path.join(inputFolder, fileName);
 
         // Prepare file data for Gemini
@@ -319,9 +322,9 @@ export async function processCompanyFiles(
           companyName = cumulativeMetadata.company_name; // Company name may change
         }
 
-        console.log(`Successfully processed: ${fileName}`);
+        logger.info(`Successfully processed: ${fileName}`);
       } catch (err) {
-        console.error(`Error processing ${fileName}:`, err.message);
+        logger.error(`Error processing ${fileName}`, err);
       }
     }
 
@@ -354,7 +357,7 @@ export async function processCompanyFiles(
       );
     }
   } catch (err) {
-    console.error("Error in processCompanyFiles:", err);
+    logger.error("Error in processCompanyFiles", err);
     return {
       status: "error",
       error: err.message,
