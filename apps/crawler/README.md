@@ -45,12 +45,12 @@ The application operates in two ways:
       - Enter a single GEMI number to download its documents.
       - Use all the company IDs from the `ids.txt` file created in the previous step or by you.
       - The `ids.txt` should contain 1 GEMI number per line.
-    - The crawler will then process each company, visit its public page, and download all available PDF files.
+    - The crawler will then process each company, visit its public page, and download all available PDF/DOC/DOCX files with date prefixes when available.
 
 ## Output
 
 The tool generates outputs in two locations:
 
-- `ids.txt`: A plain text file created in the project root. It contains the list of GEMI IDs that matched your search criteria, with one ID per line.
+- `src/ids.txt`: A plain text file created in the crawler `src` directory. It contains the list of GEMI IDs that matched your search criteria, with one ID per line.
 
 - `src/downloads/{GEMI_ID}/`: For each company that is crawled, a folder named with its GEMI ID is created inside `src/downloads/`. All downloaded PDF documents for that company are saved in this folder.

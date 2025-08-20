@@ -107,6 +107,6 @@ The system includes intelligent processing optimization:
 
 The system generates a comprehensive metadata file:
 
-- **Location**: `/src/data/output/[GEMI_ID]/[GEMI_ID]_final_metadata.json`
+- **Location**: `apps/doc-scanner/src/data/output/[GEMI_ID]/[GEMI_ID]_final_metadata.json`
 - **Format**: Structured JSON with complete company information
 - **Content**: All extracted data merged chronologically with tracked changes history
