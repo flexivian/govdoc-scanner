@@ -42,17 +42,17 @@ Scan for these Greek section headers:
 ### STEP 3: DETERMINE ACTIVE STATUS WITH PRECISION
 
 **is_active = TRUE** when document shows:
-- ✅ "εκλέγεται" / "διορίζεται" / "συνεχίζει" (elected/appointed/continues)
-- ✅ "μετέχει στο εταιρικό κεφάλαιο" (participates in capital)
-- ✅ "αναλαμβάνει καθήκοντα" (assumes duties)
-- ✅ "παραμένει" / "εξακολουθεί" (remains/continues)
-- ✅ Has ownership percentage > 0%
+- "εκλέγεται" / "διορίζεται" / "συνεχίζει" (elected/appointed/continues)
+- "μετέχει στο εταιρικό κεφάλαιο" (participates in capital)
+- "αναλαμβάνει καθήκοντα" (assumes duties)
+- "παραμένει" / "εξακολουθεί" (remains/continues)
+- Has ownership percentage > 0%
 
 **is_active = FALSE** when document shows:
-- ❌ "αποχωρεί" / "παραιτείται" / "αντικαθίσταται" (leaves/resigns/replaced)
-- ❌ "μεταβιβάζει το σύνολο" (transfers all shares)
-- ❌ "παύει" / "λήγει η θητεία" (ceases/term expires)
-- ❌ Ownership reduced to 0%
+- "αποχωρεί" / "παραιτείται" / "αντικαθίσταται" (leaves/resigns/replaced)
+- "μεταβιβάζει το σύνολο" (transfers all shares)
+- "παύει" / "λήγει η θητεία" (ceases/term expires)
+- Ownership reduced to 0%
 
 ### STEP 4: ROLE CLASSIFICATION
 Use EXACT Greek terminology from document:
@@ -70,16 +70,20 @@ Search for these exact patterns:
 - "μετέχει στο εταιρικό κεφάλαιο με X ευρώ"
 - "εταιρικό μερίδιο X%"
 - "κεφάλαιο X,XX ευρώ"
+- "μερίδιο X%"
+- "μερίδα συμμετοχής X%"
+- "κατέβαλε ποσό X,XXX,XX Ευρώ"
 
-Format as: "X,XXX,XX Ευρώ / XX%" or just "XX%" if amount not specified.
+
+**IMPORTANT**: Format as: "X,XXX,XX Ευρώ / XX%" or just "XX%" if amount not specified.
 
 ## VALIDATION CHECKLIST
 Before finalizing each representative:
-1. ✓ Has explicit Greek corporate role (not service provider)
-2. ✓ Status determination is based on THIS document's actions
-3. ✓ Name format: "ΕΠΩΝΥΜΟ ΟΝΟΜΑ" (surname first, all caps)
-4. ✓ Capital share extracted verbatim from document
-5. ✓ Tax ID is 9-digit number (if mentioned)
+1. Has explicit Greek corporate role (not service provider)
+2. Status determination is based on THIS document's actions
+3. Name format: "ΕΠΩΝΥΜΟ ΟΝΟΜΑ" (surname first, all caps)
+4. Capital share extracted verbatim from document
+5. Tax ID is 9-digit number (if mentioned)
 
 ## EXTRACTION CONTEXT
 Document date: ${extractedDate || "Unknown"}
@@ -164,9 +168,16 @@ For each person in the new document:
 ### STEP 4: OWNERSHIP & CAPITAL TRACKING
 
 **Extract and update capital_share information:**
-- Look for exact percentages: "XX,XX%" or "XX%"
-- Look for capital amounts: "X.XXX,XX Ευρώ"
-- Combined format: "X.XXX,XX Ευρώ / XX%"
+Search for these patterns:
+- "ποσοστό στα κέρδη και στις ζημίες X%" 
+- "μετέχει στο εταιρικό κεφάλαιο με X ευρώ"
+- "εταιρικό μερίδιο X%"
+- "κεφάλαιο X,XX ευρώ"
+- "μερίδιο X%"
+- "μερίδα συμμετοχής X%"
+- "κατέβαλε ποσό X,XXX,XX Ευρώ"
+
+**IMPORTANT**: Format as: "X,XXX,XX Ευρώ / XX%" or just "XX%" if amount not specified.
 - **Rule**: If someone transfers ALL shares → set capital_share to null and is_active to false
 - **Rule**: If someone acquires shares → update capital_share and set is_active to true
 
@@ -181,7 +192,7 @@ For each person in the new document:
 
 ### STEP 6: TRACKED CHANGES GENERATION
 
-**Generate a concise summary of key changes** for the tracked_changes field:
+**Generate a concise summary of key changes** for the tracked_changes field ΙΝ ENGLISH:
 - Compare the NEW document data with the EXISTING metadata
 - **Include only significant changes:**
   - Representative appointments: "• [LASTNAME FIRSTNAME] entered the company as [ROLE]."
@@ -190,11 +201,11 @@ For each person in the new document:
   - Capital share transfers: "• [OLD_OWNER LASTNAME FIRSTNAME] transferred [AMOUNT/PERCENTAGE] to [NEW_OWNER LASTNAME FIRSTNAME]"
   - Address updates: "• Company address changed to [NEW_ADDRESS]"
   - Company name changes: "• Company name changed to [NEW_NAME]"
-  - Capital modifications: "• Share capital modified"
+  - Capital modifications: "• Share capital modified from [OLD_AMOUNT] to [NEW_AMOUNT]"
 
 **Format as bulleted list using Greek names and roles exactly as they appear.**
 **Example output:** "• ΠΑΠΑΔΟΠΟΥΛΟΣ ΙΩΑΝΝΗΣ appointed as Διαχειριστής • ΑΝΑΣΤΑΣΗΣ ΚΥΡΙΑΖΟΣ departed from the company and transfered 20% to ΠΑΠΑΔΟΠΟΥΛΟΥ ΜΑΡΙΑ"
-Do not add '\n' at the end of each bullet point.
+**IMPORTANT**: Do not add '\n' at the end of each bullet point.
 **Exclude minor changes** like document date updates or formatting corrections.
 
 ## MERGE EXECUTION STRATEGY

@@ -261,7 +261,7 @@ async function fetchCompanyDocuments(context, gemiId, downloadPath) {
     }
 
     try {
-      await page.waitForSelector("div#title", { timeout: 4000 });
+      await page.waitForSelector("#Basic1", { timeout: 4000 });
     } catch {
       // Browser loaded but the site content didn't render expected title in time
       const err = new Error("Site content did not load in time");
