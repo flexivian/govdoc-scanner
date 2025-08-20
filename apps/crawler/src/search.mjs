@@ -72,7 +72,7 @@ async function main() {
     try {
       await page.goto(URL, { waitUntil: "domcontentloaded", timeout: 30000 });
       logger.info(`Navigated to ${URL}`);
-      logger.debug("Waiting for reCAPTCHA badge...");
+      logger.info("Waiting for reCAPTCHA badge...");
       await page.waitForSelector("div.grecaptcha-badge", { timeout: 20000 });
       logger.info("Page appears to be fully ready.");
     } catch (e) {
