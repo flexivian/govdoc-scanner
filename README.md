@@ -1,5 +1,14 @@
 # govdoc-scanner
 
+[![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://flexivian.github.io/govdoc-scanner/)
+[![GitHub](https://img.shields.io/badge/GitHub-govdoc--scanner-green)](https://github.com/flexivian/govdoc-scanner)
+
+## 📚 Documentation
+
+**📖 [View Complete Documentation →](https://flexivian.github.io/govdoc-scanner/)**
+
+For detailed documentation, including setup guides, API references, contribution guidelines, and GSoC 2025 information, visit our comprehensive documentation site.
+
 ## Project Overview
 
 In Greece, vital public company data is often locked in behind multiple custom templated PDF files, making it challenging for citizens, researchers, and policymakers to access and analyze this information. The current state of these documents limits transparency and hinders efficient data use. The govdoc-scanner project seeks to bridge this gap by transforming these PDFs into a structured, searchable database, thereby democratizing access to important corporate information.
@@ -10,9 +19,9 @@ The govdoc-scanner is an open-source tool designed to convert unstructured [Γ.�
 
 The repository currently includes three main applications:
 
-- **doc-scanner**: Processes `.pdf`, `.doc` and `.docx` documents for a given GEMI company, extracting comprehensive metadata with chronological processing and intelligent representative tracking using Gemini 2.5 Flash.
+- **cli**: A unified command-line interface that orchestrates the complete workflow, combining crawling and scanning with interactive prompts and automated batch processing (recommended for most users).
+- **doc-scanner**: Processes `.pdf`, `.doc` and `.docx` documents for a given GEMI company, extracting comprehensive metadata with chronological processing and intelligent representative tracking using Gemini 2.5 Flash Lite.
 - **crawler**: Scrapes the GEMI portal to search for companies using advanced filters and downloads all available public documents with enhanced date extraction, intelligent file management, and robust retry mechanisms.
-- **cli**: A unified command-line interface that orchestrates the complete workflow, combining crawling and scanning with interactive prompts and automated batch processing.
 
 Optional integration:
 - **OpenSearch**: Index your results for search/analytics with a ready mapping template and CLI bulk push.
@@ -63,27 +72,27 @@ OPENSEARCH_REFRESH=false
 
 2. **Run the Tool** (choose one of the following)
 
-   **🚀 Most Common Usage - Interactive Workflow:**
+   **Most Common Usage - Interactive Workflow:**
 
    ```sh
    npm start govdoc
    ```
 
-   This runs an interactive CLI that guides you through the complete workflow.
+   This runs an interactive CLI that guides you through the complete workflow. Use `--` to pass args.
 
-   **🔍 Just Search & Download Documents:**
+   **Just Search & Download Documents:**
 
    ```sh
    npm start crawler
    ```
 
-   **📄 Just Process Existing Documents:**
+   **Just Process Existing Documents:**
 
    ```sh
    npm start scanner
    ```
 
-   **❓ Get Help:**
+   **Get Help:**
 
    ```sh
    npm start help
@@ -176,7 +185,7 @@ Docs: see `docs-site/docs/installation/OpenSearch.md` for end-to-end setup and q
 
 ### 3. Manual Workflow
 
-If you prefer to run each step separately:
+If you prefer to run each step separately, make sure to use `LOG_LEVEL=DEBUG` for detailed output when running the separate apps:
 
 **Step 1: Search & Download**
 
@@ -219,7 +228,7 @@ You can also run commands directly:
 - **Unified CLI Tool**: Complete end-to-end workflow with both interactive and command-line modes for different use cases and automation needs.
 - **Automated Document Downloading**: Bulk or single download of all public documents for any Greek company listed in GEMI with enhanced date extraction for proper filename organization.
 - **Advanced Company Search**: Filter by name, legal type, status, location, and more.
-- **Intelligent Metadata Extraction**: Uses Gemini 2.5 Flash for accurate extraction of company information, representative details, and ownership data from Greek legal documents.
+- **Intelligent Metadata Extraction**: Uses Gemini 2.5 Flash Lite for accurate extraction of company information, representative details, and ownership data from Greek legal documents.
 - **Chronological Processing**: Processes documents in date order to track company evolution and changes over time.
 - **Representative Tracking**: Accurately identifies company representatives, their active status, and ownership percentages with advanced duplicate prevention.
 - **Change Tracking**: Automatically summarizes significant changes between document versions, including role changes, ownership transfers, and address updates with intelligent processing optimization.

@@ -5,7 +5,7 @@
     "postinstall": "npx playwright install chromium",
     "start": "node run.js",
     "crawler": "node apps/crawler/src/ui.mjs",
-    "scanner": "node apps/doc-scanner/src/main.mjs", 
+    "scanner": "node apps/doc-scanner/src/main.mjs",
     "govdoc": "node cli/src/main.mjs"
   },
   "workspaces": [

@@ -2,10 +2,15 @@ import { chromium } from "playwright";
 import { existsSync, rmSync } from "fs";
 import fs from "fs";
 import path from "path";
+import { config } from "../../../shared/config/index.mjs";
+import { createLogger } from "../../../shared/logging/index.mjs";
+import { isValidGemiId } from "./utils.mjs";
+
+const logger = createLogger("SEARCH");
 
 // Configs
 const USER_DATA_DIR = "./playwright_profile";
-const URL = "https://publicity.businessportal.gr/";
+const URL = config.crawler.baseUrl;
 
 function parseArgs() {
   const args = process.argv.slice(2);
@@ -28,7 +33,7 @@ function parseArgs() {
     }
   }
   if (!searchTerm && Object.keys(filters).length === 0) {
-    console.error("You must provide at least a search term or one filter.");
+    logger.error("You must provide at least a search term or one filter.");
     process.exit(1);
   }
   return { searchTerm, filters };
@@ -37,32 +42,49 @@ function parseArgs() {
 async function main() {
   const { searchTerm, filters } = parseArgs();
 
-  console.log("Starting the search script...");
-  console.log(`Search Term: "${searchTerm}"`);
-  console.log("Applying Filters:", filters);
+  logger.info("Starting the search script...");
+  logger.info(`Search Term: "${searchTerm}"`);
+  logger.info("Applying Filters:", JSON.stringify(filters));
 
   // Remove old browser profile for a clean session
   if (existsSync(USER_DATA_DIR)) {
     rmSync(USER_DATA_DIR, { recursive: true, force: true });
   }
 
-  // Launch browser with custom viewport and user agent
-  const browser = await chromium.launch({ headless: true });
+  let browser;
+  try {
+    browser = await chromium.launch({ headless: config.crawler.headless });
+  } catch (e) {
+    const errPayload = {
+      code: "browser-launch-failed",
+      message: `Failed to launch browser: ${e.message}`,
+    };
+    console.error("__SEARCH_ERROR__" + JSON.stringify(errPayload));
+    process.exit(1);
+  }
   const context = await browser.newContext({
-    userAgent:
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36",
+    userAgent: config.crawler.userAgent,
   });
   const page = await context.newPage();
 
   try {
     // Navigate to site
-    await page.goto(URL, { waitUntil: "domcontentloaded" });
-    console.log(`Navigated to ${URL}`);
-
-    // Wait for the page to be fully initialized
-    console.log("Waiting for reCAPTCHA badge...");
-    await page.waitForSelector("div.grecaptcha-badge", { timeout: 20000 });
-    console.log("Page appears to be fully ready.");
+    try {
+      await page.goto(URL, { waitUntil: "domcontentloaded", timeout: 30000 });
+      logger.info(`Navigated to ${URL}`);
+      logger.info("Waiting for reCAPTCHA badge...");
+      await page.waitForSelector("div.grecaptcha-badge", { timeout: 20000 });
+      logger.info("Page appears to be fully ready.");
+    } catch (e) {
+      const errPayload = {
+        code: "site-navigation-timeout",
+        message: e?.message?.includes("reCAPTCHA")
+          ? "Site content did not load required elements in time"
+          : `Failed to navigate or load site: ${e.message}`,
+      };
+      console.error("__SEARCH_ERROR__" + JSON.stringify(errPayload));
+      process.exit(1);
+    }
 
     // Set filters and perform the search
     await equipFilters(page, filters);
@@ -71,8 +93,8 @@ async function main() {
     await performSearch(page, searchTerm);
     const allResults = await scrapeAllPages(page);
 
-    console.log("\nFinal Search Results:");
-    console.log(
+    logger.info("\nFinal Search Results:");
+    logger.info(
       `\nSuccessfully scraped a total of ${allResults.length} companies from all pages.`
     );
 
@@ -81,19 +103,27 @@ async function main() {
 
     fs.writeFileSync(filePath, "", "utf-8"); // Clear file first
     fs.writeFileSync(filePath, allResults.join("\n"), "utf-8");
-    console.log("Results written to ids.txt");
+    logger.info("Results written to ids.txt");
   } catch (e) {
-    console.error(`An error occurred in the script: ${e}`);
+    if (e && e.code) {
+      // Already emitted structured error earlier; just ensure non-zero exit
+      process.exit(1);
+    }
+    const errPayload = {
+      code: "search-error",
+      message: e?.message || String(e),
+    };
+    console.error("__SEARCH_ERROR__" + JSON.stringify(errPayload));
     process.exit(1);
   } finally {
-    console.log("Closing browser.");
+    logger.debug("Closing browser.");
     await browser.close();
   }
 }
 
 // Fills the search box and triggers the search
 async function performSearch(page, searchTerm) {
-  console.log(`Performing search for: "${searchTerm}"`);
+  logger.info(`Performing search for: "${searchTerm}"`);
   const searchInputSelector = "#AutocompleteSearchItem";
 
   await page.waitForSelector(searchInputSelector);
@@ -120,19 +150,20 @@ async function performSearch(page, searchTerm) {
   ]);
 
   if (result === "no-results") {
-    console.log("No results found with these filters/search term.");
-    throw new Error("No results found.");
+    const err = new Error("No results found.");
+    err.code = "no-search-results";
+    throw err;
   } else if (result === "results") {
-    console.log("Initial results loaded.");
+    logger.debug("Initial results loaded.");
   } else {
-    console.log("Timed out waiting for search results.");
+    logger.error("Timed out waiting for search results.");
     throw new Error("Timed out waiting for search results.");
   }
 }
 
 // Applies filter values based on provided config
 async function equipFilters(page, filters) {
-  console.log("Equipping filters...");
+  logger.debug("Equipping filters...");
   const filterButtonSelector =
     "button.MuiButtonBase-root.MuiButton-root.MuiButton-textPrimary";
 
@@ -232,20 +263,22 @@ async function equipFilters(page, filters) {
 
 // Loops through result pages and extracts all company IDs
 async function scrapeAllPages(page) {
-  console.log("\nStarting multi-page scrape...");
+  logger.info("\nStarting multi-page scrape...");
   const allGemiNumbers = [];
   let pageNum = 1;
 
   const nextButtonSelector = 'button[aria-label="Go to next page"]';
 
   while (true) {
-    console.log(`--- Scraping page ${pageNum} ---`);
+    logger.debug(`--- Scraping page ${pageNum} ---`);
     await page.waitForSelector("div.MuiPaper-root.MuiCard-root", {
       timeout: 10000,
     });
 
     const currentPageResults = await extractResults(page);
-    console.log(`    Found ${currentPageResults.length} results on this page.`);
+    logger.debug(
+      `    Found ${currentPageResults.length} results on this page.`
+    );
     allGemiNumbers.push(...currentPageResults);
 
     const nextButton = page.locator(nextButtonSelector).first();
@@ -266,7 +299,7 @@ async function scrapeAllPages(page) {
 
 // Extracts GEMI numbers from cards on the current page
 async function extractResults(page) {
-  console.log("Extracting GEMI numbers from current page...");
+  logger.debug("Extracting GEMI numbers from current page...");
   const cardSelector = "div.MuiPaper-root.MuiCard-root";
 
   const cardLocators = await page.locator(cardSelector).all();
@@ -278,7 +311,10 @@ async function extractResults(page) {
       const href = await linkElement.first().getAttribute("href");
       if (href) {
         const gemiNumber = href.split("/").pop();
-        gemiNumbers.push(gemiNumber.trim());
+        const cleanGemiNumber = gemiNumber.trim();
+        if (isValidGemiId(cleanGemiNumber)) {
+          gemiNumbers.push(cleanGemiNumber);
+        }
       }
     }
   }

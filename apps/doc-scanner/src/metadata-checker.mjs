@@ -1,6 +1,23 @@
 import fs from "fs";
 import path from "path";
+import { createLogger } from "../../../shared/logging/index.mjs";
 
+const logger = createLogger("METADATA-CHECKER");
+
+// Regex pattern to extract date from filename in YYYY-MM-DD format at the start
+const DATE_PREFIX_PATTERN = /^(\d{4}-\d{2}-\d{2})/;
+
+// Helper function to sort files by date (newest first)
+function sortFilesByDate(files) {
+  return files.slice().sort((a, b) => {
+    const dateA = a.match(DATE_PREFIX_PATTERN)?.[1];
+    const dateB = b.match(DATE_PREFIX_PATTERN)?.[1];
+    if (dateA && dateB) {
+      return new Date(dateB) - new Date(dateA); // Descending order (newest first)
+    }
+    return 0;
+  });
+}
 // Check if metadata already exists and determine if we need to process
 export function checkExistingMetadata(gemiId, outputFolder, inputFiles) {
   const metadataPath = path.resolve(
@@ -40,27 +57,11 @@ export function checkExistingMetadata(gemiId, outputFolder, inputFiles) {
     }
 
     // Sort input files by date and get the latest
-    const sortedInputFiles = inputFiles.slice().sort((a, b) => {
-      const dateA = a.match(/^(\d{4}-\d{2}-\d{2})/)?.[1];
-      const dateB = b.match(/^(\d{4}-\d{2}-\d{2})/)?.[1];
-      if (dateA && dateB) {
-        return new Date(dateB) - new Date(dateA); // Descending order
-      }
-      return 0;
-    });
-
+    const sortedInputFiles = sortFilesByDate(inputFiles);
     const latestInputFile = sortedInputFiles[0];
 
     // Sort tracked files by date and get the latest
-    const sortedTrackedFiles = trackedFiles.slice().sort((a, b) => {
-      const dateA = a.match(/^(\d{4}-\d{2}-\d{2})/)?.[1];
-      const dateB = b.match(/^(\d{4}-\d{2}-\d{2})/)?.[1];
-      if (dateA && dateB) {
-        return new Date(dateB) - new Date(dateA); // Descending order
-      }
-      return 0;
-    });
-
+    const sortedTrackedFiles = sortFilesByDate(trackedFiles);
     const latestTrackedFile = sortedTrackedFiles[0];
 
     if (latestInputFile === latestTrackedFile) {
@@ -88,7 +89,7 @@ export function checkExistingMetadata(gemiId, outputFolder, inputFiles) {
       reason: `Found ${newFiles.length} new file(s) to process: ${newFiles.join(", ")}`,
     };
   } catch (error) {
-    console.warn(`Error reading existing metadata: ${error.message}`);
+    logger.warn(`Error reading existing metadata: ${error.message}`);
     return {
       shouldProcess: true,
       filesToProcess: inputFiles,

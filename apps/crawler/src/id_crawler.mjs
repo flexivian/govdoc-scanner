@@ -4,15 +4,56 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import axios from "axios";
-import mime from "mime-types";
+import { config } from "../../../shared/config/index.mjs";
+import { createLogger } from "../../../shared/logging/index.mjs";
+import {
+  calculateHash,
+  downloadFileBuffer,
+  getFileExtensionFromHeaders,
+  createHttpHeaders,
+  parseDateToFilePrefix,
+  resolveFilenameConflict,
+  isValidGemiId,
+  findExistingFileWithExtensions,
+  createSafeFilename,
+} from "./utils.mjs";
+
+const logger = createLogger("CRAWLER");
 
 // ES Module compatible __dirname
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const BASE_URL = "https://publicity.businessportal.gr";
-const PAGE_LOAD_TIMEOUT_IN_MILLISECONDS = 60000;
-const DOWNLOAD_TIMEOUT_AXIOS = 120000;
+// Import crawler configuration from centralized config
+const {
+  baseUrl: BASE_URL,
+  pageLoadTimeoutMs: PAGE_LOAD_TIMEOUT_IN_MILLISECONDS,
+  downloadTimeoutMs: DOWNLOAD_TIMEOUT_AXIOS,
+  userAgent: USER_AGENT,
+} = config.crawler;
+
+// Calculate MD5 hash of a file
+function calculateFileHash(filePath) {
+  try {
+    const fileBuffer = fs.readFileSync(filePath);
+    return calculateHash(fileBuffer);
+  } catch (error) {
+    return null;
+  }
+}
+
+// Calculate MD5 hash of remote file content
+async function calculateRemoteFileHash(url) {
+  try {
+    const fileBuffer = await downloadFileBuffer(url, {
+      referer: BASE_URL,
+      timeout: DOWNLOAD_TIMEOUT_AXIOS,
+    });
+    return calculateHash(fileBuffer);
+  } catch (error) {
+    return null;
+  }
+}
 
 // Downloads a document using Axios
 async function downloadWithAxios(documentUrl, outputPath) {
@@ -21,53 +62,17 @@ async function downloadWithAxios(documentUrl, outputPath) {
       method: "GET",
       url: documentUrl,
       responseType: "stream",
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-        Referer: BASE_URL,
-      },
+      headers: createHttpHeaders(BASE_URL),
       timeout: DOWNLOAD_TIMEOUT_AXIOS,
     });
 
     // Determine extension from response headers if not already present
     let finalOutputPath = outputPath;
     if (!path.extname(outputPath)) {
-      const headers = response.headers;
-      let ext = "";
-
-      // Try Content-Disposition first
-      const cd = headers["content-disposition"];
-      if (cd) {
-        const m = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/.exec(cd);
-        if (m) {
-          ext = path.extname(m[1]).toLowerCase();
-        }
-      }
-
-      // Fallback to Content-Type
-      if (!ext && headers["content-type"]) {
-        const ctype = headers["content-type"].toLowerCase();
-        if (ctype.includes("pdf")) {
-          ext = ".pdf";
-        } else if (ctype.includes("msword")) {
-          ext = ".doc";
-        } else if (ctype.includes("openxmlformats")) {
-          ext = ".docx";
-        } else {
-          const guess = mime.extension(ctype);
-          if (guess) ext = "." + guess;
-        }
-      }
+      const ext = getFileExtensionFromHeaders(response.headers);
 
       if (ext) {
-        finalOutputPath = outputPath + ext;
-
-        // Check for conflicts with the new extension
-        let i = 1;
-        while (fs.existsSync(finalOutputPath)) {
-          const base = outputPath;
-          finalOutputPath = `${base}_(${i++})${ext}`;
-        }
+        finalOutputPath = resolveFilenameConflict(outputPath, ext);
       }
     }
 
@@ -105,41 +110,65 @@ async function extractDownloadLinks(html, downloadDir) {
     seen.add(rel);
 
     const fullUrl = BASE_URL + rel;
-    let name = rel.split("/").pop().split("?")[0] || `file_${seen.size}`;
+    let name = rel.split("/").pop() || `file_${seen.size}`;
 
     // Extract date from the table row containing this download link
-    let datePrefix = "";
     const $row = $(el).closest("tr");
+    let datePrefix = "";
+
     if ($row.length > 0) {
       const $firstCell = $row.find("td").first();
       const dateText = $firstCell.text().trim();
-      // Check if it matches DD/MM/YYYY format
-      const dateMatch = dateText.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-      if (dateMatch) {
-        // Convert DD/MM/YYYY to YYYY-MM-DD format for filename
-        const [, day, month, year] = dateMatch;
-        datePrefix = `${year}-${month}-${day}_`;
-      }
+      datePrefix = parseDateToFilePrefix(dateText);
     }
 
-    // Add date prefix to the filename if we found a date
-    const baseFileName = datePrefix + name;
+    // Create safe filename with date prefix
+    const baseFileName = createSafeFilename(name, datePrefix);
     let out = path.join(downloadDir, baseFileName);
 
-    // Skip if file already exists (check for common extensions)
-    const extensions = [".pdf", ".doc", ".docx"];
-    let fileExists = false;
-    for (const ext of extensions) {
-      if (fs.existsSync(out + ext)) {
-        console.log(
-          `Skipping ${path.basename(out + ext)} - file already exists`
+    // Check if file already exists and if content is the same (check for common extensions)
+    let shouldSkip = false;
+    const existingFilePath = findExistingFileWithExtensions(out);
+
+    if (existingFilePath) {
+      logger.info(
+        `File ${path.basename(existingFilePath)} already exists, checking if content has changed...`
+      );
+
+      // Calculate hash of existing file
+      const existingFileHash = calculateFileHash(existingFilePath);
+
+      if (existingFileHash) {
+        // Calculate hash of remote file
+        const remoteFileHash = await calculateRemoteFileHash(fullUrl);
+
+        if (remoteFileHash && existingFileHash === remoteFileHash) {
+          logger.info(
+            `Skipping ${path.basename(existingFilePath)} - content is identical (MD5: ${existingFileHash})`
+          );
+          shouldSkip = true;
+        } else if (remoteFileHash) {
+          logger.info(
+            `Content has changed for ${path.basename(existingFilePath)} - will re-download (Old MD5: ${existingFileHash}, New MD5: ${remoteFileHash})`
+          );
+          // Remove the old file so it can be replaced
+          fs.unlinkSync(existingFilePath);
+        } else {
+          logger.warn(
+            `Could not verify remote file hash for ${path.basename(existingFilePath)} - will skip to be safe`
+          );
+          shouldSkip = true;
+        }
+      } else {
+        logger.warn(
+          `Could not calculate hash for existing file ${path.basename(existingFilePath)} - will re-download`
         );
-        fileExists = true;
-        break;
+        // Remove the corrupted/unreadable file
+        fs.unlinkSync(existingFilePath);
       }
     }
 
-    if (fileExists) {
+    if (shouldSkip) {
       continue;
     }
 
@@ -163,21 +192,21 @@ async function downloadAll(documentLinks) {
         documentInfo.path
       );
       downloadedCount++;
-      console.log(
+      logger.info(
         `Downloaded: ${downloadedCount}/${documentLinks.length} - ${path.basename(actualPath)}`
       );
     } catch (err) {
-      console.error(
-        `\nFailed to download document from ${documentInfo.sourceUrl}: ${err.message}`
+      logger.error(
+        `Failed to download document from ${documentInfo.sourceUrl}`,
+        err
       );
       failedDownloads.push(documentInfo);
     }
   }
-  console.log(); // New line after progress
 
   // Retry failed downloads
   if (failedDownloads.length > 0) {
-    console.log(`\nRetrying ${failedDownloads.length} failed downloads...`);
+    logger.info(`Retrying ${failedDownloads.length} failed downloads...`);
     let retrySuccessCount = 0;
 
     for (let i = 0; i < failedDownloads.length; i++) {
@@ -191,12 +220,10 @@ async function downloadAll(documentLinks) {
         downloadedCount++;
         retrySuccessCount++;
       } catch (err) {
-        console.error(
-          `\n✗ Retry failed for ${documentInfo.sourceUrl}: ${err.message}`
-        );
+        logger.error(`Retry failed for ${documentInfo.sourceUrl}`, err);
       }
     }
-    console.log(
+    logger.info(
       `\nRetry completed: ${retrySuccessCount}/${failedDownloads.length} successful`
     );
   }
@@ -204,7 +231,7 @@ async function downloadAll(documentLinks) {
   const totalAttempted = documentLinks.length;
   const finalFailedCount = totalAttempted - downloadedCount;
   if (finalFailedCount > 0) {
-    console.log(`  Failed downloads: ${finalFailedCount}`);
+    logger.warn(`Failed downloads: ${finalFailedCount}`);
   }
 
   return downloadedCount;
@@ -226,14 +253,25 @@ async function fetchCompanyDocuments(context, gemiId, downloadPath) {
 
     // Check for "Not found" in the page content
     if (html.includes("Not found")) {
-      throw new Error(
+      const err = new Error(
         `Company with GEMI ID ${gemiId} not found. Please check the ID or try again later.`
       );
+      err.code = "company-not-found";
+      throw err;
+    }
+
+    try {
+      await page.waitForSelector("#Basic1", { timeout: 4000 });
+    } catch {
+      // Browser loaded but the site content didn't render expected title in time
+      const err = new Error("Site content did not load in time");
+      err.code = "site-navigation-timeout";
+      throw err;
     }
 
     try {
       // Wait for the page to load and the modification history to appear
-      await page.waitForSelector("div#ModificationHistory", { timeout: 2000 });
+      await page.waitForSelector("div#ModificationHistory", { timeout: 1000 });
     } catch {
       // If the modification history doesn't load:
       // No pdfs are available, so we can continue and find 0 or
@@ -251,15 +289,26 @@ async function fetchCompanyDocuments(context, gemiId, downloadPath) {
       if (!fs.existsSync(downloadDir)) {
         fs.mkdirSync(downloadDir, { recursive: true });
       }
-      console.log(
+      logger.info(
         `Found ${downloadLinks.length} Document(s). Saving to: ${downloadDir}`
       );
       await downloadAll(downloadLinks);
+      return { success: true, downloadDir };
     } else {
-      console.log("No Documents found to download.");
+      logger.info("No Documents found to download.");
+      return { success: true, downloadDir };
     }
   } catch (error) {
-    console.error(`Error processing GEMI ID ${gemiId}: ${error.message}`);
+    logger.error(`Processing failed for GEMI ID ${gemiId}: ${error.message}`);
+    // Map common crawler error scenarios to stable codes
+    let code = error.code || "crawl-error";
+    if (!code) {
+      const msg = String(error.message || "").toLowerCase();
+      if (error.name === "TimeoutError" || msg.includes("timeout")) {
+        code = "site-navigation-timeout"; // Browser loaded, site didn't load
+      }
+    }
+    return { success: false, errorCode: code, errorMessage: error.message };
   } finally {
     if (page) await page.close();
   }
@@ -272,26 +321,29 @@ export async function runCrawlerForGemiIds(gemiIds, outputBaseDir) {
   let browser = null;
 
   try {
-    browser = await chromium.launch({
-      headless: true,
-      args: [
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--disable-dev-shm-usage",
-        "--disable-accelerated-2d-canvas",
-        "--disable-gpu",
-      ],
-    });
+    try {
+      browser = await chromium.launch({
+        headless: config.crawler.headless,
+        args: [
+          "--no-sandbox",
+          "--disable-setuid-sandbox",
+          "--disable-dev-shm-usage",
+          "--disable-accelerated-2d-canvas",
+          "--disable-gpu",
+        ],
+      });
+    } catch (e) {
+      const err = new Error(`Failed to launch browser: ${e.message}`);
+      err.code = "browser-launch-failed";
+      throw err;
+    }
 
     const context = await browser.newContext({
-      userAgent:
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+      userAgent: USER_AGENT,
     });
 
     for (const [index, gemiId] of gemiIds.entries()) {
-      console.log(
-        `\n--- Processing ${index + 1}/${gemiIds.length}: ${gemiId} ---`
-      );
+      logger.info(`Processing ${index + 1}/${gemiIds.length}: ${gemiId}`);
 
       // Construct the final, desired download path
       const gemiDownloadPath = path.join(
@@ -301,11 +353,26 @@ export async function runCrawlerForGemiIds(gemiIds, outputBaseDir) {
       );
 
       // Pass the final path to the fetcher
-      await fetchCompanyDocuments(context, gemiId, gemiDownloadPath);
-      finalDownloadPaths[gemiId] = gemiDownloadPath;
+      const res = await fetchCompanyDocuments(
+        context,
+        gemiId,
+        gemiDownloadPath
+      );
+      if (res && res.success) {
+        finalDownloadPaths[gemiId] = { path: gemiDownloadPath, success: true };
+      } else {
+        finalDownloadPaths[gemiId] = {
+          path: gemiDownloadPath,
+          success: false,
+          errorCode: res?.errorCode || "crawl-error",
+          errorMessage: res?.errorMessage || "Unknown crawl error",
+        };
+      }
     }
   } catch (error) {
-    console.error("A critical error occurred during crawling:", error);
+    logger.error("A critical error occurred during crawling", error);
+    // Re-throw to allow caller to categorize (e.g., browser-launch-failed)
+    throw error;
   } finally {
     if (browser) await browser.close();
   }
@@ -322,15 +389,15 @@ async function main() {
 
   if (idIndex !== -1 && args[idIndex + 1]) {
     const gemiId = args[idIndex + 1].trim();
-    if (!/^\d+$/.test(gemiId)) {
-      console.error("Invalid GEMI ID format. Please enter numbers only.");
+    if (!isValidGemiId(gemiId)) {
+      logger.error("Invalid GEMI ID format. Please enter numbers only.");
       return;
     }
     gemiIds.push(gemiId);
   } else if (fileIndex !== -1 && args[fileIndex + 1]) {
     const filePath = args[fileIndex + 1];
     if (!fs.existsSync(filePath)) {
-      console.error(`Error: File not found at ${filePath}`);
+      logger.error(`Error: File not found at ${filePath}`);
       return;
     }
     try {
@@ -338,19 +405,19 @@ async function main() {
       gemiIds = fileContent
         .split("\n")
         .map((id) => id.trim())
-        .filter((id) => /^\d+$/.test(id));
-      console.log(`Loaded ${gemiIds.length} valid GEMI IDs from ${filePath}`);
+        .filter((id) => isValidGemiId(id));
+      logger.info(`Loaded ${gemiIds.length} valid GEMI IDs from ${filePath}`);
     } catch (e) {
-      console.error(`Error reading or parsing ${filePath}:`, e.message);
+      logger.error(`Error reading or parsing ${filePath}`, e);
       return;
     }
   } else {
-    console.log("This script should be run via npm start.");
+    logger.info("This script should be run via npm start.");
     return;
   }
 
   if (gemiIds.length === 0) {
-    console.log("No valid GEMI IDs to process.");
+    logger.info("No valid GEMI IDs to process.");
     return;
   }
 
@@ -360,6 +427,6 @@ async function main() {
 // Check if the script is being run directly
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   main().catch((err) => {
-    console.error("An unexpected error occurred in main:", err.message);
+    logger.error("An unexpected error occurred in main", err);
   });
 }

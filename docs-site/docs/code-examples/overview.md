@@ -2,11 +2,9 @@
 sidebar_position: 1
 ---
 
-# Code Examples Overview
+# CLI Examples
 
 This section provides simple examples for using the GovDoc Scanner CLI tool - the recommended way to use the project.
-
-## CLI Tool Examples
 
 The CLI tool provides the complete end-to-end workflow, combining crawling and document processing automatically with both interactive and command-line modes.
 
@@ -42,21 +40,54 @@ npm start govdoc -- --help
 
 ```javascript
 import { spawn } from "child_process";
+import { createLogger } from "./shared/logging/index.mjs";
+import { validateConfig, validateApiKey } from "./shared/config/validator.mjs";
 
-async function processCompanies(gemiIds) {
-  return new Promise((resolve, reject) => {
-    const govdoc = spawn("npm", [
-      "start",
-      "govdoc",
-      "--",
-      "--input",
-      "./ids.txt",
-    ]);
+const logger = createLogger("GOVDOC-INTEGRATION");
 
-    govdoc.on("close", (code) => {
-      code === 0 ? resolve() : reject(new Error(`Failed: ${code}`));
+async function processCompanies(inputFilePath) {
+  try {
+    // Validate configuration before starting
+    validateConfig();
+    const apiResult = await validateApiKey();
+    if (!apiResult.ok) {
+      logger.error(`API validation failed: ${apiResult.reason}`);
+      throw new Error(`API validation failed: ${apiResult.reason}`);
+    }
+
+    logger.info("Starting GovDoc processing...");
+
+    return new Promise((resolve, reject) => {
+      const govdoc = spawn("npm", [
+        "start",
+        "govdoc",
+        "--",
+        "--input",
+        inputFilePath, // JSON file with an array of GEMI IDs, e.g. ["152034008000","175175703000"]
+      ]);
+
+      govdoc.stdout.on("data", (data) => {
+        logger.debug(`GovDoc output: ${data}`);
+      });
+
+      govdoc.stderr.on("data", (data) => {
+        logger.warn(`GovDoc stderr: ${data}`);
+      });
+
+      govdoc.on("close", (code) => {
+        if (code === 0) {
+          logger.info("✅ GovDoc processing completed successfully");
+          resolve();
+        } else {
+          logger.error(`❌ GovDoc processing failed with exit code: ${code}`);
+          reject(new Error(`Failed with exit code: ${code}`));
+        }
+      });
     });
-  });
+  } catch (error) {
+    logger.error("Failed to start GovDoc processing", error);
+    throw error;
+  }
 }
 ```
 

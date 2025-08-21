@@ -1,25 +1,22 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import dotenv from "dotenv";
-import path from "path";
-import { fileURLToPath } from "url";
+import { config } from "../../../shared/config/index.mjs";
+import { createLogger } from "../../../shared/logging/index.mjs";
 
-// Always load .env from the project root
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const projectRoot = path.resolve(__dirname, "../../../");
-dotenv.config({ path: path.resolve(projectRoot, ".env") });
+const logger = createLogger("GEMINI-CONFIG");
 
-export const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+export const GEMINI_API_KEY = config.api.gemini.apiKey;
 export const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
-export const GEMINI_METADATA_MODEL_NAME = "gemini-2.5-flash-lite";
+export const GEMINI_METADATA_MODEL_NAME = config.api.gemini.modelName;
 
-// Retry configuration constants
-const MAX_GEMINI_ATTEMPTS = 5;
-const INITIAL_GEMINI_DELAY_MS = 3000;
-const MAX_BACKOFF_DELAY_MS = 60000;
-const JITTER_WITH_SUGGESTED_DELAY_MS = 3000;
-const JITTER_WITHOUT_SUGGESTED_DELAY_MS = 1000;
+// Import retry configuration from centralized config
+const {
+  maxAttempts: MAX_GEMINI_ATTEMPTS,
+  initialDelayMs: INITIAL_GEMINI_DELAY_MS,
+  maxBackoffDelayMs: MAX_BACKOFF_DELAY_MS,
+  jitterWithSuggestedDelayMs: JITTER_WITH_SUGGESTED_DELAY_MS,
+  jitterWithoutSuggestedDelayMs: JITTER_WITHOUT_SUGGESTED_DELAY_MS,
+} = config.api.gemini;
 
 // Return model for metadata extraction
 export function getMetadataModel() {
@@ -135,7 +132,7 @@ export async function callGeminiWithRetry(
         );
         const waitMs = (suggestedDelay || delayMs) + jitter;
 
-        console.warn(
+        logger.warn(
           `Retrying (${attempts}/${maxAttempts}) for ${fileIdentifier} after ${(
             waitMs / 1000
           ).toFixed(1)}s... (${error.message})`
@@ -148,7 +145,7 @@ export async function callGeminiWithRetry(
             ? initialDelayMs
             : Math.min(delayMs * 2, MAX_BACKOFF_DELAY_MS);
       } else {
-        console.error(
+        logger.error(
           `Gemini call failed for ${fileIdentifier} (attempt ${attempts}): ${error.message}`
         );
 
