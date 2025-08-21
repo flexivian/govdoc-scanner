@@ -5,7 +5,9 @@ function parseCapital(text) {
   const pct = /([0-9]+(?:[\.,][0-9]+)?)%/.exec(text)?.[1] || null;
   const amt = /([0-9.]+,[0-9]{2})\s*(€|Ευρώ)/.exec(text)?.[1] || null;
   const percent = pct ? parseFloat(pct.replace(",", ".")) : null;
-  const amount = amt ? parseFloat(amt.replace(/\./g, "").replace(",", ".")) : null;
+  const amount = amt
+    ? parseFloat(amt.replace(/\./g, "").replace(",", "."))
+    : null;
   return { amount, percent };
 }
 
@@ -30,7 +32,9 @@ function toDoc(company) {
   const history = historyObj
     ? Object.entries(historyObj).map(([file, summary]) => ({
         file_name: file,
-        doc_date: /^\d{4}-\d{2}-\d{2}/.test(file) ? file.substring(0, 10) : null,
+        doc_date: /^\d{4}-\d{2}-\d{2}/.test(file)
+          ? file.substring(0, 10)
+          : null,
         summary,
       }))
     : [];
@@ -59,13 +63,21 @@ function resolveIndex(company, baseIndex, strategy = "static") {
   if (strategy === "by-year") {
     const snap = company?.metadata?.["current-snapshot"] || {};
     const dateStr = snap.document_date || company["creation-date"] || null;
-    const year = dateStr && /^\d{4}-\d{2}-\d{2}$/.test(dateStr) ? dateStr.substring(0, 4) : "unknown";
+    const year =
+      dateStr && /^\d{4}-\d{2}-\d{2}$/.test(dateStr)
+        ? dateStr.substring(0, 4)
+        : "unknown";
     return `${baseIndex}-${year}`;
   }
   return baseIndex;
 }
 
-export function buildOpenSearchClient({ endpoint, username, password, insecure = false }) {
+export function buildOpenSearchClient({
+  endpoint,
+  username,
+  password,
+  insecure = false,
+}) {
   const opts = {
     node: endpoint,
   };
@@ -78,21 +90,31 @@ export function buildOpenSearchClient({ endpoint, username, password, insecure =
   return new Client(opts);
 }
 
-export async function pushCompaniesToOpenSearch(companies, {
-  endpoint,
-  username,
-  password,
-  index = "govdoc-companies-000001",
-  indexStrategy = "static",
-  insecure = false,
-  batchSize = 500,
-  refresh = false,
-} = {}) {
+export async function pushCompaniesToOpenSearch(
+  companies,
+  {
+    endpoint,
+    username,
+    password,
+    index = "govdoc-companies-000001",
+    indexStrategy = "static",
+    insecure = false,
+    batchSize = 500,
+    refresh = false,
+  } = {}
+) {
   if (!endpoint) {
-    throw new Error("OpenSearch endpoint is required (e.g., https://localhost:9200)");
+    throw new Error(
+      "OpenSearch endpoint is required (e.g., https://localhost:9200)"
+    );
   }
 
-  const client = buildOpenSearchClient({ endpoint, username, password, insecure });
+  const client = buildOpenSearchClient({
+    endpoint,
+    username,
+    password,
+    insecure,
+  });
 
   let success = 0;
   let failed = 0;
@@ -106,11 +128,14 @@ export async function pushCompaniesToOpenSearch(companies, {
       body.push({ index: { _index: targetIndex, _id: company["gemi-id"] } });
       body.push(toDoc(company));
     }
-    const resp = await client.bulk({ refresh: refresh ? "wait_for" : false, body });
+    const resp = await client.bulk({
+      refresh: refresh ? "wait_for" : false,
+      body,
+    });
     const b = resp?.body ?? resp;
 
     if (b?.errors) {
-      for (const item of (b.items || [])) {
+      for (const item of b.items || []) {
         const res = item.index || item.create || item.update || item.delete;
         if (res && res.error) {
           failed++;
