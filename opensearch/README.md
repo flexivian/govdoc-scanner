@@ -5,11 +5,13 @@ Minimal steps to index govdoc-scanner results into OpenSearch. For a deep-dive (
 ## Data model summary
 
 Template: `opensearch/company-index-template.json`
+
 - Index pattern: `govdoc-companies-*`
 - dynamic: false (unknown fields are rejected)
 - One document per company (gemi_id)
 
 Mapped fields:
+
 - gemi_id (keyword)
 - company_name (text + keyword subfield `raw`)
 - company_tax_id (keyword)
@@ -34,7 +36,8 @@ Mapped fields:
 ## 1) Start services (Docker)
 
 ```bash
-export OPENSEARCH_INITIAL_ADMIN_PASSWORD=yourStrongPassword
+# Strong password required (8+ chars, rated "strong" by zxcvbn)
+export OPENSEARCH_INITIAL_ADMIN_PASSWORD=MyStr0ngP@ssw0rd123!
 # From project root
 docker compose up -d opensearch opensearch-dashboards
 ```
@@ -69,7 +72,7 @@ OPENSEARCH_INDEX=govdoc-companies-000001
 
 ## 4) Run and push
 
-Interactive (reads OPENSEARCH_*):
+Interactive (reads OPENSEARCH\_\*):
 
 ```bash
 npm start govdoc
@@ -83,4 +86,4 @@ npm start govdoc -- --input ./companies.gds --push \
   --os.index govdoc-companies-000001 --os.insecure
 ```
 
-That’s it. Check Dashboards or _search to verify docs.
+That’s it. Check Dashboards or \_search to verify docs.

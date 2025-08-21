@@ -24,7 +24,8 @@ The repository currently includes three main applications:
 - **crawler**: Scrapes the GEMI portal to search for companies using advanced filters and downloads all available public documents with enhanced date extraction, intelligent file management, and robust retry mechanisms.
 
 Optional integration:
-- **OpenSearch**: Index your results for search/analytics with a ready mapping template and CLI bulk push.
+
+- **OpenSearch**: Index your results for search/analytics with OpenSearch 3.1+. Includes a ready-to-use mapping template, CLI bulk push, and comprehensive documentation for local development.
 
 All tools are implemented in Node.js and use a combination of CLI interfaces and automated scripts. The project uses npm workspaces for managing multiple applications.
 
@@ -39,6 +40,8 @@ All tools are implemented in Node.js and use a combination of CLI interfaces and
 node --version
 ```
 
+- **Docker & Docker Compose** (optional, for OpenSearch): Required only if using the OpenSearch integration for search and analytics.
+
 - **.env file**: Copy the example environment file and update it with your Gemini API key:
 
 ```sh
@@ -50,16 +53,16 @@ Then, open `.env` and set:
 ```
 GEMINI_API_KEY=your_gemini_api_key_here
 
-# Optional: OpenSearch integration (local defaults)
+```
+
+For OpenSearch integration, also configure:
+
+```
 OPENSEARCH_PUSH=true
 OPENSEARCH_URL=https://localhost:9200
 OPENSEARCH_USERNAME=admin
-OPENSEARCH_PASSWORD=yourStrongPassword
-OPENSEARCH_INSECURE=true
-OPENSEARCH_INDEX=govdoc-companies-000001
-OPENSEARCH_INDEX_STRATEGY=static
-OPENSEARCH_BATCH_SIZE=500
-OPENSEARCH_REFRESH=false
+OPENSEARCH_PASSWORD=MyStr0ngP@ssw0rd123!
+OPENSEARCH_INSECURE=true  # Accept self-signed certificates
 ```
 
 ### Quick Start
@@ -140,14 +143,15 @@ Both modes:
 
 ### 4. OpenSearch Integration (optional)
 
-1) Start OpenSearch + Dashboards (Docker):
+1. Start OpenSearch + Dashboards (Docker):
 
 ```bash
-export OPENSEARCH_INITIAL_ADMIN_PASSWORD=yourStrongPassword
+# Strong password required (8+ chars, rated "strong" by zxcvbn)
+export OPENSEARCH_INITIAL_ADMIN_PASSWORD=MyStr0ngP@ssw0rd123!
 docker compose up -d opensearch opensearch-dashboards
 ```
 
-2) Install the index template and create the index:
+2. Install the index template and create the index:
 
 ```bash
 curl -k -u admin:$OPENSEARCH_INITIAL_ADMIN_PASSWORD \
@@ -158,9 +162,9 @@ curl -k -u admin:$OPENSEARCH_INITIAL_ADMIN_PASSWORD \
 curl -k -u admin:$OPENSEARCH_INITIAL_ADMIN_PASSWORD -X PUT https://localhost:9200/govdoc-companies-000001
 ```
 
-3) Push data from the CLI:
+3. Push data from the CLI:
 
-Interactive mode (reads OPENSEARCH_* from .env and OPENSEARCH_PUSH=true):
+Interactive mode (reads OPENSEARCH\_\* from .env and OPENSEARCH_PUSH=true):
 
 ```bash
 npm start govdoc
@@ -173,7 +177,7 @@ npm start govdoc -- --input ./companies.gds \
    --push \
    --os.endpoint https://localhost:9200 \
    --os.username admin \
-   --os.password yourStrongPassword \
+   --os.password MyStr0ngP@ssw0rd123! \
    --os.index govdoc-companies-000001 \
    --os.index-strategy static \
    --os.insecure \
@@ -238,6 +242,7 @@ You can also run commands directly:
 - **Interactive CLI**: User-friendly command-line interfaces with guided prompts for all workflows.
 - **Multiple Input Methods**: Support for file input, manual entry, and random selection with date-based search filters.
 - **Progress Tracking**: Unified progress bar and summary for batch operations.
+- **OpenSearch Integration**: Optional integration with OpenSearch 3.1+ for full-text search, analytics, and data visualization with automated index management and bulk operations.
 
 ## Documentation
 
@@ -264,12 +269,14 @@ The documentation site will be available at `http://localhost:3000` with live re
 
 ## Reasons for Offering & Problem Solved
 
-Access to Greek public company data is hindered by the prevalence of unstructured PDF files. This project addresses the lack of transparency and the inefficiency in data utilization by converting these documents into structured, machine-readable formats.
+Access to Greek public company data is hindered by the prevalence of unstructured PDF files. This project addresses the lack of transparency and the inefficiency in data utilization by converting these documents into structured, machine-readable formats with optional full-text search capabilities.
+
 govdoc-scanner automates:
 
 - Searching for companies with complex filters
 - Downloading all available public documents
 - Extracting and structuring metadata for analysis
 - Building historical timelines for research or reporting
+- Creating searchable indexes with OpenSearch for advanced analytics
 
 This enables users to efficiently gather and analyze business data at scale, supporting transparency, due diligence, and investigative work.

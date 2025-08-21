@@ -1,35 +1,42 @@
 # OpenSearch Integration
 
-This guide shows how to set up, configure, and use the OpenSearch integration with govdoc-scanner.
+This guide shows how to set up, configure, and use OpenSearch 3.1+ integration with govdoc-scanner.
 
 ## What you get
+
 - Searchable index of company metadata (one document per GEMI ID)
 - Nested representatives and tracked changes history
 - Keyword subfields for aggregations and exact matching
 - CLI push support with flags or environment variables
 
 ## Prerequisites
+
 - Docker and Docker Compose
 - Node.js 18+ (20+ recommended)
 
 ## Start OpenSearch locally
+
 From the project root:
 
 ```bash
 # Ensure OPENSEARCH_INITIAL_ADMIN_PASSWORD is set in your .env
-export OPENSEARCH_INITIAL_ADMIN_PASSWORD=yourStrongPassword
+# Password must be at least 8 characters and rated as "strong" by zxcvbn
+# Use a complex password like: MyStr0ngP@ssw0rd123!
+export OPENSEARCH_INITIAL_ADMIN_PASSWORD=MyStr0ngP@ssw0rd123!
 
 # Start OpenSearch + Dashboards
 docker compose up -d opensearch opensearch-dashboards
 ```
 
 OpenSearch:
+
 - API: https://localhost:9200 (user: admin, password: $OPENSEARCH_INITIAL_ADMIN_PASSWORD)
 - Dashboards: http://localhost:5601
 
-Note: Self-signed SSL is enabled by default.
+Note: OpenSearch 3.1+ requires strong passwords (8+ chars, rated "strong" by zxcvbn). Self-signed SSL is enabled by default.
 
 ## Install the index template
+
 Load the provided template so your index has the correct mappings:
 
 ```bash
@@ -44,6 +51,7 @@ curl -k -u admin:$OPENSEARCH_INITIAL_ADMIN_PASSWORD -X PUT https://localhost:920
 ```
 
 ## Configure the CLI
+
 Copy the example env and set values:
 
 ```bash
@@ -70,6 +78,7 @@ OPENSEARCH_REFRESH=false
 ```
 
 ## Index data
+
 Run the CLI and let it push automatically (interactive mode reads OPENSEARCH_PUSH=true):
 
 ```bash
@@ -99,6 +108,7 @@ The CLI will print a summary like:
 ```
 
 ## Query examples
+
 Search by company name:
 
 ```json
@@ -147,6 +157,7 @@ POST govdoc-companies-000001/_search
 ```
 
 ## Troubleshooting
+
 - Indexed count is 0:
   - Ensure index template is installed and index exists
   - Confirm docs are in the final output set (CLI filters to successful ones)
@@ -157,4 +168,5 @@ POST govdoc-companies-000001/_search
   - Verify username/password and OPENSEARCH_URL
 
 ## Mapping and rationale
+
 See `opensearch/company-index-template.json` and `opensearch/README.md` for detailed field mappings and reasoning.
