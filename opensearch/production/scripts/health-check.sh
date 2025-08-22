@@ -17,13 +17,13 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OPENSEARCH_URL="https://localhost:9200"
 
 # Check if environment file exists
-if [ ! -f "../production.env" ]; then
-    echo -e "${RED}Error: production.env file not found!${NC}"
+if [ ! -f "../.env" ]; then
+    echo -e "${RED}Error: .env file not found!${NC}"
     exit 1
 fi
 
 # Source environment variables
-source ../production.env
+source ../.env
 
 echo -e "${BLUE}=== GovDoc Scanner - Production Health Check ===${NC}"
 echo -e "Timestamp: $(date)"

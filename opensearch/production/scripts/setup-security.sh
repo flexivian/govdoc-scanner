@@ -11,7 +11,21 @@ echo ""
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
+Yechecho -e "1. Admin Password: ${ADMIN_PASSWORD}"
+echo -e "2. GovDoc Ingest Password: ${GOVDOC_INGEST_PASSWORD}"
+echo -e "3. Configuration saved to: .env"
+echo ""
+echo -e "${RED}CRITICAL SECURITY WARNINGS:${NC}"
+echo -e "1. ${RED}Change demo certificates before production use${NC}"
+echo -e "2. ${RED}Store passwords securely (use secrets management)${NC}"
+echo -e "3. ${RED}Never commit .env to version control${NC}"
+echo -e "4. ${RED}Set up proper firewall rules${NC}"
+echo -e "5. ${RED}Enable audit logging for compliance${NC}"
+echo -e ""
+echo -e "${RED}CRITICAL SECURITY WARNINGS:${NC}"
+echo -e "1. ${RED}Change demo certificates before production use${NC}"
+echo -e "2. ${RED}Store passwords securely (use secrets management)${NC}"
+echo -e "3. ${RED}Never commit .env to version control${NC}"
 NC='\033[0m' # No Color
 
 # Function to generate strong password
@@ -38,7 +52,7 @@ echo -e "${GREEN}✓ Generated secure passwords${NC}"
 echo -e "\n${YELLOW}Step 2: Creating environment file...${NC}"
 
 # Create production environment file
-cat > ../production.env << EOF
+cat > ../.env << EOF
 # Production Environment Variables for GovDoc Scanner OpenSearch
 # Generated on: $(date)
 # 
@@ -63,7 +77,7 @@ OPENSEARCH_INSECURE=true  # Set to false when using proper certificates
 OPENSEARCH_TIMEOUT_MS=30000
 EOF
 
-echo -e "${GREEN}✓ Created production.env file${NC}"
+echo -e "${GREEN}✓ Created .env file${NC}"
 
 echo -e "\n${YELLOW}Step 3: Hashing passwords for internal users...${NC}"
 
@@ -285,12 +299,12 @@ echo ""
 echo -e "${YELLOW}Important Security Information:${NC}"
 echo -e "1. Admin Password: ${ADMIN_PASSWORD}"
 echo -e "2. GovDoc Ingest Password: ${GOVDOC_INGEST_PASSWORD}"
-echo -e "3. Configuration saved to: production.env"
+echo -e "3. Configuration saved to: .env"
 echo ""
 echo -e "${RED}CRITICAL SECURITY WARNINGS:${NC}"
 echo -e "1. ${RED}Change demo certificates before production use${NC}"
 echo -e "2. ${RED}Store passwords securely (use secrets management)${NC}"
-echo -e "3. ${RED}Never commit production.env to version control${NC}"
+echo -e "3. ${RED}Never commit .env to version control${NC}"
 echo -e "4. ${RED}Set up proper firewall rules${NC}"
 echo -e "5. ${RED}Enable audit logging for compliance${NC}"
 echo ""

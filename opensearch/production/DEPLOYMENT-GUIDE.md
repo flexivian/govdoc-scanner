@@ -28,7 +28,7 @@ cd opensearch/production
 # - Strong passwords for all users
 # - Security configuration files
 # - Demo certificates (replace in production!)
-# - production.env file with credentials
+# - .env file with credentials
 ```
 
 **⚠️ IMPORTANT**: Save the passwords displayed at the end!
@@ -37,7 +37,7 @@ cd opensearch/production
 
 ```bash
 # Load environment variables
-source production.env
+source .env
 
 # Start production cluster
 docker-compose -f docker-compose.prod.yml up -d
@@ -90,7 +90,7 @@ cd ../..  # Back to project root
 OPENSEARCH_PUSH=true
 OPENSEARCH_URL=https://localhost:9200
 OPENSEARCH_USERNAME=govdoc_ingest
-OPENSEARCH_PASSWORD=<govdoc_password_from_production.env>
+OPENSEARCH_PASSWORD=<govdoc_password_from_.env>
 OPENSEARCH_INDEX=govdoc-companies-write
 OPENSEARCH_INSECURE=true
 
@@ -108,7 +108,7 @@ curl -k -u govdoc_ingest:<password> https://localhost:9200/govdoc-companies/_cou
 ```
 opensearch/production/
 ├── docker-compose.prod.yml    # Production Docker Compose
-├── production.env             # Environment variables (KEEP SECURE!)
+├── .env                       # Environment variables (KEEP SECURE!)
 ├── config/
 │   ├── opensearch.yml         # Main OpenSearch config
 │   ├── jvm.options           # JVM settings (8GB heap)
@@ -224,7 +224,7 @@ docker-compose -f docker-compose.prod.yml restart
 
 ```bash
 # Verify credentials
-source production.env
+source .env
 echo $OPENSEARCH_PROD_ADMIN_PASSWORD
 
 # Reset if needed (will require cluster restart)

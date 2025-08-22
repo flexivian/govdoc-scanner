@@ -16,20 +16,20 @@ NC='\033[0m' # No Color
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OPENSEARCH_URL="https://localhost:9200"
 CONFIG_DIR="$(dirname "$SCRIPT_DIR")/config"
-TEMPLATE_FILE="../company-index-template.json"
+TEMPLATE_FILE="../../shared/templates/company-index-template.json"
 
 echo -e "${BLUE}=== GovDoc Scanner - Production Cluster Initialization ===${NC}"
 echo ""
 
 # Check if environment file exists
-if [ ! -f "../production.env" ]; then
-    echo -e "${RED}Error: production.env file not found!${NC}"
+if [ ! -f "../.env" ]; then
+    echo -e "${RED}Error: .env file not found!${NC}"
     echo -e "${YELLOW}Run ./setup-security.sh first${NC}"
     exit 1
 fi
 
 # Source environment variables
-source ../production.env
+source ../.env
 
 # Function to wait for OpenSearch to be ready
 wait_for_opensearch() {

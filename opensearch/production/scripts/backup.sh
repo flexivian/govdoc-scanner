@@ -19,13 +19,13 @@ BACKUP_REPO="govdoc-backup-repo"
 RETENTION_DAYS=30
 
 # Check if environment file exists
-if [ ! -f "../production.env" ]; then
-    echo -e "${RED}Error: production.env file not found!${NC}"
+if [ ! -f "../.env" ]; then
+    echo -e "${RED}Error: .env file not found!${NC}"
     exit 1
 fi
 
 # Source environment variables
-source ../production.env
+source ../.env
 
 # Generate snapshot name with timestamp
 SNAPSHOT_NAME="govdoc-daily-$(date +%Y%m%d-%H%M%S)"
