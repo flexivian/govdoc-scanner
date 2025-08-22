@@ -5,6 +5,13 @@ node_modules/
 **/.env
 production.env
 
+*.pem
+*.key
+*.crt
+*.cert
+opensearch/production/certs/*.pem
+opensearch/development/certs/*.pem
+
 # Docusaurus
 docs-site/.docusaurus/
 docs-site/build/
