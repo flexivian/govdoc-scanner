@@ -1,0 +1,85 @@
+version: "3.8"
+
+services:
+  opensearch-prod:
+    image: opensearchproject/opensearch:3.1.0
+    container_name: govdoc-opensearch-production
+    environment:
+      # Cluster configuration
+      - cluster.name=govdoc-production
+      - node.name=govdoc-node-01
+      - discovery.type=single-node
+
+      # Memory settings for production
+      - bootstrap.memory_lock=true
+      - "OPENSEARCH_JAVA_OPTS=-Xms4g -Xmx4g"
+
+      # Security configuration
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_PROD_ADMIN_PASSWORD}
+
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      # Data persistence
+      - opensearch-prod-data:/usr/share/opensearch/data
+      - opensearch-prod-logs:/usr/share/opensearch/logs
+      - opensearch-prod-backup:/usr/share/opensearch/backup
+    ports:
+      - "9200:9200" # REST API
+      - "9600:9600" # Performance Analyzer
+    networks:
+      - opensearch-prod-net
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -k -u admin:${OPENSEARCH_PROD_ADMIN_PASSWORD} https://localhost:9200/_cluster/health || exit 1",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+
+  opensearch-dashboards-prod:
+    image: opensearchproject/opensearch-dashboards:3.1.0
+    container_name: govdoc-opensearch-dashboards-production
+    ports:
+      - "5601:5601"
+    environment:
+      # Connect to production OpenSearch
+      - OPENSEARCH_HOSTS=["https://opensearch-prod:9200"]
+      - SERVER_HOST=0.0.0.0
+      - SERVER_PORT=5601
+    depends_on:
+      opensearch-prod:
+        condition: service_healthy
+    networks:
+      - opensearch-prod-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5601/api/status || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  opensearch-prod-data:
+    driver: local
+  opensearch-prod-logs:
+    driver: local
+  opensearch-prod-backup:
+    driver: local
+
+networks:
+  opensearch-prod-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.25.0.0/16

@@ -1,0 +1,327 @@
+# Phase 1 Production Deployment Guide
+
+## Quick Start - Deploy Production OpenSearch in 10 Minutes
+
+This guide walks you through deploying the minimal production OpenSearch cluster for GovDoc Scanner.
+
+### Prerequisites Check
+
+```bash
+# Verify system requirements
+free -h                    # Should show ~16GB RAM
+nproc                     # Should show 4+ CPU cores
+df -h                     # Should have 200GB+ free space
+docker --version          # Docker 20.10+
+docker-compose --version  # Docker Compose 1.29+
+```
+
+### Step 1: Security Setup (5 minutes)
+
+```bash
+# Navigate to production directory
+cd opensearch/production
+
+# Generate security configuration
+./scripts/setup-security.sh
+
+# This creates:
+# - Strong passwords for all users
+# - Security configuration files
+# - Demo certificates (replace in production!)
+# - production.env file with credentials
+```
+
+**⚠️ IMPORTANT**: Save the passwords displayed at the end!
+
+### Step 2: Start the Cluster (3 minutes)
+
+```bash
+# Load environment variables
+source production.env
+
+# Start production cluster
+docker-compose -f docker-compose.prod.yml up -d
+
+# Check status
+docker-compose -f docker-compose.prod.yml ps
+
+# Wait for cluster to be ready (takes 2-3 minutes)
+./scripts/health-check.sh
+```
+
+### Step 3: Initialize Cluster (2 minutes)
+
+```bash
+# Initialize indices and templates
+./scripts/initialize-cluster.sh
+
+# This sets up:
+# - Index templates
+# - Initial indices with aliases
+# - Backup repository
+# - Tests application user permissions
+```
+
+## Verification & Testing
+
+### Verify Installation
+
+```bash
+# Check cluster health
+curl -k -u admin:$OPENSEARCH_PROD_ADMIN_PASSWORD https://localhost:9200/_cluster/health
+
+# Expected response: {"status":"green",...}
+
+# Check indices
+curl -k -u admin:$OPENSEARCH_PROD_ADMIN_PASSWORD https://localhost:9200/_cat/indices
+
+# Access Dashboards
+# Open http://localhost:5601
+# Login with admin / $OPENSEARCH_PROD_ADMIN_PASSWORD
+```
+
+### Test Data Ingestion
+
+```bash
+# Update your main .env file with production credentials
+cd ../..  # Back to project root
+
+# Add to .env:
+OPENSEARCH_PUSH=true
+OPENSEARCH_URL=https://localhost:9200
+OPENSEARCH_USERNAME=govdoc_ingest
+OPENSEARCH_PASSWORD=<govdoc_password_from_production.env>
+OPENSEARCH_INDEX=govdoc-companies-write
+OPENSEARCH_INSECURE=true
+
+# Test ingestion
+npm start govdoc -- --input ./companies.gds --push
+
+# Verify data
+curl -k -u govdoc_ingest:<password> https://localhost:9200/govdoc-companies/_count
+```
+
+## Production Configuration Files
+
+### Generated Files Structure
+
+```
+opensearch/production/
+├── docker-compose.prod.yml    # Production Docker Compose
+├── production.env             # Environment variables (KEEP SECURE!)
+├── config/
+│   ├── opensearch.yml         # Main OpenSearch config
+│   ├── jvm.options           # JVM settings (8GB heap)
+│   ├── internal_users.yml    # User definitions
+│   ├── roles.yml             # Role definitions
+│   └── roles_mapping.yml     # User-role mappings
+├── certs/                    # SSL certificates (demo - replace!)
+│   ├── root-ca.pem
+│   ├── node.pem
+│   └── node-key.pem
+└── scripts/
+    ├── setup-security.sh     # Security initialization
+    ├── initialize-cluster.sh # Cluster setup
+    ├── health-check.sh       # Health monitoring
+    └── backup.sh             # Backup management
+```
+
+## Daily Operations
+
+### Health Monitoring
+
+```bash
+# Run health check
+cd opensearch/production
+./scripts/health-check.sh
+
+# Schedule regular checks (add to crontab)
+*/15 * * * * /path/to/govdoc-scanner/opensearch/production/scripts/health-check.sh --quiet
+```
+
+### Backup Management
+
+```bash
+# Create manual backup
+./scripts/backup.sh
+
+# List existing backups
+./scripts/backup.sh --list-only
+
+# Schedule daily backups (add to crontab)
+0 2 * * * /path/to/govdoc-scanner/opensearch/production/scripts/backup.sh
+```
+
+### Log Monitoring
+
+```bash
+# View OpenSearch logs
+docker logs govdoc-opensearch-production -f
+
+# View container stats
+docker stats govdoc-opensearch-production
+```
+
+## Security Configuration Details
+
+### User Accounts Created
+
+- **admin**: Full cluster administration
+- **govdoc_ingest**: Application data ingestion (minimal permissions)
+- **kibanaserver**: Dashboards communication
+
+### Network Security
+
+- HTTPS enabled for all communication
+- Authentication required for all endpoints
+- Minimal permissions per user role
+
+### Certificates
+
+- ⚠️ Demo certificates generated (replace in production!)
+- Transport layer encryption enabled
+- HTTP layer encryption enabled
+
+## Resource Usage
+
+### Memory Configuration
+
+- **JVM Heap**: 8GB (50% of 16GB system)
+- **Container Limit**: ~12GB total
+- **System Reserve**: ~4GB for OS
+
+### Storage
+
+- **Data Volume**: `opensearch-prod-data`
+- **Logs Volume**: `opensearch-prod-logs`
+- **Backup Volume**: `opensearch-prod-backup`
+
+### Ports
+
+- **9200**: REST API (HTTPS)
+- **9300**: Transport (for future clustering)
+- **5601**: Dashboards UI
+
+## Troubleshooting
+
+### Common Issues
+
+**"Cluster not ready"**
+
+```bash
+# Check logs
+docker logs govdoc-opensearch-production
+
+# Check memory
+free -h
+docker stats govdoc-opensearch-production
+
+# Restart if needed
+docker-compose -f docker-compose.prod.yml restart
+```
+
+**"Authentication failed"**
+
+```bash
+# Verify credentials
+source production.env
+echo $OPENSEARCH_PROD_ADMIN_PASSWORD
+
+# Reset if needed (will require cluster restart)
+./scripts/setup-security.sh
+```
+
+**"Index not found"**
+
+```bash
+# Re-initialize cluster
+./scripts/initialize-cluster.sh
+
+# Check templates
+curl -k -u admin:$OPENSEARCH_PROD_ADMIN_PASSWORD https://localhost:9200/_index_template
+```
+
+### Performance Issues
+
+**High memory usage**
+
+- Check heap usage in health check
+- Reduce batch size in application
+- Consider increasing system RAM
+
+**Slow searches**
+
+- Check cluster status (should be GREEN)
+- Monitor CPU usage
+- Review query patterns
+
+**Disk space issues**
+
+- Check disk usage with health script
+- Run backup and cleanup old snapshots
+- Consider index rollover
+
+## Migration to Full Production
+
+### Certificate Replacement
+
+1. Obtain proper SSL certificates from CA
+2. Replace files in `certs/` directory
+3. Update certificate paths in `opensearch.yml`
+4. Restart cluster
+
+### External Access Setup
+
+1. Configure reverse proxy (nginx/apache)
+2. Update firewall rules
+3. Use proper DNS names
+4. Update connection URLs in applications
+
+### High Availability Migration
+
+1. Deploy additional nodes
+2. Update cluster discovery settings
+3. Enable replicas for indices
+4. Test failover scenarios
+
+## Backup & Recovery
+
+### Backup Strategy
+
+- **Daily snapshots** at 2 AM
+- **30-day retention** policy
+- **Compressed storage**
+- **Automated cleanup**
+
+### Recovery Testing
+
+```bash
+# Test snapshot restore
+curl -k -u admin:$OPENSEARCH_PROD_ADMIN_PASSWORD \
+  -X POST https://localhost:9200/_snapshot/govdoc-backup-repo/SNAPSHOT_NAME/_restore
+
+# Verify restored data
+curl -k -u admin:$OPENSEARCH_PROD_ADMIN_PASSWORD \
+  https://localhost:9200/govdoc-companies/_count
+```
+
+## Next Steps
+
+After successful Phase 1 deployment:
+
+1. **Monitor for 2-4 weeks** to establish baselines
+2. **Scale to 3-node cluster** when hitting resource limits
+3. **Implement proper certificates** for production security
+4. **Add external monitoring** (Prometheus, Grafana)
+5. **Plan data retention** and archiving strategies
+
+## Support
+
+- Review logs in `/var/log/opensearch/` (inside container)
+- Check OpenSearch documentation: https://docs.opensearch.org/
+- Monitor cluster health regularly
+- Test backup/restore procedures monthly
+
+---
+
+🎉 **Congratulations!** Your production OpenSearch cluster is now running and ready for the GovDoc Scanner application.

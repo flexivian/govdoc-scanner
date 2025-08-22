@@ -1,0 +1,107 @@
+# ======================== OpenSearch Configuration =========================
+#
+# Production configuration for GovDoc Scanner OpenSearch cluster
+#
+# WARNING: This configuration includes security settings that are
+# suitable for production use. Make sure to:
+# 1. Change all default passwords
+# 2. Use proper certificates (not demo certificates)
+# 3. Configure firewall rules appropriately
+#
+
+# ---------------------------------- Cluster -----------------------------------
+cluster.name: govdoc-production
+node.name: govdoc-node-01
+node.roles: [cluster_manager, data, ingest]
+
+# ---------------------------------- Network -----------------------------------
+network.host: 0.0.0.0
+http.port: 9200
+transport.port: 9300
+
+# ---------------------------------- Discovery ----------------------------------
+# Single node configuration (Phase 1)
+discovery.type: single-node
+cluster.initial_cluster_manager_nodes: ["govdoc-node-01"]
+
+# ---------------------------------- Memory ------------------------------------
+bootstrap.memory_lock: true
+
+# ---------------------------------- Paths -------------------------------------
+path.data: /usr/share/opensearch/data
+path.logs: /usr/share/opensearch/logs
+path.repo: ["/usr/share/opensearch/backup"]
+
+# ---------------------------------- Security ----------------------------------
+# Enable Security Plugin
+plugins.security.disabled: false
+
+# SSL Transport layer (node-to-node communication)
+plugins.security.ssl.transport.enabled: true
+plugins.security.ssl.transport.pemcert_filepath: certs/node.pem
+plugins.security.ssl.transport.pemkey_filepath: certs/node-key.pem
+plugins.security.ssl.transport.pemtrustedcas_filepath: certs/root-ca.pem
+plugins.security.ssl.transport.enforce_hostname_verification: false
+
+# SSL HTTP layer (client-to-node communication)
+plugins.security.ssl.http.enabled: true
+plugins.security.ssl.http.pemcert_filepath: certs/node.pem
+plugins.security.ssl.http.pemkey_filepath: certs/node-key.pem
+plugins.security.ssl.http.pemtrustedcas_filepath: certs/root-ca.pem
+plugins.security.ssl.http.enforce_hostname_verification: false
+
+# Security Admin Distinguished Name
+plugins.security.authcz.admin_dn:
+  - "CN=admin,OU=SSL,O=Test,L=Test,C=DE"
+
+# Node certificates
+plugins.security.nodes_dn:
+  - "CN=node.example.com,OU=SSL,O=Test,L=Test,C=DE"
+
+# ---------------------------------- Performance -------------------------------
+# Disable auto-creation of indexes for security
+action.auto_create_index: false
+
+# Thread pool settings for production
+thread_pool:
+  write:
+    size: 4
+    queue_size: 1000
+  search:
+    size: 6
+    queue_size: 1000
+
+# ---------------------------------- Monitoring -------------------------------
+# Disable audit logging initially (can be enabled later)
+plugins.security.audit.type: noop
+
+# Disable compliance features for minimal setup
+plugins.security.compliance.history.external_config_enabled: false
+
+# ---------------------------------- Index Settings ---------------------------
+# Default index settings for new indices
+index:
+  number_of_shards: 1
+  number_of_replicas: 0 # Single node, no replicas
+  refresh_interval: 30s
+  mapping.total_fields.limit: 2000
+  max_result_window: 50000
+
+# ---------------------------------- Circuit Breakers ----------------------
+# Prevent OOM errors
+indices.breaker.total.limit: 70%
+indices.breaker.fielddata.limit: 40%
+indices.breaker.request.limit: 40%
+
+# ---------------------------------- Logging ---------------------------------
+logger:
+  level: INFO
+  org.opensearch.discovery: WARN
+  org.opensearch.cluster.service: WARN
+
+# ---------------------------------- Snapshots -------------------------------
+# Repository settings
+repositories:
+  fs:
+    location: /usr/share/opensearch/backup
+    compress: true
