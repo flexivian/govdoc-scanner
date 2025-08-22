@@ -1,7 +1,14 @@
 # govdoc-scanner
 
 [![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://flexivian.github.io/govdoc-scanner/)
-[![GitHub](https://img.shields.io/badge/GitHub-govdoc--scanner-green)](https://github.com/flexivian/govdoc-scanner)
+[![GitHu1. Start OpenSearch + Dashboards (Docker):
+
+```sh
+# For development environment
+cd opensearch/development
+cp .env.template .env
+# Edit .env with your strong password (8+ chars, rated "strong" by zxcvbn)
+docker compose up -dps://img.shields.io/badge/GitHub-govdoc--scanner-green)](https://github.com/flexivian/govdoc-scanner)
 
 ## 📚 Documentation
 
@@ -154,10 +161,11 @@ docker compose up -d opensearch opensearch-dashboards
 2. Install the index template and create the index:
 
 ```bash
-curl -k -u admin:$OPENSEARCH_INITIAL_ADMIN_PASSWORD \
-   -H 'content-type: application/json' \
-   -X PUT https://localhost:9200/_index_template/govdoc-companies-template \
-   --data-binary @opensearch/company-index-template.json
+```sh
+curl -k -u admin:$OPENSEARCH_INITIAL_ADMIN_PASSWORD 
+  -H 'content-type: application/json' 
+  -X PUT https://localhost:9200/_index_template/govdoc-companies-template 
+   --data-binary @opensearch/development/templates/company-index-template.json
 
 curl -k -u admin:$OPENSEARCH_INITIAL_ADMIN_PASSWORD -X PUT https://localhost:9200/govdoc-companies-000001
 ```
