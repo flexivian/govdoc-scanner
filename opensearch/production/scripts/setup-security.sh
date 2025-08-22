@@ -11,8 +11,10 @@ echo ""
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
-Yechecho -e "1. Admin Password: ${ADMIN_PASSWORD}"
-echo -e "2. GovDoc Ingest Password: ${GOVDOC_INGEST_PASSWORD}"
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+# Function to generate strong password
 echo -e "3. Configuration saved to: .env"
 echo ""
 echo -e "${RED}CRITICAL SECURITY WARNINGS:${NC}"

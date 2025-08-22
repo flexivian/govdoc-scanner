@@ -1,5 +1,5 @@
 # Production Internal Users Configuration
-# Generated on: Fri Aug 22 17:12:05 EEST 2025
+# Generated on: Fri Aug 22 18:19:43 EEST 2025
 
 _meta:
   type: "internalusers"
@@ -7,7 +7,7 @@ _meta:
 
 # Admin user (for cluster administration)
 admin:
-  hash: "$2b$12$WGSWFRa.UuqHaE2HFlEFEuI6EN7sPMYWE5TzLC8vEStCss0hgfw8K"
+  hash: "$2b$12$U97LL7QeoFI3E2rIiL23z.KCni10Lnx3RIcO3pnr/KRtB78wBfk9K"
   reserved: true
   backend_roles:
   - "admin"
@@ -15,13 +15,13 @@ admin:
 
 # Kibana server user (for Dashboards communication)
 kibanaserver:
-  hash: "$2b$12$efbhpKzc9kCgSjRqCqQY5uq2tDwbqnl.dXPAOtZJ20UpbrKq2G0Ta"
+  hash: "$2b$12$pHpPCWLi6tgXP1B85Ly3BO4d0Ls4ZRgf9otcNFyIUN5koEeuC8voe"
   reserved: true
   description: "Kibana server user"
 
 # GovDoc ingestion user (for application data ingestion)
 govdoc_ingest:
-  hash: "$2b$12$9ZA0zhu3BCeOuVdzekfGye1XqOivEnrxY.lnJmH46foSb1q2KxPie"
+  hash: "$2b$12$xbD9QdZDhnxd/N.n8gQUEO/8f3xnxS6Dlyde4HkTF8kqqAs32f9SW"
   reserved: false
   backend_roles: []
   description: "GovDoc application user for data ingestion"
