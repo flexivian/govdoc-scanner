@@ -54,10 +54,12 @@ Then, open `.env` and set:
 GEMINI_API_KEY=your_gemini_api_key_here
 ```
 
-For OpenSearch integration, use environment-specific configuration:
+For OpenSearch integration, first set up your chosen environment:
 
-**Development**: See `opensearch/development/.env.template`
-**Production**: Run `opensearch/production/scripts/setup-security.sh`
+- **Development**: `cd opensearch/development && cp .env.template .env` (edit with password)
+- **Production**: `cd opensearch/production && ./scripts/setup-security.sh`
+
+Then copy the OpenSearch settings to your root `.env` file, or use command-line flags.
 
 ### Quick Start
 
