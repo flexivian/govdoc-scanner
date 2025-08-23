@@ -1,5 +1,8 @@
 # Production Roles Configuration
-# Generated on: Sat Aug 23 14:45:09 EEST 2025
+# Generated on: Sat Aug 23 15:10:59 EEST 2025
+#
+# SECURITY: This file contains only role definitions and permissions.
+# It is safe to commit to version control as it contains no sensitive data.
 
 _meta:
   type: "roles"

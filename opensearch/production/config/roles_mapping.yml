@@ -1,5 +1,5 @@
-# Production Roles Mapping Configuration
-# Generated on: Sat Aug 23 14:45:09 EEST 2025
+# Production Roles Mapping Configuration  
+# Generated on: Sat Aug 23 15:10:59 EEST 2025
 
 _meta:
   type: "rolesmapping"
@@ -9,18 +9,18 @@ _meta:
 all_access:
   reserved: false
   backend_roles:
-    - "admin"
+  - "admin"
   description: "Maps admin backend role to all_access"
 
 # Map kibana server role
 kibana_server:
   reserved: true
   users:
-    - "kibanaserver"
+  - "kibanaserver"
 
 # Map govdoc ingestion role
 govdoc_ingest_role:
   reserved: false
   users:
-    - "govdoc_ingest"
+  - "govdoc_ingest"
   description: "Maps govdoc_ingest user to ingestion role"
