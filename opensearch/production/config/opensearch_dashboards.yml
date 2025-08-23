@@ -1,0 +1,30 @@
+server.name: opensearch_dashboards
+server.host: "0.0.0.0"
+server.port: 5601
+server.customResponseHeaders: { "Access-Control-Allow-Credentials": "true" }
+
+# Disabling HTTPS on OpenSearch Dashboards (client connects via HTTP)
+server.ssl.enabled: false
+
+# OpenSearch connection settings
+opensearch.hosts: ["https://opensearch-prod:9200"]
+opensearch.ssl.verificationMode: none # For demo certificates
+# Username and password will be provided via environment variables
+# OPENSEARCH_USERNAME and OPENSEARCH_PASSWORD
+opensearch.requestHeadersWhitelist: ["securitytenant", "Authorization"]
+
+# SSL settings for connecting to OpenSearch - Trust CA but don't send client certs
+opensearch.ssl.certificateAuthorities:
+  ["/usr/share/opensearch-dashboards/config/certs/root-ca.pem"]
+# opensearch.ssl.certificate: "/usr/share/opensearch-dashboards/config/certs/node.pem"
+# opensearch.ssl.key: "/usr/share/opensearch-dashboards/config/certs/node-key.pem"
+
+# Multitenancy settings
+opensearch_security.multitenancy.enabled: true
+opensearch_security.multitenancy.tenants.preferred: ["Private", "Global"]
+opensearch_security.readonly_mode.roles: ["kibana_read_only"]
+
+# Additional settings for production
+logging.dest: stdout
+logging.quiet: false
+logging.verbose: false

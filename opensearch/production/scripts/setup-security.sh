@@ -15,20 +15,6 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Function to generate strong password
-echo -e "3. Configuration saved to: .env"
-echo ""
-echo -e "${RED}CRITICAL SECURITY WARNINGS:${NC}"
-echo -e "1. ${RED}Change demo certificates before production use${NC}"
-echo -e "2. ${RED}Store passwords securely (use secrets management)${NC}"
-echo -e "3. ${RED}Never commit .env to version control${NC}"
-echo -e "4. ${RED}Set up proper firewall rules${NC}"
-echo -e "5. ${RED}Enable audit logging for compliance${NC}"
-echo -e ""
-echo -e "${RED}CRITICAL SECURITY WARNINGS:${NC}"
-echo -e "1. ${RED}Change demo certificates before production use${NC}"
-echo -e "2. ${RED}Store passwords securely (use secrets management)${NC}"
-echo -e "3. ${RED}Never commit .env to version control${NC}"
-NC='\033[0m' # No Color
 
 # Function to generate strong password
 generate_password() {
@@ -54,7 +40,7 @@ echo -e "${GREEN}✓ Generated secure passwords${NC}"
 echo -e "\n${YELLOW}Step 2: Creating environment file...${NC}"
 
 # Create production environment file
-cat > ../.env << EOF
+cat > .env << EOF
 # Production Environment Variables for GovDoc Scanner OpenSearch
 # Generated on: $(date)
 # 
@@ -76,7 +62,6 @@ OPENSEARCH_PASSWORD=${GOVDOC_INGEST_PASSWORD}
 OPENSEARCH_INDEX=govdoc-companies-write
 OPENSEARCH_BATCH_SIZE=500
 OPENSEARCH_INSECURE=true  # Set to false when using proper certificates
-OPENSEARCH_TIMEOUT_MS=30000
 EOF
 
 echo -e "${GREEN}✓ Created .env file${NC}"
@@ -309,10 +294,4 @@ echo -e "2. ${RED}Store passwords securely (use secrets management)${NC}"
 echo -e "3. ${RED}Never commit .env to version control${NC}"
 echo -e "4. ${RED}Set up proper firewall rules${NC}"
 echo -e "5. ${RED}Enable audit logging for compliance${NC}"
-echo ""
-echo -e "${GREEN}Next steps:${NC}"
-echo -e "1. Review and customize config files"
-echo -e "2. Start the cluster: docker-compose -f docker-compose.prod.yml up -d"
-echo -e "3. Initialize indices and templates"
-echo -e "4. Test the setup"
 echo ""

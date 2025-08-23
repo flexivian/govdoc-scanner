@@ -2,136 +2,132 @@
 
 This directory contains all OpenSearch-related configurations for the GovDoc Scanner project.
 
-## Directory Structure
-
-```
-opensearch/
-├── README.md                           # This file - overview of OpenSearch setup
-├── development/                        # Development environment configuration
-│   ├── docker-compose.yml              # Dev Docker Compose configuration
-│   └── .env.template                   # Development environment variables template
-├── production/                         # Production environment configuration
-│   ├── docker-compose.prod.yml         # Production Docker Compose
-│   ├── DEPLOYMENT-GUIDE.md             # Complete production deployment guide
-│   ├── config/                         # OpenSearch configuration files
-│   │   ├── opensearch.yml              # Main OpenSearch configuration
-│   │   ├── jvm.options                 # JVM settings for production
-│   │   ├── internal_users.yml          # User authentication configuration
-│   │   ├── roles.yml                   # Role definitions
-│   │   └── roles_mapping.yml           # User-role mappings
-│   ├── scripts/                        # Production automation scripts
-│   │   ├── setup-security.sh           # Security initialization script
-│   │   ├── initialize-cluster.sh       # Cluster setup script
-│   │   ├── health-check.sh             # Health monitoring script
-│   │   ├── backup.sh                   # Backup management script
-│   │   └── generate-demo-certs.sh      # SSL certificate generation
-│   └── certs/                          # SSL certificates
-└── shared/                             # Shared resources and documentation
-    ├── templates/                      # Common index templates (used by both environments)
-    │   └── company-index-template.json # Company data index template
-    └── docs/                           # Additional documentation and planning
-```
-
 ## Quick Start
 
 ### Development Environment
 
+1. **Start OpenSearch development cluster:**
+
 ```bash
 cd opensearch/development
 cp .env.template .env
-# Edit .env with your strong password (8+ chars, rated "strong" by zxcvbn)
+# Edit .env with a strong password (8+ characters)
 docker compose up -d
 ```
 
-### Production Environment
-
-```bash
-cd opensearch/production
-# Run security setup (creates .env file automatically)
-./scripts/setup-security.sh
-# Start production cluster
-docker compose -f docker-compose.prod.yml up -d
-# Initialize indices and templates
-./scripts/initialize-cluster.sh
-```
-
-## Data Model Summary
-
-**Template**: `shared/templates/company-index-template.json`
-
-- **Index pattern**: `govdoc-companies-*`
-- **Dynamic mapping**: false (unknown fields rejected)
-- **Document structure**: One document per company (gemi_id)
-
-**Key Fields**:
-
-- `gemi_id`, `company_tax_id` (keyword)
-- `company_name` (text + keyword subfield)
-- `creation_date`, `scan_date`, `document_date` (date)
-- `representatives` (nested array)
-- `tracked_changes_history` (nested array)
-
-## Environment Differences
-
-| Feature          | Development         | Production               |
-| ---------------- | ------------------- | ------------------------ |
-| **Memory**       | 512MB heap          | 4GB heap                 |
-| **Security**     | Basic auth          | Full TLS + RBAC          |
-| **Persistence**  | Docker volumes      | Named volumes + backup   |
-| **Monitoring**   | Basic health checks | Comprehensive monitoring |
-| **Certificates** | Auto-generated      | Demo certs (Phase 1)     |
-
-## CLI Integration
-
-### Environment Variables (.env)
+2. **Configure your application** by updating the root `.env` file:
 
 ```bash
 OPENSEARCH_PUSH=true
 OPENSEARCH_URL=https://localhost:9200
 OPENSEARCH_USERNAME=admin
-OPENSEARCH_PASSWORD=yourStrongPassword
-OPENSEARCH_INSECURE=true  # For development only
+OPENSEARCH_PASSWORD=yourAdminPassword
+OPENSEARCH_INSECURE=true
 OPENSEARCH_INDEX=govdoc-companies-000001
 ```
 
-### Usage
+3. **Create the index template:**
 
 ```bash
-# Interactive mode
-npm start govdoc
-
-# Command mode with flags
-npm start govdoc -- --input ./companies.gds --push \
-  --os.endpoint https://localhost:9200 \
-  --os.username admin \
-  --os.password yourPassword \
-  --os.index govdoc-companies-000001 \
-  --os.insecure
+# From the project root directory
+curl -k -u admin:yourAdminPassword -X PUT "https://localhost:9200/_index_template/govdoc-company-template" \
+  -H "Content-Type: application/json" \
+  -d @../shared/templates/company-index-template.json
 ```
 
-## Security Notes
+4. **Create the initial index:**
 
-### Development
+```bash
+curl -k -u admin:yourAdminPassword -X PUT "https://localhost:9200/govdoc-companies-000001"
+```
 
-- Uses demo certificates and basic authentication
-- `OPENSEARCH_INSECURE=true` for local development
-- Password stored in `.env` file (not committed to git)
+**Verify setup:**
 
-### Production
+```bash
+# Check if template was created
+curl -k -u admin:yourAdminPassword "https://localhost:9200/_index_template/govdoc-company-template?pretty"
 
-- Full TLS encryption for all communication
-- Role-based access control (RBAC)
-- Strong password policies enforced
-- Demo certificates (replace with proper CA-signed certs for full production)
+# Check index mappings
+curl -k -u admin:yourAdminPassword "https://localhost:9200/govdoc-companies-000001/_mapping?pretty"
+```
 
-## Access Points
+5. **Test data ingestion:**
 
-### Development
+```bash
+npm start govdoc -- --input ./companies.gds --push
+```
 
-- **API**: https://localhost:9200 (admin/password)
-- **Dashboards**: http://localhost:5601
+**Access OpenSearch Dashboards:**
 
-### Production
+- **URL**: http://localhost:5601
+- **Username**: admin
+- **Password**: (from your `.env` file)
 
-- **API**: https://localhost:9200 (admin/production-password)
-- **Dashboards**: http://localhost:5601
+Create index patterns and visualizations:
+
+1. Go to **Stack Management** → **Index Patterns**
+2. Create pattern: `govdoc-companies-*`
+3. Set time field: `scan_date`
+4. Explore data in **Discover** tab
+
+**Reset development environment:**
+
+```bash
+cd opensearch/development
+docker compose down --volumes --remove-orphans
+```
+
+## Production Environment
+
+### Quick Production Setup
+
+```bash
+cd opensearch/production
+# Run the unified production setup script
+./setup-production.sh
+```
+
+This script will automatically:
+
+1. Generate secure passwords and certificates
+2. Start the production OpenSearch cluster
+3. Apply security configuration (create users and roles)
+4. Initialize indices, templates, and aliases
+5. Setup OpenSearch Dashboards index patterns
+
+### Manual Step-by-Step Setup
+
+If you prefer to run each step manually:
+
+```bash
+cd opensearch/production
+# Step 1: Run security setup (creates .env file automatically)
+./scripts/setup-security.sh
+# Step 2: Start production cluster
+docker compose -f docker-compose.prod.yml up -d
+# Step 3: Apply security configuration (creates users and roles)
+./scripts/apply-security-config.sh
+# Step 4: Initialize indices and templates
+./scripts/initialize-cluster.sh
+# Step 5: Setup dashboards
+./scripts/setup-dashboards.sh
+```
+
+If you want to redo everything do:
+
+```bash
+./cleanup-production.sh
+```
+
+**Access OpenSearch Dashboards:**
+
+- **URL**: http://localhost:5601
+- **Username**: admin
+- **Password**: (shown after running setup script)
+
+The production setup automatically creates index patterns. You can:
+
+1. Access **Discover** to explore company data
+2. Create visualizations in **Visualize**
+3. Build dashboards in **Dashboard**
+4. Monitor cluster health in **Stack Management**

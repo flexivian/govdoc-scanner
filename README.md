@@ -25,7 +25,7 @@ The repository currently includes three main applications:
 
 Optional integration:
 
-- **OpenSearch**: Index your results for search/analytics with OpenSearch 3.1+. Includes a ready-to-use mapping template, CLI bulk push, and comprehensive documentation for local development.
+- **OpenSearch**: Index your results for search/analytics with OpenSearch 3.1+. Includes a ready-to-use mapping template, CLI bulk push, and comprehensive documentation for local development and production.
 
 All tools are implemented in Node.js and use a combination of CLI interfaces and automated scripts. The project uses npm workspaces for managing multiple applications.
 
@@ -53,13 +53,6 @@ Then, open `.env` and set:
 ```
 GEMINI_API_KEY=your_gemini_api_key_here
 ```
-
-For OpenSearch integration, first set up your chosen environment:
-
-- **Development**: `cd opensearch/development && cp .env.template .env` (edit with password)
-- **Production**: `cd opensearch/production && ./scripts/setup-security.sh`
-
-Then copy the OpenSearch settings to your root `.env` file, or use command-line flags.
 
 ### Quick Start
 
@@ -137,52 +130,6 @@ Both modes:
 - Provide comprehensive summary when complete
 - Save output in the `output/` directory
 
-### 4. OpenSearch Integration (optional)
-
-1. Start OpenSearch + Dashboards (Docker):
-
-```bash
-# Strong password required (8+ chars, rated "strong" by zxcvbn)
-export OPENSEARCH_INITIAL_ADMIN_PASSWORD=MyStr0ngP@ssw0rd123!
-docker compose up -d opensearch opensearch-dashboards
-```
-
-2. Install the index template and create the index:
-
-```bash
-curl -k -u admin:$OPENSEARCH_INITIAL_ADMIN_PASSWORD \
-  -H 'content-type: application/json' \
-  -X PUT https://localhost:9200/_index_template/govdoc-companies-template \
-   --data-binary @opensearch/shared/templates/company-index-template.json
-
-curl -k -u admin:$OPENSEARCH_INITIAL_ADMIN_PASSWORD -X PUT https://localhost:9200/govdoc-companies-000001
-```
-
-3. Push data from the CLI:
-
-Interactive mode (reads OPENSEARCH\_\* from .env and OPENSEARCH_PUSH=true):
-
-```bash
-npm start govdoc
-```
-
-Command mode with flags:
-
-```bash
-npm start govdoc -- --input ./companies.gds \
-   --push \
-   --os.endpoint https://localhost:9200 \
-   --os.username admin \
-   --os.password MyStr0ngP@ssw0rd123! \
-   --os.index govdoc-companies-000001 \
-   --os.index-strategy static \
-   --os.insecure \
-   --os.batch-size 500 \
-   --os.refresh
-```
-
-Docs: see `docs-site/docs/installation/OpenSearch.md` for end-to-end setup and query examples.
-
 ### 3. Manual Workflow
 
 If you prefer to run each step separately, make sure to use `LOG_LEVEL=DEBUG` for detailed output when running the separate apps:
@@ -213,15 +160,10 @@ You can also run commands directly:
 - `npm run scanner` (same as `npm start scanner`)
 - `npm run govdoc` (same as `npm start govdoc`)
 
-## Command Summary
+## OpenSearch integration
 
-| What you want to do        | Command             |
-| -------------------------- | ------------------- |
-| **First time setup**       | `npm install`       |
-| **Interactive workflow**   | `npm start govdoc`  |
-| **Search & download only** | `npm start crawler` |
-| **Process documents only** | `npm start scanner` |
-| **Get help**               | `npm start help`    |
+- **Quick Setup**: Read `opensearch/README.md`
+- **Detailed Guide**: [OpenSearch Installation Documentation](https://flexivian.github.io/govdoc-scanner/docs/installation/OpenSearch)
 
 ## Features Offered
 

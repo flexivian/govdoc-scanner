@@ -22,14 +22,14 @@ echo -e "${BLUE}=== GovDoc Scanner - Production Cluster Initialization ===${NC}"
 echo ""
 
 # Check if environment file exists
-if [ ! -f "../.env" ]; then
+if [ ! -f ".env" ]; then
     echo -e "${RED}Error: .env file not found!${NC}"
     echo -e "${YELLOW}Run ./setup-security.sh first${NC}"
     exit 1
 fi
 
 # Source environment variables
-source ../.env
+source .env
 
 # Function to wait for OpenSearch to be ready
 wait_for_opensearch() {
@@ -114,6 +114,15 @@ create_initial_index() {
     
     if [ "$response" = "200" ]; then
         echo -e "${GREEN}✓ Initial index created successfully${NC}"
+    elif [ "$response" = "400" ]; then
+        # Check if it's because the index already exists
+        if grep -q "already exists" /tmp/index_response.json 2>/dev/null; then
+            echo -e "${GREEN}✓ Initial index already exists${NC}"
+        else
+            echo -e "${RED}✗ Failed to create initial index (HTTP $response)${NC}"
+            cat /tmp/index_response.json
+            exit 1
+        fi
     else
         echo -e "${RED}✗ Failed to create initial index (HTTP $response)${NC}"
         cat /tmp/index_response.json
@@ -182,6 +191,15 @@ setup_backup_repository() {
     
     if [ "$response" = "200" ]; then
         echo -e "${GREEN}✓ Backup repository configured successfully${NC}"
+    elif [ "$response" = "400" ]; then
+        # Check if it's because the repository already exists
+        if grep -q "already exists" /tmp/repo_response.json 2>/dev/null; then
+            echo -e "${GREEN}✓ Backup repository already exists${NC}"
+        else
+            echo -e "${RED}✗ Failed to setup backup repository (HTTP $response)${NC}"
+            cat /tmp/repo_response.json
+            exit 1
+        fi
     else
         echo -e "${RED}✗ Failed to setup backup repository (HTTP $response)${NC}"
         cat /tmp/repo_response.json
@@ -230,21 +248,6 @@ display_summary() {
     echo -e "  • Write Index: govdoc-companies-write"
     echo -e "  • Read Alias: govdoc-companies"
     echo -e "  • Physical Index: govdoc-companies-000001"
-    echo ""
-    echo -e "${BLUE}Next Steps:${NC}"
-    echo -e "  1. Update your application .env file:"
-    echo -e "     OPENSEARCH_URL=${OPENSEARCH_URL}"
-    echo -e "     OPENSEARCH_USERNAME=govdoc_ingest"
-    echo -e "     OPENSEARCH_PASSWORD=${OPENSEARCH_PROD_GOVDOC_PASSWORD}"
-    echo -e "     OPENSEARCH_INDEX=govdoc-companies-write"
-    echo ""
-    echo -e "  2. Test data ingestion:"
-    echo -e "     npm start govdoc -- --input ./companies.gds --push"
-    echo ""
-    echo -e "  3. Access OpenSearch Dashboards:"
-    echo -e "     http://localhost:5601"
-    echo -e "     Username: admin"
-    echo -e "     Password: ${OPENSEARCH_PROD_ADMIN_PASSWORD}"
     echo ""
 }
 

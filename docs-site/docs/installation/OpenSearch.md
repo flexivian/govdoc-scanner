@@ -1,172 +1,299 @@
 # OpenSearch Integration
 
-This guide shows how to set up, configure, and use OpenSearch 3.1+ integration with govdoc-scanner.
+This guide shows how to set up and use OpenSearch 3.1+ with govdoc-scanner for searchable company data indexing.
 
-## What you get
+## Overview
+
+The `opensearch/` directory provides complete OpenSearch integration with:
+
+- **Development environment**: Quick local setup for testing
+- **Production environment**: Secure, scalable deployment with authentication
+- **Index templates**: Pre-configured mappings for company data
+- **Dashboard setup**: Ready-to-use visualizations and index patterns
+
+## What You Get
 
 - Searchable index of company metadata (one document per GEMI ID)
 - Nested representatives and tracked changes history
 - Keyword subfields for aggregations and exact matching
-- CLI push support with flags or environment variables
+- CLI integration with bulk push support
+- OpenSearch Dashboards for data exploration
 
 ## Prerequisites
 
 - Docker and Docker Compose
 - Node.js 18+ (20+ recommended)
 
-## Start OpenSearch locally
+## Development Setup
 
-From the project root:
+For local development and testing:
+
+### 1. Start Development Cluster
 
 ```bash
-# Ensure OPENSEARCH_INITIAL_ADMIN_PASSWORD is set in your .env
-# Password must be at least 8 characters and rated as "strong" by zxcvbn
-# Use a complex password like: MyStr0ngP@ssw0rd123!
-export OPENSEARCH_INITIAL_ADMIN_PASSWORD=MyStr0ngP@ssw0rd123!
-
-# Start OpenSearch + Dashboards
-docker compose up -d opensearch opensearch-dashboards
+cd opensearch/development
+cp .env.template .env
+# Edit .env with a strong password (8+ characters)
+docker compose up -d
 ```
 
-OpenSearch:
+### 2. Configure Application
 
-- API: https://localhost:9200 (user: admin, password: $OPENSEARCH_INITIAL_ADMIN_PASSWORD)
-- Dashboards: http://localhost:5601
-
-Note: OpenSearch 3.1+ requires strong passwords (8+ chars, rated "strong" by zxcvbn). Self-signed SSL is enabled by default.
-
-## Install the index template
-
-Load the provided template so your index has the correct mappings:
+Update your root `.env` file:
 
 ```bash
-# Using curl (replace password)
-curl -k -u admin:$OPENSEARCH_INITIAL_ADMIN_PASSWORD \
-  -H 'content-type: application/json' \
-  -X PUT https://localhost:9200/_index_template/govdoc-companies-template \
-  --data-binary @opensearch/company-index-template.json
-
-# Create the first write index (if not exists)
-curl -k -u admin:$OPENSEARCH_INITIAL_ADMIN_PASSWORD -X PUT https://localhost:9200/govdoc-companies-000001
-```
-
-## Configure the CLI
-
-Copy the example env and set values:
-
-```bash
-cp .env.example .env
-```
-
-Update or ensure these keys exist in `.env`:
-
-```bash
-# Enable push in interactive mode
 OPENSEARCH_PUSH=true
-
-# Connection
 OPENSEARCH_URL=https://localhost:9200
 OPENSEARCH_USERNAME=admin
-OPENSEARCH_PASSWORD=yourStrongPassword
-OPENSEARCH_INSECURE=true # accept self-signed certs in dev
-
-# Indexing
+OPENSEARCH_PASSWORD=yourPassword
+OPENSEARCH_INSECURE=true
 OPENSEARCH_INDEX=govdoc-companies-000001
-OPENSEARCH_INDEX_STRATEGY=static   # or by-year
-OPENSEARCH_BATCH_SIZE=500
-OPENSEARCH_REFRESH=false
 ```
 
-## Index data
+### 3. Create Index Template
 
-Run the CLI and let it push automatically (interactive mode reads OPENSEARCH_PUSH=true):
+```bash
+# From project root
+curl -k -u admin:yourPassword -X PUT "https://localhost:9200/_index_template/govdoc-company-template" \
+  -H "Content-Type: application/json" \
+  -d @opensearch/shared/templates/company-index-template.json
+```
+
+### 4. Create Initial Index
+
+```bash
+curl -k -u admin:yourPassword -X PUT "https://localhost:9200/govdoc-companies-000001"
+```
+
+**Verify setup:**
+
+```bash
+# Check if template was created
+curl -k -u admin:yourAdminPassword "https://localhost:9200/_index_template/govdoc-company-template?pretty"
+
+# Check index mappings
+curl -k -u admin:yourAdminPassword "https://localhost:9200/govdoc-companies-000001/_mapping?pretty"
+```
+
+### 5. Test Data Ingestion
+
+```bash
+npm start govdoc -- --input ./companies.gds --push
+```
+
+### Access Dashboards
+
+- **URL**: http://localhost:5601
+- **Username**: admin
+- **Password**: (from your `.env` file)
+
+Create index patterns manually:
+
+1. Go to **Stack Management** → **Index Patterns**
+2. Create pattern: `govdoc-companies-*`
+3. Set time field: `scan_date`
+4. Explore data in **Discover** tab
+
+## Production Setup
+
+For production deployments with security and monitoring:
+
+### Quick Setup
+
+```bash
+cd opensearch/production
+./setup-production.sh
+```
+
+This automatically:
+
+1. Generates secure passwords and certificates
+2. Starts production OpenSearch cluster
+3. Applies security configuration (users & roles)
+4. Initializes indices, templates, and aliases
+5. Sets up OpenSearch Dashboards index patterns
+
+### Manual Setup
+
+For step-by-step control:
+
+```bash
+cd opensearch/production
+
+# Generate security configuration
+./scripts/setup-security.sh
+
+# Start cluster
+docker compose -f docker-compose.prod.yml up -d
+
+# Apply security settings
+./scripts/apply-security-config.sh
+
+# Initialize cluster
+./scripts/initialize-cluster.sh
+
+# Setup dashboards
+./scripts/setup-dashboards.sh
+```
+
+### Access Production Dashboards
+
+- **URL**: http://localhost:5601
+- **Username**: admin
+- **Password**: (shown after setup completion)
+
+Index patterns are automatically created. You can:
+
+- Explore data in **Discover**
+- Create visualizations in **Visualize**
+- Build dashboards in **Dashboard**
+- Monitor health in **Stack Management**
+
+## Environment Differences
+
+| Feature          | Development         | Production                 |
+| ---------------- | ------------------- | -------------------------- |
+| **Memory**       | 512MB heap          | 4GB heap                   |
+| **Security**     | Basic auth          | Full TLS + RBAC            |
+| **Persistence**  | Docker volumes      | Named volumes + backup     |
+| **Monitoring**   | Basic health checks | Health checks + monitoring |
+| **Certificates** | Auto-generated      | Demo certs                 |
+
+## CLI Integration
+
+### Environment Variables
+
+Configure in your root `.env`:
+
+```bash
+OPENSEARCH_PUSH=true
+OPENSEARCH_URL=https://localhost:9200
+OPENSEARCH_USERNAME=admin  # or govdoc_ingest (production)
+OPENSEARCH_PASSWORD=yourPassword
+OPENSEARCH_INDEX=govdoc-companies-000001
+OPENSEARCH_BATCH_SIZE=500
+OPENSEARCH_INSECURE=true  # For development only
+```
+
+### Interactive Mode
 
 ```bash
 npm start govdoc
+# Automatically pushes if OPENSEARCH_PUSH=true
 ```
 
-Or run in command mode and force push with flags:
+### Command Mode with Flags
 
 ```bash
 npm start govdoc -- --input ./companies.gds \
   --push \
   --os.endpoint https://localhost:9200 \
   --os.username admin \
-  --os.password yourStrongPassword \
+  --os.password yourPassword \
   --os.index govdoc-companies-000001 \
-  --os.index-strategy static \
   --os.insecure \
-  --os.batch-size 500 \
-  --os.refresh
+  --os.batch-size 500
 ```
 
-The CLI will print a summary like:
+## Data Model
 
-```
-📤 Pushing to OpenSearch...
-✅ Indexed: 42 | ❌ Failed: 0
-```
+The index template (`opensearch/shared/templates/company-index-template.json`) defines:
 
-## Query examples
+- **Index pattern**: `govdoc-companies-*`
+- **Dynamic mapping**: false (unknown fields rejected)
+- **Document structure**: One document per company (gemi_id)
 
-Search by company name:
+**Key Fields**:
 
-```json
-POST govdoc-companies-000001/_search
-{
-  "query": {
-    "match": { "company_name": "ΤΕΧΝΙΚΗ" }
-  }
-}
-```
+- `gemi_id`, `company_tax_id` (keyword)
+- `company_name` (text + keyword subfield)
+- `creation_date`, `scan_date`, `document_date` (date)
+- `representatives` (nested array)
+- `tracked_changes_history` (nested array)
 
-Filter by region and aggregate cities:
+## Query Examples
 
-```json
-POST govdoc-companies-000001/_search
-{
-  "size": 0,
-  "query": {
-    "term": { "region": "ΑΤΤΙΚΗΣ" }
-  },
-  "aggs": {
-    "cities": { "terms": { "field": "city" } }
-  }
-}
+### Search by company name:
+
+```bash
+curl -k -u admin:yourPassword -X POST "https://localhost:9200/govdoc-companies-000001/_search" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": {
+      "match": { "company_name": "ΤΕΧΝΙΚΗ" }
+    }
+  }'
 ```
 
-Find active representatives named "ΓΕΩΡΓΙΟΣ":
+### Filter by region and aggregate cities:
 
-```json
-POST govdoc-companies-000001/_search
-{
-  "query": {
-    "nested": {
-      "path": "representatives",
-      "query": {
-        "bool": {
-          "must": [
-            { "match": { "representatives.name": "ΓΕΩΡΓΙΟΣ" } },
-            { "term": { "representatives.is_active": true } }
-          ]
+```bash
+curl -k -u admin:yourPassword -X POST "https://localhost:9200/govdoc-companies-000001/_search" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "size": 0,
+    "query": {
+      "term": { "region": "ΑΤΤΙΚΗΣ" }
+    },
+    "aggs": {
+      "cities": { "terms": { "field": "city" } }
+    }
+  }'
+```
+
+### Find active representatives:
+
+```bash
+curl -k -u admin:yourPassword -X POST "https://localhost:9200/govdoc-companies-000001/_search" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": {
+      "nested": {
+        "path": "representatives",
+        "query": {
+          "bool": {
+            "must": [
+              { "match": { "representatives.name": "ΓΕΩΡΓΙΟΣ" } },
+              { "term": { "representatives.is_active": true } }
+            ]
+          }
         }
       }
     }
-  }
-}
+  }'
 ```
 
-## Troubleshooting
+## Reset Environments
 
-- Indexed count is 0:
-  - Ensure index template is installed and index exists
-  - Confirm docs are in the final output set (CLI filters to successful ones)
-  - Check OPENSEARCH_INDEX_STRATEGY; with by-year, docs go to e.g. govdoc-companies-2021
-- SSL errors:
-  - Use `OPENSEARCH_INSECURE=true` or `--os.insecure` locally
-- Auth errors:
-  - Verify username/password and OPENSEARCH_URL
+**Development:**
 
-## Mapping and rationale
+```bash
+cd opensearch/development
+docker compose down --volumes --remove-orphans
+```
 
-See `opensearch/company-index-template.json` and `opensearch/README.md` for detailed field mappings and reasoning.
+**Production:**
+
+```bash
+cd opensearch/production
+./cleanup-production.sh
+```
+
+## Directory Structure
+
+```
+opensearch/
+├── README.md                           # Quick start guide
+├── development/                        # Development environment
+│   ├── docker-compose.yml              # Dev Docker Compose
+│   └── .env.template                   # Environment template
+├── production/                         # Production environment
+│   ├── docker-compose.prod.yml         # Production Docker Compose
+│   ├── setup-production.sh             # One-click setup script
+│   ├── cleanup-production.sh           # Reset script
+│   ├── config/                         # OpenSearch configuration
+│   └── scripts/                        # Setup automation scripts
+└── shared/                             # Shared resources
+    └── templates/                      # Index templates
+        └── company-index-template.json # Company data mapping
+```

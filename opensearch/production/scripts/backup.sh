@@ -19,13 +19,13 @@ BACKUP_REPO="govdoc-backup-repo"
 RETENTION_DAYS=30
 
 # Check if environment file exists
-if [ ! -f "../.env" ]; then
+if [ ! -f ".env" ]; then
     echo -e "${RED}Error: .env file not found!${NC}"
     exit 1
 fi
 
 # Source environment variables
-source ../.env
+source .env
 
 # Generate snapshot name with timestamp
 SNAPSHOT_NAME="govdoc-daily-$(date +%Y%m%d-%H%M%S)"
@@ -149,9 +149,22 @@ monitor_snapshot_progress() {
     echo -e "  • Monitoring snapshot progress..."
     
     local max_wait_minutes=30
-    local check_interval=10
+    local check_interval=5  # Reduced to 5 seconds for faster detection
     local checks_performed=0
     local max_checks=$((max_wait_minutes * 60 / check_interval))
+    
+    # Check immediately first
+    local status_response=$(curl -k -s -u "admin:${OPENSEARCH_PROD_ADMIN_PASSWORD}" \
+                           "${OPENSEARCH_URL}/_snapshot/${BACKUP_REPO}/${SNAPSHOT_NAME}" 2>/dev/null)
+    
+    if [ $? -eq 0 ] && [ -n "$status_response" ] && [ "$HAS_JQ" = "true" ]; then
+        local state=$(echo "$status_response" | jq -r '.snapshots[0].state // "unknown"')
+        if [ "$state" = "SUCCESS" ]; then
+            echo -e "${GREEN}    ✓ Snapshot completed successfully${NC}"
+            show_snapshot_details "$status_response"
+            return 0
+        fi
+    fi
     
     while [ $checks_performed -lt $max_checks ]; do
         local status_response=$(curl -k -s -u "admin:${OPENSEARCH_PROD_ADMIN_PASSWORD}" \
@@ -167,27 +180,19 @@ monitor_snapshot_progress() {
             local progress=$(echo "$status_response" | jq -r '.snapshots[0].shards.successful // 0')
             local total=$(echo "$status_response" | jq -r '.snapshots[0].shards.total // 0')
             
+            # Fix for when total is 0 but should be 1
+            if [ "$total" = "0" ] && [ "$state" = "SUCCESS" ]; then
+                total=1
+                progress=1
+            fi
+            
             case $state in
                 "IN_PROGRESS")
                     echo -e "    • Progress: $progress/$total shards completed"
                     ;;
                 "SUCCESS")
                     echo -e "${GREEN}    ✓ Snapshot completed successfully${NC}"
-                    
-                    # Get snapshot details
-                    local size=$(echo "$status_response" | jq -r '.snapshots[0].stats.total.size_in_bytes // 0')
-                    local duration=$(echo "$status_response" | jq -r '.snapshots[0].duration_in_millis // 0')
-                    
-                    if [ "$size" != "0" ] && [ "$size" != "null" ]; then
-                        local size_mb=$((size / 1024 / 1024))
-                        echo -e "    • Backup size: ${size_mb} MB"
-                    fi
-                    
-                    if [ "$duration" != "0" ] && [ "$duration" != "null" ]; then
-                        local duration_sec=$((duration / 1000))
-                        echo -e "    • Duration: ${duration_sec} seconds"
-                    fi
-                    
+                    show_snapshot_details "$status_response"
                     return 0
                     ;;
                 "FAILED")
@@ -203,7 +208,7 @@ monitor_snapshot_progress() {
                     return 1
                     ;;
                 *)
-                    echo -e "    • Status: $state"
+                    echo -e "    • Status: $state (progress: $progress/$total)"
                     ;;
             esac
         else
@@ -217,6 +222,25 @@ monitor_snapshot_progress() {
     echo -e "${YELLOW}    ⚠ Snapshot taking longer than expected (${max_wait_minutes} minutes)${NC}"
     echo -e "    • Check snapshot status manually: /_snapshot/${BACKUP_REPO}/${SNAPSHOT_NAME}"
     return 1
+}
+
+# Function to show snapshot details
+show_snapshot_details() {
+    local status_response="$1"
+    
+    # Get snapshot details
+    local size=$(echo "$status_response" | jq -r '.snapshots[0].stats.total.size_in_bytes // 0')
+    local duration=$(echo "$status_response" | jq -r '.snapshots[0].duration_in_millis // 0')
+    
+    if [ "$size" != "0" ] && [ "$size" != "null" ]; then
+        local size_mb=$((size / 1024 / 1024))
+        echo -e "    • Backup size: ${size_mb} MB"
+    fi
+    
+    if [ "$duration" != "0" ] && [ "$duration" != "null" ]; then
+        local duration_sec=$((duration / 1000))
+        echo -e "    • Duration: ${duration_sec} seconds"
+    fi
 }
 
 # Function to cleanup old snapshots
@@ -308,12 +332,6 @@ generate_report() {
         local snapshot_count=$(echo "$snapshots_response" | jq -r '.snapshots | length')
         echo -e "Total snapshots: $snapshot_count"
     fi
-    
-    echo -e "\n${BLUE}Next Steps:${NC}"
-    echo -e "  • Schedule this script to run daily"
-    echo -e "  • Monitor backup success in logs"
-    echo -e "  • Test restore procedure periodically"
-    echo -e "  • Consider offsite backup replication"
     
     echo -e "\n${GREEN}Backup process completed${NC}"
 }

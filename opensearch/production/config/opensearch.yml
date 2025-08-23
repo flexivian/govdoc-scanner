@@ -30,7 +30,7 @@ bootstrap.memory_lock: true
 # ---------------------------------- Paths -------------------------------------
 path.data: /usr/share/opensearch/data
 path.logs: /usr/share/opensearch/logs
-path.repo: ["/usr/share/opensearch/backup"]
+path.repo: /usr/share/opensearch/backup
 
 # ---------------------------------- Security ----------------------------------
 # Enable Security Plugin
@@ -98,10 +98,3 @@ logger:
   level: INFO
   org.opensearch.discovery: WARN
   org.opensearch.cluster.service: WARN
-
-# ---------------------------------- Snapshots -------------------------------
-# Repository settings
-repositories:
-  fs:
-    location: /usr/share/opensearch/backup
-    compress: true

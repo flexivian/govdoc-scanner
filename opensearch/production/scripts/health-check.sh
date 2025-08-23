@@ -17,13 +17,13 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OPENSEARCH_URL="https://localhost:9200"
 
 # Check if environment file exists
-if [ ! -f "../.env" ]; then
+if [ ! -f ".env" ]; then
     echo -e "${RED}Error: .env file not found!${NC}"
     exit 1
 fi
 
 # Source environment variables
-source ../.env
+source .env
 
 echo -e "${BLUE}=== GovDoc Scanner - Production Health Check ===${NC}"
 echo -e "Timestamp: $(date)"
@@ -140,10 +140,13 @@ check_index_stats() {
     fi
     
     if [ "$HAS_JQ" = "true" ]; then
-        local total_docs=0
-        local total_size=0
-        
-        echo "$indices_response" | jq -r '.[] | "\(.index) \(.docs.count // 0) \(.store.size // "0b")"' | while read -r index docs size; do
+        echo "$indices_response" | jq -r '.[] | .index' | while read -r index; do
+            # Get accurate document count using _count API
+            local count_response=$(curl -k -s -u "admin:${OPENSEARCH_PROD_ADMIN_PASSWORD}" \
+                                 "${OPENSEARCH_URL}/${index}/_count" 2>/dev/null)
+            local docs=$(echo "$count_response" | jq -r '.count // 0')
+            local size=$(echo "$indices_response" | jq -r --arg idx "$index" '.[] | select(.index == $idx) | ."store.size" // "0b"')
+            
             echo -e "  • Index: $index"
             echo -e "    Documents: $docs"
             echo -e "    Size: $size"
@@ -241,26 +244,14 @@ generate_summary() {
     echo -e "Status: Complete"
     echo -e "Timestamp: $(date)"
     
-    echo -e "\n${BLUE}Recommendations:${NC}"
-    
     # Check if this is first run without data
     local count_response=$(curl -k -s -u "admin:${OPENSEARCH_PROD_ADMIN_PASSWORD}" \
-                          "${OPENSEARCH_URL}/govdoc-companies/_count" 2>/dev/null)
+                          "${OPENSEARCH_URL}/govdoc-companies-*/_count" 2>/dev/null)
     
     if [ $? -ne 0 ] || echo "$count_response" | grep -q "index_not_found"; then
-        echo -e "  • ${YELLOW}No data indexed yet - run data ingestion to populate cluster${NC}"
-        echo -e "    Command: npm start govdoc -- --input ./companies.gds --push"
+        echo -e "\n${YELLOW}No data indexed yet - run data ingestion to populate cluster${NC}"
+        echo -e "Command: npm start govdoc -- --input ./companies.gds --push"
     fi
-    
-    echo -e "  • Schedule regular health checks (e.g., every 15 minutes)"
-    echo -e "  • Monitor disk usage and plan for scaling at 80% capacity"
-    echo -e "  • Ensure daily backups are running successfully"
-    echo -e "  • Review cluster status if YELLOW or RED"
-    
-    echo -e "\n${BLUE}Next Health Check:${NC}"
-    echo -e "  • Run this script again in 15-30 minutes"
-    echo -e "  • Set up automated monitoring with alerts"
-    echo -e "  • Consider adding this to crontab for regular checks"
 }
 
 # Main execution
