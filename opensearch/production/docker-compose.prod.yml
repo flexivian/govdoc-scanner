@@ -5,12 +5,21 @@ services:
     container_name: govdoc-opensearch-init
     volumes:
       - opensearch-prod-backup:/backup
+      - ./certs:/certs
     command: |
       sh -c "
         echo 'Setting up backup directory permissions...'
         chown -R 1000:1000 /backup
         chmod -R 755 /backup
-        echo 'Backup directory setup complete'
+        echo 'Setting up certificate permissions...'
+        if [ -d /certs ] && [ -n \"\$(ls -A /certs 2>/dev/null)\" ]; then
+          chown -R 1000:1000 /certs
+          chmod 644 /certs/*.pem 2>/dev/null || echo 'No PEM files found, skipping permission fix'
+          echo 'Certificate permissions updated'
+        else
+          echo 'No certificates found, skipping certificate permissions'
+        fi
+        echo 'Initialization complete'
       "
 
   opensearch-prod:
@@ -24,7 +33,7 @@ services:
 
       # Memory settings for production
       - bootstrap.memory_lock=true
-      - "OPENSEARCH_JAVA_OPTS=-Xms2g -Xmx2g"
+      - "OPENSEARCH_JAVA_OPTS=-Xms4g -Xmx4g"
 
       # Security configuration - disable demo config since we use custom config files
       - DISABLE_INSTALL_DEMO_CONFIG=true
