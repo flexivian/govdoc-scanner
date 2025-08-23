@@ -29,7 +29,6 @@ OPENSEARCH_INDEX=govdoc-companies-000001
 3. **Create the index template:**
 
 ```bash
-# From the project root directory
 curl -k -u admin:yourAdminPassword -X PUT "https://localhost:9200/_index_template/govdoc-company-template" \
   -H "Content-Type: application/json" \
   -d @../shared/templates/company-index-template.json
@@ -69,6 +68,13 @@ Create index patterns and visualizations:
 2. Create pattern: `govdoc-companies-*`
 3. Set time field: `scan_date`
 4. Explore data in **Discover** tab
+
+**Shut Down Docker Container:**
+
+```bash
+cd opensearch/development
+docker compose down
+```
 
 **Reset development environment:**
 
@@ -113,9 +119,17 @@ docker compose -f docker-compose.prod.yml up -d
 ./scripts/setup-dashboards.sh
 ```
 
-If you want to redo everything do:
+**Shut Down Docker Container:**
 
 ```bash
+cd opensearch/production
+docker compose -f docker-compose.prod.yml down
+```
+
+**Reset production environment:**
+
+```bash
+cd opensearch/production
 ./cleanup-production.sh
 ```
 
