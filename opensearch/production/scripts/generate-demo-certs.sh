@@ -1,6 +1,6 @@
 #!/bin/bash
 # Demo certificate generation script
-# WARNING: Only for development/testing
+# Only for development/testing
 
 cd certs
 

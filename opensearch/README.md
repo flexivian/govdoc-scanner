@@ -12,10 +12,9 @@ opensearch/
 │   └── .env.template                   # Development environment variables template
 ├── production/                         # Production environment configuration
 │   ├── docker-compose.prod.yml         # Production Docker Compose
-│   ├── .env.template                   # Production environment template
 │   ├── DEPLOYMENT-GUIDE.md             # Complete production deployment guide
 │   ├── config/                         # OpenSearch configuration files
-│   │   ├── opensearch.yml               # Main OpenSearch configuration
+│   │   ├── opensearch.yml              # Main OpenSearch configuration
 │   │   ├── jvm.options                 # JVM settings for production
 │   │   ├── internal_users.yml          # User authentication configuration
 │   │   ├── roles.yml                   # Role definitions
@@ -26,7 +25,7 @@ opensearch/
 │   │   ├── health-check.sh             # Health monitoring script
 │   │   ├── backup.sh                   # Backup management script
 │   │   └── generate-demo-certs.sh      # SSL certificate generation
-│   └── certs/                          # SSL certificates (demo certs for Phase 1)
+│   └── certs/                          # SSL certificates
 └── shared/                             # Shared resources and documentation
     ├── templates/                      # Common index templates (used by both environments)
     │   └── company-index-template.json # Company data index template
@@ -48,8 +47,11 @@ docker compose up -d
 
 ```bash
 cd opensearch/production
+# Run security setup (creates .env file automatically)
 ./scripts/setup-security.sh
+# Start production cluster
 docker compose -f docker-compose.prod.yml up -d
+# Initialize indices and templates
 ./scripts/initialize-cluster.sh
 ```
 
