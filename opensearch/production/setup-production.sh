@@ -156,9 +156,9 @@ main() {
         exit 1
     fi
     
-    # Step 3: Apply security configuration
-    run_step "3" "Security Configuration" "apply-security-config.sh" \
-        "Create users and roles in the running OpenSearch cluster."
+    # Step 3: Initialize security configuration
+    run_step "3" "Security Initialization" "initialize-security.sh" \
+        "Initialize OpenSearch security configuration using securityadmin.sh tool."
     
     # Step 4: Initialize cluster
     run_step "4" "Cluster Initialization" "initialize-cluster.sh" \

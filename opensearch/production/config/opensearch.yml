@@ -22,7 +22,6 @@ transport.port: 9300
 # ---------------------------------- Discovery ----------------------------------
 # Single node configuration (Phase 1)
 discovery.type: single-node
-cluster.initial_cluster_manager_nodes: ["govdoc-node-01"]
 
 # ---------------------------------- Memory ------------------------------------
 bootstrap.memory_lock: true
@@ -48,7 +47,6 @@ plugins.security.ssl.http.enabled: true
 plugins.security.ssl.http.pemcert_filepath: certs/node.pem
 plugins.security.ssl.http.pemkey_filepath: certs/node-key.pem
 plugins.security.ssl.http.pemtrustedcas_filepath: certs/root-ca.pem
-plugins.security.ssl.http.enforce_hostname_verification: false
 
 # Security Admin Distinguished Name
 plugins.security.authcz.admin_dn:
@@ -74,18 +72,6 @@ thread_pool:
 # ---------------------------------- Monitoring -------------------------------
 # Disable audit logging initially (can be enabled later)
 plugins.security.audit.type: noop
-
-# Disable compliance features for minimal setup
-plugins.security.compliance.history.external_config_enabled: false
-
-# ---------------------------------- Index Settings ---------------------------
-# Default index settings for new indices
-index:
-  number_of_shards: 1
-  number_of_replicas: 0 # Single node, no replicas
-  refresh_interval: 30s
-  mapping.total_fields.limit: 2000
-  max_result_window: 50000
 
 # ---------------------------------- Circuit Breakers ----------------------
 # Prevent OOM errors

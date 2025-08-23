@@ -24,10 +24,10 @@ services:
 
       # Memory settings for production
       - bootstrap.memory_lock=true
-      - "OPENSEARCH_JAVA_OPTS=-Xms4g -Xmx4g"
+      - "OPENSEARCH_JAVA_OPTS=-Xms2g -Xmx2g"
 
-      # Security configuration
-      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_PROD_ADMIN_PASSWORD}
+      # Security configuration - disable demo config since we use custom config files
+      - DISABLE_INSTALL_DEMO_CONFIG=true
 
       # Backup repository path
       - path.repo=/usr/share/opensearch/backup
@@ -44,6 +44,8 @@ services:
       - opensearch-prod-data:/usr/share/opensearch/data
       - opensearch-prod-logs:/usr/share/opensearch/logs
       - opensearch-prod-backup:/usr/share/opensearch/backup
+      # OpenSearch configuration
+      - ./config/opensearch.yml:/usr/share/opensearch/config/opensearch.yml:ro
       # Security configuration files
       - ./config/internal_users.yml:/usr/share/opensearch/config/opensearch-security/internal_users.yml:ro
       - ./config/roles.yml:/usr/share/opensearch/config/opensearch-security/roles.yml:ro

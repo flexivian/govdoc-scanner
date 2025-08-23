@@ -21,13 +21,6 @@ generate_password() {
     openssl rand -base64 32 | tr -d "=+/" | cut -c1-25
 }
 
-# Function to hash password for OpenSearch internal users
-hash_password() {
-    local password="$1"
-    # Using bcrypt with cost 12 (production strength)
-    python3 -c "import bcrypt; print(bcrypt.hashpw(b'$password', bcrypt.gensalt(rounds=12)).decode())"
-}
-
 echo -e "${YELLOW}Step 1: Generating secure passwords...${NC}"
 
 # Generate passwords
@@ -68,55 +61,29 @@ echo -e "${GREEN}✓ Created .env file${NC}"
 
 echo -e "\n${YELLOW}Step 3: Hashing passwords for internal users...${NC}"
 
-# Check if Python3 and bcrypt are available
-if ! command -v python3 &> /dev/null || ! python3 -c "import bcrypt" &> /dev/null 2>&1; then
-    echo -e "${YELLOW}Warning: Python3 or bcrypt not available. Using simpler hash method.${NC}"
-    ADMIN_HASH="\$2a\$12\$VcCDgh2NDk07JGN0rjGbM.Ad41qVR/YFJcgHp0UGns5JDymv..TOG"
-    KIBANA_HASH="\$2a\$12\$4AcgAt3xwOWadA5s5blL6ev39OXDNhmOesEoo33eZtrq2N0YrU3H."
-    GOVDOC_HASH="\$2a\$12\$JJSXNfTowz7Uu5ttXfeYpeYE0arACvcwlPBStB1F.MI7f0U9Z5DGC"
-    echo -e "${YELLOW}Using default hashes - remember to change passwords after setup${NC}"
+# Check if Node.js and bcryptjs are available
+if ! command -v node &> /dev/null; then
+    echo -e "${RED}Error: Node.js is required but not found. Please install Node.js.${NC}"
+    exit 1
+fi
+
+# Check if we're in the project root with bcryptjs installed
+cd ../.. # Go to project root to access node_modules
+if ! node -e "require('bcryptjs')" &> /dev/null 2>&1; then
+    echo -e "${YELLOW}Installing bcryptjs for password hashing...${NC}"
+    npm install bcryptjs > /dev/null 2>&1
+fi
+cd opensearch/production # Return to production directory
+
+# Run the password hashing script
+if node scripts/hash-passwords.mjs; then
+    echo -e "${GREEN}✓ Generated password hashes and updated internal_users.yml${NC}"
 else
-    ADMIN_HASH=$(hash_password "$ADMIN_PASSWORD")
-    KIBANA_HASH=$(hash_password "$KIBANA_PASSWORD")
-    GOVDOC_HASH=$(hash_password "$GOVDOC_INGEST_PASSWORD")
-    echo -e "${GREEN}✓ Generated password hashes${NC}"
+    echo -e "${RED}Error: Failed to hash passwords${NC}"
+    exit 1
 fi
 
 echo -e "\n${YELLOW}Step 4: Creating security configuration files...${NC}"
-
-# Create internal users configuration
-cat > config/internal_users.yml << EOF
-# Production Internal Users Configuration
-# Generated on: $(date)
-
-_meta:
-  type: "internalusers"
-  config_version: 2
-
-# Admin user (for cluster administration)
-admin:
-  hash: "${ADMIN_HASH}"
-  reserved: true
-  backend_roles:
-  - "admin"
-  description: "Admin user for cluster management"
-
-# Kibana server user (for Dashboards communication)
-kibanaserver:
-  hash: "${KIBANA_HASH}"
-  reserved: true
-  description: "Kibana server user"
-
-# GovDoc ingestion user (for application data ingestion)
-govdoc_ingest:
-  hash: "${GOVDOC_HASH}"
-  reserved: false
-  backend_roles: []
-  description: "GovDoc application user for data ingestion"
-  attributes:
-    created_by: "production-setup"
-    purpose: "data-ingestion"
-EOF
 
 # Create roles configuration
 cat > config/roles.yml << EOF
@@ -131,23 +98,33 @@ _meta:
 govdoc_ingest_role:
   reserved: false
   cluster_permissions:
-  - "indices:admin/create"
-  - "cluster:admin/aliases"
   - "cluster:monitor/health"
-  - "cluster:monitor/stats"
+  - "indices:data/write/bulk"
+  - "indices:data/write/bulk*"
+  - "indices:admin/auto_create"
+  - "cluster:admin/ingest/pipeline/get"
+  - "indices:admin/aliases/get"
+  - "indices:admin/aliases/exists"
   index_permissions:
   - index_patterns:
     - "govdoc-companies-*"
+    - "govdoc-companies-write"
     allowed_actions:
     - "indices:data/write/index"
     - "indices:data/write/bulk"
+    - "indices:data/write/bulk*"
     - "indices:data/write/update"
     - "indices:data/write/delete"
-    - "indices:admin/refresh"
-    - "indices:admin/mapping/put"
-    - "indices:admin/rollover"
     - "indices:data/read/search"
     - "indices:data/read/get"
+    - "indices:admin/create"
+    - "indices:admin/auto_create"
+    - "indices:admin/aliases"
+    - "indices:admin/aliases/get"
+    - "indices:admin/aliases/exists"
+    - "indices:admin/mapping/put"
+    - "indices:admin/mappings/fields/get"
+    - "indices:admin/mappings/get"
   description: "Role for GovDoc application data ingestion"
 
 # Read-only role for queries (future use)
@@ -230,7 +207,7 @@ openssl pkcs8 -inform PEM -outform PEM -in node-key-temp.pem -topk8 -nocrypt -v1
 openssl req -new -key node-key.pem -out node.csr \
     -subj "/C=US/ST=CA/L=SF/O=GovDoc/OU=IT/CN=node.example.com"
 
-# Generate certificate with SAN
+# Generate certificate with SAN and proper key usage
 cat > node.conf << 'CONF'
 [req]
 distinguished_name = req_distinguished_name
@@ -246,8 +223,9 @@ OU = IT
 CN = node.example.com
 
 [v3_req]
-keyUsage = keyEncipherment, dataEncipherment
-extendedKeyUsage = serverAuth
+basicConstraints = CA:FALSE
+keyUsage = critical, digitalSignature, keyEncipherment, keyAgreement
+extendedKeyUsage = serverAuth, clientAuth
 subjectAltName = @alt_names
 
 [alt_names]
@@ -260,16 +238,34 @@ CONF
 openssl x509 -req -in node.csr -CA root-ca.pem -CAkey root-ca-key.pem -CAcreateserial \
     -out node.pem -days 365 -extensions v3_req -extfile node.conf
 
-# Generate admin certificate
+# Generate admin certificate with proper key usage
+cat > admin.conf << 'CONF'
+[req]
+distinguished_name = req_distinguished_name
+req_extensions = v3_req
+prompt = no
+
+[req_distinguished_name]
+C = DE
+L = Test
+O = Test
+OU = SSL
+CN = admin
+
+[v3_req]
+basicConstraints = CA:FALSE
+keyUsage = critical, digitalSignature, keyEncipherment, keyAgreement
+extendedKeyUsage = clientAuth
+CONF
+
 openssl genrsa -out admin-key-temp.pem 2048
 openssl pkcs8 -inform PEM -outform PEM -in admin-key-temp.pem -topk8 -nocrypt -v1 PBE-SHA1-3DES -out admin-key.pem
-openssl req -new -key admin-key.pem -out admin.csr \
-    -subj "/C=DE/L=Test/O=Test/OU=SSL/CN=admin"
+openssl req -new -key admin-key.pem -out admin.csr -config admin.conf
 openssl x509 -req -in admin.csr -CA root-ca.pem -CAkey root-ca-key.pem -CAcreateserial \
-    -out admin.pem -days 365
+    -out admin.pem -days 365 -extensions v3_req -extfile admin.conf
 
 # Cleanup
-rm node-key-temp.pem admin-key-temp.pem node.csr admin.csr node.conf
+rm node-key-temp.pem admin-key-temp.pem node.csr admin.csr node.conf admin.conf
 
 echo "Demo certificates generated!"
 echo "WARNING: Replace these with proper certificates in production!"

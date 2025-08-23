@@ -13,8 +13,9 @@
     "cli"
   ],
   "dependencies": {
+    "@opensearch-project/opensearch": "^3.5.1",
+    "bcryptjs": "^3.0.2",
     "chokidar": "^4.0.3",
-    "cli-progress": "^3.12.0",
-    "@opensearch-project/opensearch": "^3.5.1"
+    "cli-progress": "^3.12.0"
   }
 }

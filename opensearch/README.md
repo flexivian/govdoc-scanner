@@ -65,7 +65,7 @@ npm start govdoc -- --input ./companies.gds --push
 
 Create index patterns and visualizations:
 
-1. Go to **Stack Management** → **Index Patterns**
+1. Go to **Discover -> Create Index Pattern**
 2. Create pattern: `govdoc-companies-*`
 3. Set time field: `scan_date`
 4. Explore data in **Discover** tab
@@ -91,7 +91,7 @@ This script will automatically:
 
 1. Generate secure passwords and certificates
 2. Start the production OpenSearch cluster
-3. Apply security configuration (create users and roles)
+3. Initialize security configuration (create users and roles)
 4. Initialize indices, templates, and aliases
 5. Setup OpenSearch Dashboards index patterns
 
@@ -105,8 +105,8 @@ cd opensearch/production
 ./scripts/setup-security.sh
 # Step 2: Start production cluster
 docker compose -f docker-compose.prod.yml up -d
-# Step 3: Apply security configuration (creates users and roles)
-./scripts/apply-security-config.sh
+# Step 3: Initialize security configuration (loads YAML files into OpenSearch)
+./scripts/initialize-security.sh
 # Step 4: Initialize indices and templates
 ./scripts/initialize-cluster.sh
 # Step 5: Setup dashboards

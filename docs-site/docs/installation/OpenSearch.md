@@ -45,7 +45,7 @@ Update your root `.env` file:
 OPENSEARCH_PUSH=true
 OPENSEARCH_URL=https://localhost:9200
 OPENSEARCH_USERNAME=admin
-OPENSEARCH_PASSWORD=yourPassword
+OPENSEARCH_PASSWORD=yourAdminPassword
 OPENSEARCH_INSECURE=true
 OPENSEARCH_INDEX=govdoc-companies-000001
 ```
@@ -54,7 +54,7 @@ OPENSEARCH_INDEX=govdoc-companies-000001
 
 ```bash
 # From project root
-curl -k -u admin:yourPassword -X PUT "https://localhost:9200/_index_template/govdoc-company-template" \
+curl -k -u admin:yourAdminPassword -X PUT "https://localhost:9200/_index_template/govdoc-company-template" \
   -H "Content-Type: application/json" \
   -d @opensearch/shared/templates/company-index-template.json
 ```
@@ -62,7 +62,7 @@ curl -k -u admin:yourPassword -X PUT "https://localhost:9200/_index_template/gov
 ### 4. Create Initial Index
 
 ```bash
-curl -k -u admin:yourPassword -X PUT "https://localhost:9200/govdoc-companies-000001"
+curl -k -u admin:yourAdminPassword -X PUT "https://localhost:9200/govdoc-companies-000001"
 ```
 
 **Verify setup:**
@@ -89,7 +89,7 @@ npm start govdoc -- --input ./companies.gds --push
 
 Create index patterns manually:
 
-1. Go to **Stack Management** → **Index Patterns**
+1. Go to **Discover -> Create Index Pattern**
 2. Create pattern: `govdoc-companies-*`
 3. Set time field: `scan_date`
 4. Explore data in **Discover** tab
@@ -108,10 +108,12 @@ cd opensearch/production
 This automatically:
 
 1. Generates secure passwords and certificates
-2. Starts production OpenSearch cluster
-3. Applies security configuration (users & roles)
-4. Initializes indices, templates, and aliases
-5. Sets up OpenSearch Dashboards index patterns
+2. Creates security configuration (users, roles, mappings)
+3. Starts production OpenSearch cluster
+4. Initializes security configuration with proper authentication
+5. Creates test data to verify bulk operations work
+
+**Important**: After setup completes, passwords are stored in `/opensearch/production/.env`. Copy the `govdoc_ingest` password to your root `.env` file.
 
 ### Manual Setup
 
@@ -119,22 +121,57 @@ For step-by-step control:
 
 ```bash
 cd opensearch/production
-
-# Generate security configuration
+# Step 1: Run security setup (creates .env file automatically)
 ./scripts/setup-security.sh
-
-# Start cluster
+# Step 2: Start production cluster
 docker compose -f docker-compose.prod.yml up -d
-
-# Apply security settings
-./scripts/apply-security-config.sh
-
-# Initialize cluster
+# Step 3: Initialize security configuration (loads YAML files into OpenSearch)
+./scripts/initialize-security.sh
+# Step 4: Initialize indices and templates
 ./scripts/initialize-cluster.sh
-
-# Setup dashboards
+# Step 5: Setup dashboards
 ./scripts/setup-dashboards.sh
 ```
+
+**Security Note**: Production uses a dedicated `govdoc_ingest` user with minimal permissions (only bulk write access to `govdoc-companies-*` indexes). Admin credentials are separate and should be stored securely.
+
+### Production Maintenance
+
+#### Health Monitoring
+
+Check cluster health and status:
+
+```bash
+cd opensearch/production
+./scripts/health-check.sh
+```
+
+This script monitors:
+
+- Cluster status (green/yellow/red) with shard distribution
+- Node health, heap memory usage, and JVM statistics
+- Index statistics and document counts for govdoc-companies-\* indices
+- Disk usage (both container and host)
+- Recent snapshot status and backup health
+- Security configuration (HTTPS and authentication status)
+
+#### Data Backup
+
+Create backups of your data:
+
+```bash
+cd opensearch/production
+./scripts/backup.sh
+```
+
+Features:
+
+- Creates timestamped snapshots (govdoc-daily-YYYYMMDD-HHMMSS)
+- Backs up govdoc-companies-\* indices with metadata
+- Automatic cleanup of old snapshots (30-day retention)
+- Repository verification and integrity checks
+- Progress monitoring and detailed reporting
+- Support for --list-only, --cleanup-only, --verify-only options
 
 ### Access Production Dashboards
 
@@ -148,6 +185,22 @@ Index patterns are automatically created. You can:
 - Create visualizations in **Visualize**
 - Build dashboards in **Dashboard**
 - Monitor health in **Stack Management**
+
+## Reset Environments
+
+**Development:**
+
+```bash
+cd opensearch/development
+docker compose down --volumes --remove-orphans
+```
+
+**Production:**
+
+```bash
+cd opensearch/production
+./cleanup-production.sh
+```
 
 ## Environment Differences
 
@@ -168,11 +221,12 @@ Configure in your root `.env`:
 ```bash
 OPENSEARCH_PUSH=true
 OPENSEARCH_URL=https://localhost:9200
-OPENSEARCH_USERNAME=admin  # or govdoc_ingest (production)
+OPENSEARCH_USERNAME=admin         # Development
+# OPENSEARCH_USERNAME=govdoc_ingest  # Production
 OPENSEARCH_PASSWORD=yourPassword
-OPENSEARCH_INDEX=govdoc-companies-000001
+OPENSEARCH_INDEX=govdoc-companies-write  # Or govdoc-companies-000001
 OPENSEARCH_BATCH_SIZE=500
-OPENSEARCH_INSECURE=true  # For development only
+OPENSEARCH_INSECURE=true  # For development/demo certificates only
 ```
 
 ### Interactive Mode
@@ -185,12 +239,23 @@ npm start govdoc
 ### Command Mode with Flags
 
 ```bash
+# Development
 npm start govdoc -- --input ./companies.gds \
   --push \
   --os.endpoint https://localhost:9200 \
   --os.username admin \
-  --os.password yourPassword \
+  --os.password yourDevPassword \
   --os.index govdoc-companies-000001 \
+  --os.insecure \
+  --os.batch-size 500
+
+# Production
+npm start govdoc -- --input ./companies.gds \
+  --push \
+  --os.endpoint https://localhost:9200 \
+  --os.username govdoc_ingest \
+  --os.password yourProdPassword \
+  --os.index govdoc-companies-write \
   --os.insecure \
   --os.batch-size 500
 ```
@@ -261,22 +326,6 @@ curl -k -u admin:yourPassword -X POST "https://localhost:9200/govdoc-companies-0
       }
     }
   }'
-```
-
-## Reset Environments
-
-**Development:**
-
-```bash
-cd opensearch/development
-docker compose down --volumes --remove-orphans
-```
-
-**Production:**
-
-```bash
-cd opensearch/production
-./cleanup-production.sh
 ```
 
 ## Directory Structure
