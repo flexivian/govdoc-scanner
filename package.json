@@ -10,7 +10,8 @@
   },
   "workspaces": [
     "apps/*",
-    "cli"
+    "cli",
+    "api"
   ],
   "dependencies": {
     "@opensearch-project/opensearch": "^3.5.1",
