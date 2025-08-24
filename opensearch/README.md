@@ -119,6 +119,17 @@ docker compose -f docker-compose.prod.yml up -d
 ./scripts/setup-dashboards.sh
 ```
 
+**Configure your application** by copying from the .env created to the root `.env` file:
+
+```bash
+OPENSEARCH_URL=https://localhost:9200
+OPENSEARCH_USERNAME=govdoc_ingest
+OPENSEARCH_PASSWORD=govdoc_ingest_password
+OPENSEARCH_INDEX=govdoc-companies-write
+OPENSEARCH_BATCH_SIZE=500
+OPENSEARCH_INSECURE=true  # Set to false when using proper certificates
+```
+
 **Shut Down Docker Container:**
 
 ```bash
