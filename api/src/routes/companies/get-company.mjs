@@ -42,7 +42,9 @@ export default async function getCompanyRoute(fastify) {
             request_id: req.id,
           },
         });
-      const repo = createCompanyRepo(fastify.opensearch);
+      const repo = createCompanyRepo(fastify.opensearch, {
+        index: process.env.OPENSEARCH_INDEX,
+      });
       const company = await repo.getById(req.params.gemiId);
       if (!company)
         return reply.code(404).send({

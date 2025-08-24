@@ -96,7 +96,9 @@ export default async function searchCompaniesRoute(fastify) {
           },
         });
       }
-      const repo = createCompanyRepo(fastify.opensearch);
+      const repo = createCompanyRepo(fastify.opensearch, {
+        index: process.env.OPENSEARCH_INDEX,
+      });
       const result = await repo.search({
         q,
         from,

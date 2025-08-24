@@ -2,39 +2,102 @@
 
 REST API for querying Greek company metadata from GEMI registry scans.
 
-## Quick Start
+## Prerequisites
 
-### Development Setup
+**Ensure OpenSearch Production is running first:**
 
-1. **Install dependencies:**
+```bash
+cd ../opensearch/production
+./setup-production.sh
+```
+
+## Development Deployment
+
+For development and testing with OpenSearch integration:
+
+### Quick Development Setup
 
 ```bash
 cd api
-npm install
+# Setup environment file
+./docker-deploy.sh setup
+# Edit .env with your configuration (use govdoc_ingest credentials)
+nano .env
+# Build and start development services
+./docker-deploy.sh build dev
+./docker-deploy.sh start dev
 ```
 
-2. **Configure environment** (create `.env` or set variables):
+### Development Features
+
+- **Network**: Connected to OpenSearch production network
+- **Port**: Accessible on all interfaces (`0.0.0.0:8080`)
+- **Logging**: Info level logs
+- **Resources**: 512M memory limit
+- **Security**: Basic security settings
+
+### Development Commands
 
 ```bash
-# Required
-API_KEY=your-secure-api-key-here
-API_KEY_ROLE=admin
-
-# Optional
-PORT=8080
-JWT_SECRET=your-jwt-secret-key
+./docker-deploy.sh build dev      # Build development image
+./docker-deploy.sh start dev      # Start development services
+./docker-deploy.sh stop dev       # Stop development services
+./docker-deploy.sh logs dev [-f]  # View development logs
+./docker-deploy.sh status dev     # Show development status
 ```
 
-3. **Start the API server:**
+## Production Deployment
+
+For production deployment with enhanced security and performance:
+
+### Quick Production Setup
 
 ```bash
-npm run dev
+cd api
+# Setup environment file (if not done)
+./docker-deploy.sh setup
+# Edit .env with production configuration
+nano .env
+# Full production deployment
+./docker-deploy.sh deploy
 ```
 
-**API is now running at:** http://localhost:8080
+### Production Features
 
-OpenAPI JSON: http://localhost:8080/openapi.json  
-Swagger UI: http://localhost:8080/docs
+- **Network**: Connected to OpenSearch production network + internal network
+- **Port**: Only accessible from localhost (`127.0.0.1:8080`) - requires reverse proxy
+- **Logging**: Warn level logs with rotation
+- **Resources**: 1G memory limit, enhanced CPU allocation
+- **Security**: Enhanced security (dropped capabilities, read-only filesystem)
+- **Monitoring**: Production labels and structured logging
+
+### Production Commands
+
+```bash
+./docker-deploy.sh build prod     # Build production image
+./docker-deploy.sh start prod     # Start production services
+./docker-deploy.sh stop prod      # Stop production services
+./docker-deploy.sh logs prod [-f] # View production logs
+./docker-deploy.sh status prod    # Show production status
+./docker-deploy.sh deploy         # Full deployment (build + start production)
+```
+
+### Production Access
+
+- **API Endpoint**: http://localhost:8080 (localhost only)
+- **For external access**: Setup reverse proxy (nginx/traefik)
+- **Health Check**: `curl http://localhost:8080/health`
+
+## General Commands
+
+- `./docker-deploy.sh setup` - Create .env from template
+- `./docker-deploy.sh status` - Show container status
+- `./docker-deploy.sh cleanup` - Clean up containers and images
+
+**API Documentation:**
+
+- OpenAPI JSON: http://localhost:8080/openapi.json
+- Swagger UI: http://localhost:8080/docs
 
 ### Quick Test
 
@@ -162,26 +225,6 @@ curl -X POST -H "Content-Type: application/json" \
 - **Input sanitization:** XSS protection on all inputs
 - **Role-based access:** Admin vs Reader permissions
 - **Request tracking:** All requests logged with unique IDs
-
-## OpenSearch Integration
-
-The API connects to OpenSearch for company data. Configure connection:
-
-```bash
-# Environment variables
-OPENSEARCH_URL=https://localhost:9200
-OPENSEARCH_USERNAME=govdoc_ingest
-OPENSEARCH_PASSWORD=your-password
-OPENSEARCH_INDEX=govdoc-companies-write
-OPENSEARCH_INSECURE=true  # for development only
-```
-
-**Start OpenSearch first:**
-
-```bash
-cd ../opensearch/development
-docker compose up -d
-```
 
 ## Monitoring
 

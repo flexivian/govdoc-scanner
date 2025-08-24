@@ -16,7 +16,7 @@ NC='\033[0m' # No Color
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OPENSEARCH_URL="https://localhost:9200"
 CONFIG_DIR="$(dirname "$SCRIPT_DIR")/config"
-TEMPLATE_FILE="../shared/templates/company-index-template.json"
+TEMPLATE_FILE="$(dirname "$(dirname "$SCRIPT_DIR")")/shared/templates/company-index-template.json"
 
 echo -e "${BLUE}=== GovDoc Scanner - Production Cluster Initialization ===${NC}"
 echo ""
