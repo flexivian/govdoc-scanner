@@ -148,6 +148,17 @@ docker compose -f docker-compose.prod.yml up -d
 
 **Security Note**: Production uses a dedicated `govdoc_ingest` user with minimal permissions (only bulk write access to `govdoc-companies-*` indexes). Admin credentials are separate and should be stored securely.
 
+**Configure your application** by copying from the .env created to the root `.env` file:
+
+```bash
+OPENSEARCH_URL=https://localhost:9200
+OPENSEARCH_USERNAME=govdoc_ingest
+OPENSEARCH_PASSWORD=govdoc_ingest_password
+OPENSEARCH_INDEX=govdoc-companies-write
+OPENSEARCH_BATCH_SIZE=500
+OPENSEARCH_INSECURE=true  # Set to false when using proper certificates
+```
+
 **Shut Down Docker Container:**
 
 ```bash
@@ -224,21 +235,6 @@ Index patterns are automatically created. You can:
 | **Certificates** | Auto-generated      | Demo certs                 |
 
 ## CLI Integration
-
-### Environment Variables
-
-Configure in your root `.env`:
-
-```bash
-OPENSEARCH_PUSH=true
-OPENSEARCH_URL=https://localhost:9200
-OPENSEARCH_USERNAME=admin         # Development
-# OPENSEARCH_USERNAME=govdoc_ingest  # Production
-OPENSEARCH_PASSWORD=yourPassword
-OPENSEARCH_INDEX=govdoc-companies-write  # Or govdoc-companies-000001
-OPENSEARCH_BATCH_SIZE=500
-OPENSEARCH_INSECURE=true  # For development/demo certificates only
-```
 
 ### Interactive Mode
 
