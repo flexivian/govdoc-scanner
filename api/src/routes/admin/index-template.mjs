@@ -7,10 +7,8 @@ export default async function indexTemplateRoute(fastify) {
     "/admin/index-template/init",
     {
       schema: {
-        description:
-          "Initialize or update the OpenSearch index template for company data. Creates proper field mappings and settings for optimal search performance. Admin access required.",
-        tags: ["admin"],
-        summary: "Initialize OpenSearch index template",
+  summary: "Init index template (admin)",
+  tags: ["admin"],
         security: [{ ApiKeyAuth: [] }, { BearerAuth: [] }],
         response: {
           200: {

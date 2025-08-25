@@ -5,46 +5,20 @@ export default async function searchCompaniesRoute(fastify) {
     "/companies",
     {
       schema: {
-        description:
-          "Search Greek companies from GEMI registry data. Use query parameters to filter by name, tax ID, location, or company type. Results are paginated and sorted by scan date (newest first) or company name.",
         summary: "Search companies",
         tags: ["companies"],
         querystring: {
           type: "object",
-          properties: {
-            q: {
-              type: "string",
-              maxLength: 512,
-              description:
-                "Search query for company name. Supports fuzziness and partial matching.",
+            properties: {
+              q: { type: "string", maxLength: 512, description: "Company name (fuzzy)" },
+              tax_id: { type: "string", description: "Exact company tax ID" },
+              region: { type: "string" },
+              city: { type: "string" },
+              company_type: { type: "string" },
+              sort: { type: "string", enum: ["scan_date:desc", "company_name.raw:asc"] },
+              from: { type: "integer", minimum: 0, default: 0, description: "Pagination offset" },
+              size: { type: "integer", minimum: 1, maximum: 100, default: 10, description: "Page size (max 100)" },
             },
-            tax_id: {
-              type: "string",
-              description: "Exact company tax ID for precise matching.",
-            },
-            region: { type: "string" },
-            city: { type: "string" },
-            company_type: { type: "string" },
-            sort: {
-              type: "string",
-              enum: ["scan_date:desc", "company_name.raw:asc"],
-            },
-            from: {
-              type: "integer",
-              minimum: 0,
-              default: 0,
-              description:
-                "Pagination offset: number of matching records to skip before collecting results.",
-            },
-            size: {
-              type: "integer",
-              minimum: 1,
-              maximum: 100,
-              default: 10,
-              description:
-                "Page size: maximum number of records to return (max 100).",
-            },
-          },
         },
         response: {
           200: {

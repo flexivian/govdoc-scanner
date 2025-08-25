@@ -5,9 +5,7 @@ export default async function getCompanyRoute(fastify) {
     "/companies/:gemiId",
     {
       schema: {
-        description:
-          "Get detailed information for a specific company using its GEMI ID. Returns complete company data including representatives, addresses, and document history.",
-        summary: "Get company by GEMI ID",
+  summary: "Get company data by GEMI ID",
         tags: ["companies"],
         params: {
           type: "object",

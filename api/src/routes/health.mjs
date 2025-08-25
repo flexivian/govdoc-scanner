@@ -3,9 +3,7 @@ export default async function healthRoute(fastify) {
     "/health",
     {
       schema: {
-        description:
-          "Check API and OpenSearch database health status. Returns service availability and any degradation warnings.",
-        summary: "Health check endpoint",
+  summary: "Health status",
         tags: ["system"],
         response: {
           200: {

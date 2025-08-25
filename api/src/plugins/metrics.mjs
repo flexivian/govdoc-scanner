@@ -34,14 +34,12 @@ async function metricsPlugin(fastify) {
     "/metrics",
     {
       schema: {
-        description:
-          "Prometheus-format metrics including HTTP request counts, response times, memory usage, and Node.js process statistics. Authentication required unless API_METRICS_PUBLIC=true.",
-        summary: "Prometheus metrics",
+    summary: "Prometheus metrics",
         tags: ["default"],
         response: {
           200: {
             type: "string",
-            description: "Prometheus metrics in text format",
+      description: "Metrics text format",
           },
         },
       },

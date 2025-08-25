@@ -1,14 +1,11 @@
-// Search representatives nested within company documents.
-// Query params: name OR tax_id (at least one required). If name provided min 2 chars. Supports pagination.
+// Search representatives by name or tax_id. One of name or tax_id required.
 export default async function representativesSearchRoute(fastify) {
   fastify.get(
     "/companies/representatives",
     {
       schema: {
-        description:
-          "Search for company representatives by name across all companies and tracked changes. Returns companies that have representatives matching the search criteria in structured representatives data or historical tracked changes, along with the matching representative details.",
+        summary: "Search representatives",
         tags: ["companies"],
-        summary: "Search company representatives",
         querystring: {
           type: "object",
           properties: {
@@ -34,7 +31,7 @@ export default async function representativesSearchRoute(fastify) {
               minimum: 1,
               maximum: 50,
               default: 10,
-              description: "Page size (max 50).",
+              description: "Page size (max 50)",
             },
           },
           anyOf: [{ required: ["name"] }, { required: ["tax_id"] }],

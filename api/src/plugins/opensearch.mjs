@@ -1,6 +1,6 @@
 import fp from "fastify-plugin";
-import "../../shared/config/index.mjs";
-import { buildOpenSearchClient } from "../../shared/opensearch/client.mjs";
+import "../../../shared/config/index.mjs";
+import { buildOpenSearchClient } from "../../../shared/opensearch/client.mjs";
 
 async function opensearchPlugin(fastify, opts) {
   const {

@@ -28,7 +28,7 @@ async function buildServer() {
       info: {
         title: "GovDoc Scanner API",
         description:
-          "API for querying company metadata derived from incorporation document scans.\n\nSecurity & Limits:\n- API key auth (x-api-key) OR Bearer JWT (login issues 12h token).\n- /login is public; provide username/password to receive token.\n- Role derived from API_KEY_ROLE env for API key usage (default admin) or from stored user for JWT.\n- Global rate limit 100 req/min (configurable).\n- User management endpoints for admin role only (create/update/delete).",
+          "API for querying company metadata from document scans. Auth: x-api-key or JWT (12h). Rate limit: 100 req/min. User admin endpoints require admin role.",
         version: "0.1.0",
         contact: {
           name: "API Support",
@@ -154,14 +154,12 @@ async function buildServer() {
     "/openapi.json",
     {
       schema: {
-        description:
-          "OpenAPI 3.0 specification in JSON format. Contains complete API documentation including all endpoints, parameters, and response schemas.",
-        summary: "OpenAPI specification",
+    summary: "OpenAPI specification JSON",
         tags: ["default"],
         response: {
           200: {
             type: "object",
-            description: "OpenAPI 3.0 specification object",
+      description: "OpenAPI 3.0 spec object",
           },
         },
       },
@@ -207,9 +205,7 @@ async function buildServer() {
     "/",
     {
       schema: {
-        description:
-          "API status and basic information. Returns the service name and current status.",
-        summary: "API status",
+  summary: "API status",
         tags: ["default"],
         response: {
           200: {

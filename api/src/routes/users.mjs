@@ -32,10 +32,8 @@ export default async function usersRoute(fastify) {
     "/users",
     {
       schema: {
-        description:
-          "Get a list of all registered users. Shows user ID, username, and role. Admin access required.",
-        tags: ["users"],
-        summary: "List all users",
+  summary: "List users (admin)",
+  tags: ["users"],
         response: {
           200: {
             type: "object",
@@ -63,10 +61,8 @@ export default async function usersRoute(fastify) {
     "/users",
     {
       schema: {
-        description:
-          "Create a new user account. Requires admin privileges. Users can have 'admin' (full access) or 'reader' (company data only) roles.",
-        tags: ["users"],
-        summary: "Create new user",
+  summary: "Create user (admin)",
+  tags: ["users"],
         body: {
           type: "object",
           required: ["username", "password", "role"],
@@ -118,10 +114,8 @@ export default async function usersRoute(fastify) {
     "/users/:id/password",
     {
       schema: {
-        description:
-          "Change a user's password. Admin access required. The user will need to use the new password for future logins.",
-        tags: ["users"],
-        summary: "Change user password",
+  summary: "Change password (admin)",
+  tags: ["users"],
         params: {
           type: "object",
           required: ["id"],
@@ -235,10 +229,8 @@ export default async function usersRoute(fastify) {
     "/users/:id",
     {
       schema: {
-        description:
-          "Update user details such as username or role. Admin access required. Cannot update passwords (use separate password endpoint).",
-        tags: ["users"],
-        summary: "Update user details",
+  summary: "Update user (admin)",
+  tags: ["users"],
         params: {
           type: "object",
           required: ["id"],
@@ -287,10 +279,8 @@ export default async function usersRoute(fastify) {
     "/users/:id",
     {
       schema: {
-        description:
-          "Permanently delete a user account. Admin access required. This action cannot be undone.",
-        tags: ["users"],
-        summary: "Delete user account",
+  summary: "Delete user (admin)",
+  tags: ["users"],
         params: {
           type: "object",
           required: ["id"],

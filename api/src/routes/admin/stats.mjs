@@ -3,10 +3,8 @@ export default async function statsRoute(fastify) {
     "/admin/stats",
     {
       schema: {
-        description:
-          "Get OpenSearch cluster health, index statistics, and document counts for govdoc-companies indices. Shows cluster status, node count, and total documents indexed. Admin access required.",
-        tags: ["admin"],
-        summary: "OpenSearch cluster statistics",
+  summary: "Cluster stats (admin)",
+  tags: ["admin"],
         security: [{ ApiKeyAuth: [] }, { BearerAuth: [] }],
         response: {
           200: {
