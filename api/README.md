@@ -2,6 +2,8 @@
 
 REST API for querying Greek company metadata from GEMI registry scans.
 
+**Detailed Guide**: [REST API Installation Documentation](https://flexivian.github.io/govdoc-scanner/docs/installation/REST-API)
+
 ## Prerequisites
 
 **Ensure OpenSearch Production is running first:**
@@ -166,39 +168,6 @@ curl -H "Authorization: Bearer $TOKEN" "http://localhost:8080/companies"
 - `GET /internal/stats` - API performance metrics
 - `GET /metrics` - Prometheus metrics (requires auth)
 
-## Response Format
-
-All responses follow this structure:
-
-```json
-{
-  "data": {
-    /* actual data */
-  },
-  "meta": {
-    "request_id": "uuid",
-    "total": 42, // for paginated results
-    "from": 0, // pagination offset
-    "size": 10 // page size
-  }
-}
-```
-
-Errors return (canonical Error schema):
-
-```json
-{
-  "error": {
-    "code": "error_code",
-    "message": "Human readable message",
-    "request_id": "uuid",
-    "details": {
-      /* optional structured info */
-    }
-  }
-}
-```
-
 ## User Management
 
 ### Create Users (Admin)
@@ -217,61 +186,4 @@ curl -X POST -H "Content-Type: application/json" \
   -d '{"username": "newuser", "password": "secure123"}' \
   "http://localhost:8080/login"
 # Returns: {"data": {"token": "jwt...", "role": "reader"}}
-```
-
-## Security Features
-
-- **Rate limiting:** 100 requests/minute per IP
-- **Input sanitization:** XSS protection on all inputs
-- **Role-based access:** Admin vs Reader permissions
-- **Request tracking:** All requests logged with unique IDs
-
-## Monitoring
-
-### Internal Statistics
-
-```bash
-curl -H "x-api-key: your-key" "http://localhost:8080/internal/stats"
-```
-
-Returns API uptime, request counts, OpenSearch query performance.
-
-### Prometheus Metrics
-
-```bash
-curl -H "x-api-key: your-key" "http://localhost:8080/metrics"
-```
-
-Returns standard Node.js metrics in Prometheus format.
-
-## Configuration
-
-| Variable              | Default | Description                |
-| --------------------- | ------- | -------------------------- |
-| `PORT`                | 8080    | API server port            |
-| `API_KEY`             | -       | Primary API key (required) |
-| `API_KEY_ROLE`        | admin   | Role for API key users     |
-| `JWT_SECRET`          | random  | JWT signing secret         |
-| `OPENSEARCH_URL`      | -       | OpenSearch endpoint        |
-| `OPENSEARCH_USERNAME` | -       | OpenSearch username        |
-| `OPENSEARCH_PASSWORD` | -       | OpenSearch password        |
-
-### Project Structure
-
-```
-api/
-├── src/
-│   ├── server.mjs          # Main server
-│   ├── config.mjs          # Configuration
-│   ├── plugins/            # Fastify plugins
-│   │   ├── auth.mjs        # Authentication
-│   │   ├── rate-limit.mjs  # Rate limiting
-│   │   └── ...
-│   ├── routes/             # API endpoints
-│   │   ├── companies/      # Company routes
-│   │   ├── admin/          # Admin routes
-│   │   └── users.mjs       # User management
-│   ├── services/           # Business logic
-│   └── schemas/            # JSON schemas
-└── package.json
 ```
