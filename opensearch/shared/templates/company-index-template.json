@@ -1,0 +1,124 @@
+{
+  "index_patterns": ["govdoc-companies-*"],
+  "template": {
+    "settings": {
+      "number_of_shards": 1,
+      "number_of_replicas": 0,
+      "index.mapping.total_fields.limit": 2000
+    },
+    "mappings": {
+      "dynamic": false,
+      "properties": {
+        "gemi_id": {
+          "type": "keyword"
+        },
+        "company_name": {
+          "type": "text",
+          "fields": {
+            "raw": {
+              "type": "keyword"
+            }
+          }
+        },
+        "company_tax_id": {
+          "type": "keyword"
+        },
+        "creation_date": {
+          "type": "date",
+          "format": "strict_date_optional_time"
+        },
+        "scan_date": {
+          "type": "date",
+          "format": "strict_date_optional_time"
+        },
+        "registered_address": {
+          "type": "text",
+          "fields": {
+            "raw": {
+              "type": "keyword"
+            }
+          }
+        },
+        "company_type": {
+          "type": "keyword"
+        },
+        "competent_gemi_office": {
+          "type": "keyword"
+        },
+        "region": {
+          "type": "keyword"
+        },
+        "city": {
+          "type": "keyword"
+        },
+        "postal_code": {
+          "type": "keyword"
+        },
+        "document_date": {
+          "type": "date",
+          "format": "strict_date_optional_time"
+        },
+        "tracked_changes_current": {
+          "type": "text"
+        },
+        "representatives": {
+          "type": "nested",
+          "properties": {
+            "name": {
+              "type": "text",
+              "fields": {
+                "raw": {
+                  "type": "keyword"
+                }
+              }
+            },
+            "role": {
+              "type": "keyword"
+            },
+            "is_active": {
+              "type": "boolean"
+            },
+            "tax_id": {
+              "type": "keyword"
+            },
+            "capital_share_text": {
+              "type": "keyword"
+            },
+            "capital_share_percent": {
+              "type": "scaled_float",
+              "scaling_factor": 100
+            },
+            "capital_share_amount_eur": {
+              "type": "scaled_float",
+              "scaling_factor": 100
+            }
+          }
+        },
+        "tracked_changes_history": {
+          "type": "nested",
+          "properties": {
+            "file_name": {
+              "type": "keyword"
+            },
+            "doc_date": {
+              "type": "date",
+              "format": "strict_date"
+            },
+            "summary": {
+              "type": "text"
+            }
+          }
+        },
+        "raw": {
+          "enabled": false
+        }
+      }
+    }
+  },
+  "priority": 100,
+  "composed_of": [],
+  "version": 1,
+  "_meta": {
+    "description": "Index template for Greek company metadata from GEMI registry"
+  }
+}

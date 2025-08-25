@@ -1,0 +1,94 @@
+# Production JVM configuration for OpenSearch
+# Optimized for 16GB system (8GB heap)
+
+################################################################
+## IMPORTANT: JVM heap size
+################################################################
+# Set heap size to 50% of available RAM
+# For 16GB system = 8GB heap
+-Xms8g
+-Xmx8g
+
+################################################################
+## Expert settings
+################################################################
+# Force the JVM to use IPv4 stack
+-Djava.net.preferIPv4Stack=true
+
+# Use the server JVM
+-server
+
+# Explicitly set the locale
+-Dfile.encoding=UTF-8
+-Djava.locale.providers=SPI,COMPAT
+
+################################################################
+## GC Configuration
+################################################################
+# Use G1GC for better performance with large heaps
+-XX:+UseG1GC
+
+# G1GC settings optimized for search workloads
+-XX:G1HeapRegionSize=32m
+-XX:+G1UseAdaptiveIHOP
+-XX:G1MixedGCCountTarget=8
+
+# GC logging
+-Xlog:gc*,gc+heap=info,safepoint:gc.log:time,level,tags
+
+################################################################
+## JVM temporary directory
+################################################################
+# JVM temporary directory (use system default)
+# -Djava.io.tmpdir=/usr/share/opensearch/tmp
+
+################################################################
+## Heap dumps
+################################################################
+# Generate a heap dump when an allocation from the Java heap fails
+-XX:+HeapDumpOnOutOfMemoryError
+
+# Specify an alternative path for heap dumps
+-XX:HeapDumpPath=/usr/share/opensearch/logs/heapdump.hprof
+
+################################################################
+## JVM fatal error logs
+################################################################
+-XX:ErrorFile=/usr/share/opensearch/logs/hs_err_pid%p.log
+
+################################################################
+## Performance optimizations
+################################################################
+# Disable explicit GC calls
+-XX:+DisableExplicitGC
+
+# Enable compressed OOPs for memory efficiency
+-XX:+UseCompressedOops
+-XX:+UseCompressedClassPointers
+
+# Optimize string handling
+-XX:+UseStringDeduplication
+
+################################################################
+## Security
+################################################################
+# Disable JVM options that can be dangerous in production
+-XX:+UnlockExperimentalVMOptions
+-Djava.security.policy=all.policy
+
+################################################################
+## Networking
+################################################################
+# Network timeouts
+-Dnetworkaddress.cache.ttl=60
+-Dnetworkaddress.cache.negative.ttl=10
+
+################################################################
+## OpenSearch specific
+################################################################
+# Disable Nashorn deprecation warnings
+-Dnashorn.args=--no-deprecation-warnings
+
+# Set locale for consistent behavior
+-Duser.language=en
+-Duser.country=US

@@ -28,6 +28,7 @@ const sidebars = {
         "installation/Getting Started",
         "installation/Development",
         "installation/Configuration",
+        "installation/OpenSearch",
       ],
     },
     {
