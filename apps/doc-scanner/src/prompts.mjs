@@ -15,7 +15,7 @@ First, identify the document type from these categories:
 - Μεταβίβαση εταιρικών μεριδίων (Share transfer)
 - Τροποποίηση διοίκησης (Management modification)
 
-## REPRESENTATIVE IDENTIFICATION PROTOCOL
+## REPRESENTATIVE IDENTIFICATION PROTOCOL (Populate representatives[] objects with: name, role, is_active, tax_id, capital_amount, capital_percentage)
 
 ### STEP 1: LOCATE REPRESENTATIVE SECTIONS
 Scan for these Greek section headers:
@@ -31,6 +31,11 @@ Scan for these Greek section headers:
 2. **Current active status** (not historical mentions)
 3. **Legal authority** in the company
 
+**NAME EXTRACTION RULES:**
+- Extract ONLY the surname and given name: "ΕΠΩΝΥΜΟ ΟΝΟΜΑ"
+- EXCLUDE father's names or patronymics (e.g., "του ΓΕΩΡΓΙΟΥ", "της ΜΑΡΙΑΣ", "του ΔΗΜΗΤΡΙΟΥ")
+- EXCLUDE titles, degrees, or professional designations
+
 **EXCLUDE ALWAYS:**
 - Δικηγόροι (Lawyers) - even if signing documents
 - Λογιστές (Accountants) 
@@ -38,6 +43,7 @@ Scan for these Greek section headers:
 - Μάρτυρες (Witnesses)
 - Υπάλληλοι ΓΕΜΗ (GEMI officials)
 - Historical references to former representatives
+- Father's names or patronymics (του/της + father's name)
 
 ### STEP 3: DETERMINE ACTIVE STATUS WITH PRECISION
 
@@ -64,25 +70,46 @@ Use EXACT Greek terminology from document:
 - "Μέλος ΔΣ" (Board Member)
 - "Αντιπρόεδρος ΔΣ" (Vice Chairman)
 
-### STEP 5: CAPITAL SHARE EXTRACTION
-Search for these exact patterns:
-- "ποσοστό στα κέρδη και στις ζημίες X%" 
+### STEP 5: CAPITAL OWNERSHIP EXTRACTION
+
+**CAPITAL STRUCTURE PATTERN RECOGNITION:**
+Look for "Άρθρο 5" or capital sections showing before/after structures:
+- Initial state: "κεφάλαιο της Εταιρίας συνίσταται από..."
+- Final state: "μετά τα ανωτέρω θα διαμορφωθεί σε..." or "μετέχουν:"
+
+**Extract FINAL ownership data only:**
+- "ποσοστό συμμέτοχής X%" (participation percentage)
+- "εταιρικά μερίδια... με ποσοστό συμμέτοχής X%"
 - "μετέχει στο εταιρικό κεφάλαιο με X ευρώ"
-- "εταιρικό μερίδιο X%"
-- "κεφάλαιο X,XX ευρώ"
-- "μερίδιο X%"
-- "μερίδα συμμετοχής X%"
-- "κατέβαλε ποσό X,XXX,XX Ευρώ"
 
+Record ownership using TWO separate fields (never combine):
+1. capital_amount: monetary value from final state (format: '14.918,00€'). Null if no explicit amount.
+2. capital_percentage: percentage from final state ('5%', '24%'). Null if not stated.
 
-**IMPORTANT**: Format as: "X,XXX,XX Ευρώ / XX%" or just "XX%" if amount not specified.
+**Use the LATEST figures** shown in the document (typically after capital increases).
+
+Do NOT infer amounts or percentages via arithmetic; only extract explicitly present text.
+
+### STEP 6: FINANCIAL DATA EXTRACTION
+
+**BALANCE SHEET INFORMATION:**
+Extract these financial metrics when explicitly stated in the document:
+
+1. **equity_amount**: Search for "Καθαρή Θέση" or "Ίδια Κεφάλαια" - extract verbatim amount with Greek formatting
+2. **total_assets**: Search for "Σύνολο Ενεργητικού" - extract verbatim amount with Greek formatting  
+3. **total_liabilities**: Search for "Σύνολο Υποχρεώσεων" - extract verbatim amount with Greek formatting
+
+Format: 'X.XXX.XXX,XX€' - preserve exact Greek number formatting. Set null if not found.
+
+### OPTIONAL FINANCIAL METRIC: PRE-TAX PROFIT (for future comparison only)
+If the document explicitly states pre-tax profit (search Greek phrases: "κέρδη προ φόρων", "αποτελέσματα προ φόρων", "κέρδη προ φόρων και τόκων", "αποτέλεσμα προ φόρων"), note the exact monetary amount internally for potential future comparison. Do NOT add a new field; this value is only used later to describe changes inside tracked_economic_changes when a subsequent document provides a different figure. If this is the first document, still leave tracked_economic_changes = null.
 
 ## VALIDATION CHECKLIST
 Before finalizing each representative:
 1. Has explicit Greek corporate role (not service provider)
 2. Status determination is based on THIS document's actions
-3. Name format: "ΕΠΩΝΥΜΟ ΟΝΟΜΑ" (surname first, all caps)
-4. Capital share extracted verbatim from document
+3. Name format: "ΕΠΩΝΥΜΟ ΟΝΟΜΑ" (surname first, all caps) - EXCLUDE father's names or patronymics (terms like "του ΓΕΩΡΓΙΟΥ", "της ΜΑΡΙΑΣ")
+4. capital_amount / capital_percentage values extracted verbatim (or null if absent)
 5. Tax ID is 9-digit number (if mentioned)
 
 ## EXTRACTION CONTEXT
@@ -91,7 +118,7 @@ Processing priority: Accuracy over completeness
 
 Apply Greek corporate law interpretation. When uncertain about representative status, err on the side of exclusion. Return null for any field where information is not explicitly stated or you have any doubt.
 
-**IMPORTANT**: This is an initial document extraction. Set the "tracked_changes" field to null since there is no previous document for comparison.
+**IMPORTANT (INITIAL DOCUMENT)**: Set both "tracked_company_changes" and "tracked_economic_changes" to null (no previous state to compare).
 
 Follow the JSON schema precisely. All Greek text must remain in original Greek characters.
 
@@ -120,7 +147,7 @@ Identify the new document type and its legal implications:
 - Maintain chronological consistency in representative status
 - New appointments/elections take precedence over existing data
 
-### STEP 3: REPRESENTATIVE MERGING PROTOCOL
+### STEP 3: REPRESENTATIVE MERGING PROTOCOL (representatives[]: name, role, is_active, tax_id, capital_amount, capital_percentage)
 
 #### DUPLICATE DETECTION & PREVENTION
 **MERGE by name similarity** - these are the SAME person:
@@ -128,18 +155,23 @@ Identify the new document type and its legal implications:
 - "ΠΑΠΑΔΟΠΟΥΛΟΣ ΜΑΡΙΑ" = "ΠΑΠΑΔΟΠΟΥΛΟΥ ΜΑΡΙΑ" (genitive forms)
 - Minor spelling differences in Greek names
 
+**NAME EXTRACTION RULES:**
+- Extract ONLY the surname and given name: "ΕΠΩΝΥΜΟ ΟΝΟΜΑ"
+- EXCLUDE father's names or patronymics (e.g., "του ΓΕΩΡΓΙΟΥ", "της ΜΑΡΙΑΣ", "του ΔΗΜΗΤΡΙΟΥ")
+- EXCLUDE titles, degrees, or professional designations
+
 #### STATUS UPDATE DECISION TREE
 For each person in the new document:
 
 **SCENARIO A: Person exists in previous data**
 1. Update is_active based on THIS document's action
 2. Update role if more specific information provided  
-3. Update capital_share with current ownership data
+3. Update capital_amount / capital_percentage with current ownership data
 4. Keep most recent tax_id if newly provided
 
 **SCENARIO B: New person not in previous data**
 1. Add as new representative with current document status
-2. Extract all available information (role, shares, tax_id)
+2. Extract all available information (role, capital_amount, capital_percentage, tax_id)
 
 **SCENARIO C: Person in previous data but not in new document**
 1. Keep existing entry unchanged (unless document explicitly mentions departure)
@@ -164,22 +196,33 @@ For each person in the new document:
 - "μεταβιβάζει το σύνολο των μεριδίων" (transfers all shares)
 - "παύει" / "λήγει η θητεία" (ceases/term expires)
 
-
 ### STEP 4: OWNERSHIP & CAPITAL TRACKING
 
-**Extract and update capital_share information:**
-Search for these patterns:
-- "ποσοστό στα κέρδη και στις ζημίες X%" 
-- "μετέχει στο εταιρικό κεφάλαιο με X ευρώ"
-- "εταιρικό μερίδιο X%"
-- "κεφάλαιο X,XX ευρώ"
-- "μερίδιο X%"
-- "μερίδα συμμετοχής X%"
-- "κατέβαλε ποσό X,XXX,XX Ευρώ"
+**CAPITAL STRUCTURE PATTERN RECOGNITION:**
+Documents often show capital changes in "Άρθρο 5" sections with before/after structures:
+- Initial capital: "κεφάλαιο της Εταιρίας συνίσταται από... ποσό των X ευρώ"
+- After changes: "κεφαλαίο της εταιρίας μετά τα ανωτέρω θα διαμορφωθεί σε Y€"
+- Individual holdings: "μετέχουν:" followed by numbered list
 
-**IMPORTANT**: Format as: "X,XXX,XX Ευρώ / XX%" or just "XX%" if amount not specified.
-- **Rule**: If someone transfers ALL shares → set capital_share to null and is_active to false
-- **Rule**: If someone acquires shares → update capital_share and set is_active to true
+**Extract the FINAL/CURRENT state only** (after all changes described in document):
+
+Search for these patterns:
+- "ποσοστό συμμέτοχής X%" (participation percentage)
+- "εταιρικά μερίδια, ονομαστικής αξίας... με ποσοστό συμμέτοχής X%"
+- "μετέχει στο εταιρικό κεφάλαιο με X ευρώ" 
+- Final totals after "μετά τα ανωτέρω" or similar phrases
+
+Rules:
+- capital_amount: monetary amount from final state (e.g., '14.918,00€')
+- capital_percentage: percentage from final state ('5%', '24%', '66%')
+- Use the LATEST figures shown in the document (typically after capital increases/changes)
+
+**FINANCIAL DATA EXTRACTION:**
+Update these financial fields when present in the new document:
+- equity_amount: "Καθαρή Θέση" or "Ίδια Κεφάλαια" 
+- total_assets: "Σύνολο Ενεργητικού"
+- total_liabilities: "Σύνολο Υποχρεώσεων"
+Format: 'X.XXX.XXX,XX€' - preserve Greek number formatting
 
 ### STEP 5: DATA INTEGRITY VALIDATION
 
@@ -192,21 +235,34 @@ Search for these patterns:
 
 ### STEP 6: TRACKED CHANGES GENERATION
 
-**Generate a concise summary of key changes** for the tracked_changes field ΙΝ ENGLISH:
-- Compare the NEW document data with the EXISTING metadata
-- **Include only significant changes:**
+**FOCUS: Compare OLD JSON vs NEW JSON field-by-field**
+- Match representatives by name, compare all fields for changes
+- Compare financial amounts (capital, equity, assets, liabilities) 
+- Only report actual differences where OLD ≠ NEW
+
+**Generate two summaries:**
+1. tracked_company_changes (governance / structural):
   - Representative appointments: "• [LASTNAME FIRSTNAME] entered the company as [ROLE]."
   - Representative departures: "• [LASTNAME FIRSTNAME] departed from the company"
   - Role changes: "• [LASTNAME FIRSTNAME] role changed from [OLD_ROLE] to [NEW_ROLE]"
-  - Capital share transfers: "• [OLD_OWNER LASTNAME FIRSTNAME] transferred [AMOUNT/PERCENTAGE] to [NEW_OWNER LASTNAME FIRSTNAME]"
   - Address updates: "• Company address changed to [NEW_ADDRESS]"
   - Company name changes: "• Company name changed to [NEW_NAME]"
-  - Capital modifications: "• Share capital modified from [OLD_AMOUNT] to [NEW_AMOUNT]"
+  **DO NOT INCLUDE ANY OF THE CHANGES LISTED ON tracked_economic_changes BELOW**
+2. tracked_economic_changes (capital / ownership economics):
+  - Total capital changes: "• Total capital changed from [OLD_TOTAL] to [NEW_TOTAL]"
+  - Equity changes: "• Equity changed from [OLD_EQUITY] to [NEW_EQUITY]"
+  - Total assets changes: "• Total assets changed from [OLD_ASSETS] to [NEW_ASSETS]"
+  - Total liabilities changes: "• Total liabilities changed from [OLD_LIABILITIES] to [NEW_LIABILITIES]"
+  - Individual capital_amount changes: "• [LASTNAME FIRSTNAME] capital_amount changed from [OLD] to [NEW]"
+  - Individual capital_percentage changes: similar phrasing
+  - Transfers: "• [FROM LASTNAME FIRSTNAME] transferred [AMOUNT/PERCENTAGE] to [TO LASTNAME FIRSTNAME]"
+  - Pre-tax profit changes: "• Pre-tax profit changed from [OLD_PROFIT] to [NEW_PROFIT]" OR if only growth % given: "• Pre-tax profit growth: [PERCENTAGE] / [AMOUNT]" (include both percentage and amount when both appear together)
+  **IF OLD_AMOUNT = NEW_AMOUNT DO NOT INCLUDE THIS CHANGE**
+  **DO NOT INCLUDE ANY OF THE CHANGES LISTED ON tracked_company_changes ABOVE**
 
-**Format as bulleted list using Greek names and roles exactly as they appear.**
-**Example output:** "• ΠΑΠΑΔΟΠΟΥΛΟΣ ΙΩΑΝΝΗΣ appointed as Διαχειριστής • ΑΝΑΣΤΑΣΗΣ ΚΥΡΙΑΖΟΣ departed from the company and transfered 20% to ΠΑΠΑΔΟΠΟΥΛΟΥ ΜΑΡΙΑ"
-**IMPORTANT**: Do not add '\n' at the end of each bullet point.
-**Exclude minor changes** like document date updates or formatting corrections.
+**IF NO CHANGES ARE DETECTED OUTPUT: "No significant changes detected"**
+Formatting:
+- Bullets start with '•' and are separated by a single space (single string, no trailing newline characters).
 
 ## MERGE EXECUTION STRATEGY
 
@@ -215,7 +271,7 @@ Search for these patterns:
 3. **Maintain representative array integrity** - exactly one entry per person
 4. **Update chronologically relevant fields** only
 5. **Keep null values** for uncertain information
-6. **Generate tracked_changes summary** - document all significant modifications
+6. **Generate tracked_company_changes & tracked_economic_changes summaries**
 
 ## EXCLUSION CRITERIA (DO NOT INCLUDE)
 - Legal advisors (δικηγόροι) signing documents
@@ -226,12 +282,14 @@ Search for these patterns:
 
 ---
 
-**EXISTING METADATA TO UPDATE:**
+**EXISTING METADATA TO COMPARE:**
 ${JSON.stringify(existingMetadata, null, 2)}
+
+**INSTRUCTIONS:** Extract new data from document, compare with above JSON, report only actual changes.
 
 **NEW DOCUMENT DATE:** ${extractedDate || "Unknown"}
 
-Return the complete updated metadata with representative array containing NO duplicates. Each person should appear exactly once with their most current status and information. **CRITICAL**: Include a comprehensive tracked_change summary highlighting all significant differences between the existing and new data.
+Return the complete updated metadata with representative array containing NO duplicates (one entry per person). Preserve historical entries (set is_active=false where appropriate). Include tracked_company_changes & tracked_economic_changes fields populated per above (or null where no changes).
 
 OUTPUT FORMAT RULES:
 - Return ONLY raw JSON, no explanations.

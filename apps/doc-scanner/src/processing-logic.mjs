@@ -171,10 +171,11 @@ function createFinalMetadataStructure(
   currentSnapshot,
   trackedChangesHistory = {}
 ) {
-  // Extract tracked_changes from current snapshot for both history and current display
-  const trackedChanges = currentSnapshot.tracked_changes;
+  // Extract tracked_company_changes and tracked_economic_changes from current snapshot for both history and current display
+  const trackedCompanyChanges = currentSnapshot.tracked_company_changes;
+  const trackedEconomicChanges = currentSnapshot.tracked_economic_changes;
 
-  // Keep tracked_changes in current snapshot but also store in history
+  // Keep tracked changes in current snapshot but also store in history
   const finalSnapshot = { ...currentSnapshot };
 
   return {
@@ -303,9 +304,20 @@ export async function processCompanyFiles(
           );
 
           // Store tracked changes if they exist
-          if (cumulativeMetadata.tracked_changes) {
-            trackedChangesHistory[fileName] =
-              cumulativeMetadata.tracked_changes;
+          if (
+            cumulativeMetadata.tracked_company_changes ||
+            cumulativeMetadata.tracked_economic_changes
+          ) {
+            const changes = {};
+            if (cumulativeMetadata.tracked_company_changes) {
+              changes.company_changes =
+                cumulativeMetadata.tracked_company_changes;
+            }
+            if (cumulativeMetadata.tracked_economic_changes) {
+              changes.economic_changes =
+                cumulativeMetadata.tracked_economic_changes;
+            }
+            trackedChangesHistory[fileName] = changes;
           } else {
             // Even if no specific changes, record that the file was processed
             trackedChangesHistory[fileName] = "No significant changes detected";
