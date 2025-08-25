@@ -6,7 +6,7 @@ export default async function representativesSearchRoute(fastify) {
     {
       schema: {
         description:
-          "Search for company representatives by name across all companies. Returns companies that have representatives matching the search criteria, along with the matching representative details.",
+          "Search for company representatives by name across all companies and tracked changes. Returns companies that have representatives matching the search criteria in structured representatives data or historical tracked changes, along with the matching representative details.",
         tags: ["companies"],
         summary: "Search company representatives",
         querystring: {
@@ -50,6 +50,11 @@ export default async function representativesSearchRoute(fastify) {
                   properties: {
                     gemi_id: { type: "string" },
                     company_name: { type: "string" },
+                    matched_in_tracked_changes: {
+                      type: "boolean",
+                      description:
+                        "True if match was found in tracked changes rather than structured representatives data",
+                    },
                     representatives: {
                       type: "array",
                       items: {
@@ -122,11 +127,18 @@ export default async function representativesSearchRoute(fastify) {
 
       // Build nested representative query. Using match_phrase_prefix for partial name matching.
       const mustClauses = [];
-      // Build nested query only if name or taxId provided
+
+      // Search in structured representatives field
       const nameTaxFilters = [];
       if (name) {
         nameTaxFilters.push({
-          match_phrase_prefix: { "representatives.name": { query: name } },
+          match: {
+            "representatives.name": {
+              query: name,
+              fuzziness: 2,
+              minimum_should_match: "100%",
+            },
+          },
         });
       }
       if (taxId) {
@@ -154,10 +166,60 @@ export default async function representativesSearchRoute(fastify) {
         });
       }
 
+      // Also search in tracked changes fields if name is provided
+      const shouldClauses = [];
+      if (name) {
+        // Search in current tracked changes - use match with very low fuzziness
+        shouldClauses.push({
+          match: {
+            tracked_changes_current: {
+              query: name,
+              fuzziness: 2,
+              minimum_should_match: "100%",
+            },
+          },
+        });
+
+        // Search in tracked changes history - use match with very low fuzziness
+        shouldClauses.push({
+          nested: {
+            path: "tracked_changes_history",
+            query: {
+              match: {
+                "tracked_changes_history.summary": {
+                  query: name,
+                  fuzziness: 2,
+                  minimum_should_match: "100%",
+                },
+              },
+            },
+          },
+        });
+      }
+
+      // Combine structured and tracked changes searches
+      const finalQuery = {};
+      if (mustClauses.length && shouldClauses.length) {
+        // If both structured and tracked changes searches exist, use should with minimum_should_match
+        finalQuery.bool = {
+          should: [...mustClauses, ...shouldClauses],
+          minimum_should_match: 1,
+        };
+      } else if (mustClauses.length) {
+        // Only structured representatives search
+        finalQuery.bool = { must: mustClauses };
+      } else if (shouldClauses.length) {
+        // Only tracked changes search
+        finalQuery.bool = { should: shouldClauses };
+      } else {
+        // Fallback - shouldn't happen due to validation above
+        finalQuery.match_all = {};
+      }
+
       const body = {
         from,
         size,
-        query: { bool: { must: mustClauses } },
+        query: finalQuery,
         _source: ["gemi_id", "company_name"],
       };
 
@@ -173,7 +235,8 @@ export default async function representativesSearchRoute(fastify) {
         const representativeHits =
           h.inner_hits?.representatives?.hits?.hits?.map((ih) => ih._source) ||
           [];
-        // inner_hits _source will have path prefix; flatten values
+
+        // Handle structured representatives data
         const representatives = representativeHits.map((r) => ({
           name: r.representatives?.name ?? r.name ?? null,
           role: r.representatives?.role ?? r.role ?? null,
@@ -188,11 +251,21 @@ export default async function representativesSearchRoute(fastify) {
             r.capital_share_amount_eur ??
             null,
         }));
-        return {
+
+        // If no structured representatives found but there's a match,
+        // it might be from tracked changes - include a note
+        const result = {
           gemi_id: source.gemi_id,
           company_name: source.company_name,
           representatives,
         };
+
+        // Add indication if match came from tracked changes
+        if (representatives.length === 0 && h._score > 0) {
+          result.matched_in_tracked_changes = true;
+        }
+
+        return result;
       });
 
       return { data, meta: { total, from, size, request_id: req.id } };

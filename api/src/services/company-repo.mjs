@@ -32,7 +32,16 @@ export function createCompanyRepo(client, { index }) {
         return handleOpenSearchError(e);
       }
     },
-    async search({ q, from = 0, size = 10, region, city, company_type, sort }) {
+    async search({
+      q,
+      tax_id,
+      from = 0,
+      size = 10,
+      region,
+      city,
+      company_type,
+      sort,
+    }) {
       try {
         const filters = [];
         if (region) filters.push({ term: { region } });
@@ -42,17 +51,18 @@ export function createCompanyRepo(client, { index }) {
         const must = [];
         if (q) {
           must.push({
-            multi_match: {
-              query: q,
-              fields: [
-                "company_name^3",
-                "registered_address",
-                "tracked_changes_current",
-              ],
-              type: "best_fields",
-              fuzziness: "AUTO", // Allow some typo tolerance
-              minimum_should_match: "75%", // Improve relevance
+            match: {
+              company_name: {
+                query: q,
+                fuzziness: 2, // Allow some typo tolerance
+                minimum_should_match: "100%",
+              },
             },
+          });
+        }
+        if (tax_id) {
+          must.push({
+            term: { company_tax_id: tax_id },
           });
         }
 

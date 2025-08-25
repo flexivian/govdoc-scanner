@@ -6,7 +6,7 @@ export default async function searchCompaniesRoute(fastify) {
     {
       schema: {
         description:
-          "Search Greek companies from GEMI registry data. Use query parameters to filter by name, location, or company type. Results are paginated and sorted by scan date (newest first) or company name.",
+          "Search Greek companies from GEMI registry data. Use query parameters to filter by name, tax ID, location, or company type. Results are paginated and sorted by scan date (newest first) or company name.",
         summary: "Search companies",
         tags: ["companies"],
         querystring: {
@@ -16,7 +16,11 @@ export default async function searchCompaniesRoute(fastify) {
               type: "string",
               maxLength: 512,
               description:
-                "Free-text query across company_name (boosted), registered_address, and tracked_changes_current fields. Supports fuzziness and partial matching.",
+                "Search query for company name. Supports fuzziness and partial matching.",
+            },
+            tax_id: {
+              type: "string",
+              description: "Exact company tax ID for precise matching.",
             },
             region: { type: "string" },
             city: { type: "string" },
@@ -80,6 +84,7 @@ export default async function searchCompaniesRoute(fastify) {
         });
       const {
         q,
+        tax_id,
         region,
         city,
         company_type,
@@ -101,6 +106,7 @@ export default async function searchCompaniesRoute(fastify) {
       });
       const result = await repo.search({
         q,
+        tax_id,
         from,
         size,
         region,
