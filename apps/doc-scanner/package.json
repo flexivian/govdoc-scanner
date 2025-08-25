@@ -31,7 +31,6 @@
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.0",
-    "@opensearch-project/opensearch": "^3.5.1",
     "archiver": "^7.0.1",
     "dotenv": "^16.4.7",
     "mammoth": "^1.9.0",

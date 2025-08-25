@@ -1,0 +1,119 @@
+# Production Docker Compose for GovDoc Scanner API
+# Optimized for production deployment with enhanced security and monitoring
+
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: api/Dockerfile
+    image: govdoc-scanner-api:${VERSION:-latest}
+    container_name: govdoc-scanner-api-prod
+
+    # Restart policy
+    restart: always
+
+    # Port mapping - only expose to localhost in production
+    ports:
+      - "127.0.0.1:${API_PORT:-8080}:8080"
+
+    # Environment variables
+    environment:
+      # API Configuration
+      - API_PORT=8080
+      - API_HOST=0.0.0.0
+      - API_MAX_BODY_BYTES=${API_MAX_BODY_BYTES:-1000000}
+
+      # Authentication
+      - API_KEY=${API_KEY}
+      - API_KEY_ROLE=${API_KEY_ROLE:-admin}
+
+      # OpenSearch Configuration
+      - OPENSEARCH_URL=${OPENSEARCH_URL}
+      - OPENSEARCH_USERNAME=${OPENSEARCH_USERNAME}
+      - OPENSEARCH_PASSWORD=${OPENSEARCH_PASSWORD}
+      - OPENSEARCH_INDEX=${OPENSEARCH_INDEX}
+      - OPENSEARCH_BATCH_SIZE=${OPENSEARCH_BATCH_SIZE:-500}
+      - OPENSEARCH_INSECURE=${OPENSEARCH_INSECURE:-false}
+      - API_OS_REQUEST_TIMEOUT_MS=${API_OS_REQUEST_TIMEOUT_MS:-5000}
+
+      # Logging
+      - LOG_LEVEL=${LOG_LEVEL:-warn}
+
+      # Node.js optimizations for production
+      - NODE_ENV=production
+      - NODE_OPTIONS=--max-old-space-size=2048
+
+    # Health check with longer intervals for production
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "import('http').then(http => { const req = http.request({hostname: 'localhost', port: 8080, path: '/health', timeout: 5000}, (res) => process.exit(res.statusCode === 200 ? 0 : 1)); req.on('error', () => process.exit(1)); req.end(); })",
+        ]
+      interval: 60s
+      timeout: 15s
+      retries: 3
+      start_period: 20s
+
+    # Production resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: "1.0"
+        reservations:
+          memory: 512M
+          cpus: "0.5"
+
+    # Enhanced security for production
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+
+    # User namespace
+    user: "1001:1001"
+
+    # Read-only filesystem with necessary writable mounts
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=200m
+      - /var/run:noexec,nosuid,size=100m
+
+    # Logging configuration for production
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        labels: "service,version"
+
+    # Labels for monitoring and management
+    labels:
+      - "service=govdoc-scanner-api"
+      - "environment=production"
+      - "version=${VERSION:-latest}"
+      - "maintainer=govdoc-scanner-team"
+
+    # Network configuration
+    networks:
+      - api-network
+      - production_opensearch-prod-net
+
+# Networks
+networks:
+  api-network:
+    driver: bridge
+    name: govdoc-api-prod-network
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.20.0.0/16
+
+  # Reference external OpenSearch network
+  production_opensearch-prod-net:
+    external: true

@@ -1,0 +1,31 @@
+# Docker ignore file for API
+# Exclude unnecessary files from Docker build context
+
+# Node.js runtime and dependencies
+node_modules/
+npm-debug.log*
+
+# Environment files (will be provided via docker-compose or runtime)
+.env
+.env.*
+
+# Log files
+*.log
+logs/
+
+# Docker development files
+Dockerfile*
+docker-compose*
+.dockerignore
+docker-deploy.sh
+
+# Documentation files
+README.md
+README.Docker.md
+
+# Git files
+.git/
+.gitignore
+
+# Temporary test files (remove when done)
+*-test.mjs

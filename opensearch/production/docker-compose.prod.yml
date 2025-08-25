@@ -1,0 +1,124 @@
+services:
+  # Init container to set up proper permissions
+  opensearch-init:
+    image: busybox:latest
+    container_name: govdoc-opensearch-init
+    volumes:
+      - opensearch-prod-backup:/backup
+      - ./certs:/certs
+    command: |
+      sh -c "
+        echo 'Setting up backup directory permissions...'
+        chown -R 1000:1000 /backup
+        chmod -R 755 /backup
+        echo 'Setting up certificate permissions...'
+        if [ -d /certs ] && [ -n \"\$(ls -A /certs 2>/dev/null)\" ]; then
+          chown -R 1000:1000 /certs
+          chmod 644 /certs/*.pem 2>/dev/null || echo 'No PEM files found, skipping permission fix'
+          echo 'Certificate permissions updated'
+        else
+          echo 'No certificates found, skipping certificate permissions'
+        fi
+        echo 'Initialization complete'
+      "
+
+  opensearch-prod:
+    image: opensearchproject/opensearch:3.1.0
+    container_name: govdoc-opensearch-production
+    environment:
+      # Cluster configuration
+      - cluster.name=govdoc-production
+      - node.name=govdoc-node-01
+      - discovery.type=single-node
+
+      # Memory settings for production
+      - bootstrap.memory_lock=true
+      - "OPENSEARCH_JAVA_OPTS=-Xms4g -Xmx4g"
+
+      # Security configuration - disable demo config since we use custom config files
+      - DISABLE_INSTALL_DEMO_CONFIG=true
+
+      # Backup repository path
+      - path.repo=/usr/share/opensearch/backup
+
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      # Data persistence
+      - opensearch-prod-data:/usr/share/opensearch/data
+      - opensearch-prod-logs:/usr/share/opensearch/logs
+      - opensearch-prod-backup:/usr/share/opensearch/backup
+      # OpenSearch configuration
+      - ./config/opensearch.yml:/usr/share/opensearch/config/opensearch.yml:ro
+      # Security configuration files
+      - ./config/internal_users.yml:/usr/share/opensearch/config/opensearch-security/internal_users.yml:ro
+      - ./config/roles.yml:/usr/share/opensearch/config/opensearch-security/roles.yml:ro
+      - ./config/roles_mapping.yml:/usr/share/opensearch/config/opensearch-security/roles_mapping.yml:ro
+      # Certificates
+      - ./certs:/usr/share/opensearch/config/certs:ro
+    ports:
+      - "9200:9200" # REST API
+      - "9600:9600" # Performance Analyzer
+    networks:
+      - opensearch-prod-net
+    restart: unless-stopped
+    depends_on:
+      opensearch-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -k -u admin:${OPENSEARCH_PROD_ADMIN_PASSWORD} https://localhost:9200/_cluster/health || exit 1",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+
+  opensearch-dashboards-prod:
+    image: opensearchproject/opensearch-dashboards:3.1.0
+    container_name: govdoc-opensearch-dashboards-production
+    ports:
+      - "5601:5601"
+    environment:
+      # Pass the username and password as environment variables
+      - OPENSEARCH_USERNAME=kibanaserver
+      - OPENSEARCH_PASSWORD=${OPENSEARCH_PROD_KIBANA_PASSWORD}
+    volumes:
+      # Configuration file
+      - ./config/opensearch_dashboards.yml:/usr/share/opensearch-dashboards/config/opensearch_dashboards.yml:ro
+      # Certificates for SSL connection to OpenSearch
+      - ./certs:/usr/share/opensearch-dashboards/config/certs:ro
+    depends_on:
+      opensearch-prod:
+        condition: service_healthy
+    networks:
+      - opensearch-prod-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5601/api/status || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  opensearch-prod-data:
+    driver: local
+  opensearch-prod-logs:
+    driver: local
+  opensearch-prod-backup:
+    driver: local
+
+networks:
+  opensearch-prod-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.25.0.0/16

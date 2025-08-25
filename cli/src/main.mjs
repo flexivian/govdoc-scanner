@@ -8,6 +8,7 @@ import {
   promptRandomCount,
 } from "./prompts.mjs";
 import { loadInputFile, writeOutput, getRandomCompanies } from "./utils.mjs";
+import { pushCompaniesToOpenSearch } from "./opensearch.mjs";
 import { processCompanies } from "./processor.mjs";
 import {
   validateConfig,
@@ -49,6 +50,21 @@ function parseArgs() {
     input: null,
     companyRandom: null,
     help: false,
+    push: false,
+    os: {
+      endpoint: process.env.OPENSEARCH_URL || null,
+      username: process.env.OPENSEARCH_USERNAME || null,
+      password: process.env.OPENSEARCH_PASSWORD || null,
+      index: process.env.OPENSEARCH_INDEX || "govdoc-companies-000001",
+      indexStrategy: process.env.OPENSEARCH_INDEX_STRATEGY || "static",
+      insecure: ["1", "true", "yes"].includes(
+        (process.env.OPENSEARCH_INSECURE || "").toLowerCase()
+      ),
+      batchSize: parseInt(process.env.OPENSEARCH_BATCH_SIZE || "500", 10),
+      refresh: ["1", "true", "yes"].includes(
+        (process.env.OPENSEARCH_REFRESH || "").toLowerCase()
+      ),
+    },
   };
 
   for (let i = 0; i < args.length; i++) {
@@ -81,6 +97,77 @@ function parseArgs() {
           process.exit(1);
         }
         break;
+      case "--push":
+        parsed.push = true;
+        break;
+      case "--os.endpoint":
+        if (args[i + 1]) {
+          parsed.os.endpoint = args[i + 1];
+          i++;
+        } else {
+          console.error("❌ Error: --os.endpoint requires a value");
+          process.exit(1);
+        }
+        break;
+      case "--os.username":
+        if (args[i + 1]) {
+          parsed.os.username = args[i + 1];
+          i++;
+        } else {
+          console.error("❌ Error: --os.username requires a value");
+          process.exit(1);
+        }
+        break;
+      case "--os.password":
+        if (args[i + 1]) {
+          parsed.os.password = args[i + 1];
+          i++;
+        } else {
+          console.error("❌ Error: --os.password requires a value");
+          process.exit(1);
+        }
+        break;
+      case "--os.index":
+        if (args[i + 1]) {
+          parsed.os.index = args[i + 1];
+          i++;
+        } else {
+          console.error("❌ Error: --os.index requires a value");
+          process.exit(1);
+        }
+        break;
+      case "--os.index-strategy":
+        if (args[i + 1]) {
+          parsed.os.indexStrategy = args[i + 1];
+          i++;
+        } else {
+          console.error("❌ Error: --os.index-strategy requires a value");
+          process.exit(1);
+        }
+        break;
+      case "--os.insecure":
+        parsed.os.insecure = true;
+        break;
+      case "--os.batch-size":
+        if (args[i + 1]) {
+          const bs = parseInt(args[i + 1], 10);
+          if (!isNaN(bs) && bs > 0) {
+            parsed.os.batchSize = bs;
+            i++;
+          } else {
+            console.error(
+              "❌ Error: --os.batch-size requires a positive number"
+            );
+            process.exit(1);
+          }
+        } else {
+          console.error("❌ Error: --os.batch-size requires a value");
+          process.exit(1);
+        }
+        break;
+      case "--os.refresh":
+        parsed.os.refresh = true;
+        break;
       case "--help":
       case "-h":
         parsed.help = true;
@@ -103,11 +190,36 @@ function showHelp() {
   console.log("Options:");
   console.log("  --input <file>              Process GEMI IDs from .gds file");
   console.log("  --company-random <count>    Process random companies");
+  console.log(
+    "  --push                      Push results to OpenSearch after processing"
+  );
+  console.log(
+    "  --os.endpoint <url>         OpenSearch endpoint (e.g., https://localhost:9200)"
+  );
+  console.log("  --os.username <user>        OpenSearch username");
+  console.log("  --os.password <pass>        OpenSearch password");
+  console.log(
+    "  --os.index <name>           Base index name (default: govdoc-companies-000001)"
+  );
+  console.log(
+    "  --os.index-strategy <s>     Index naming: static|by-year (default: static)"
+  );
+  console.log(
+    "  --os.insecure               Allow self-signed certs for HTTPS endpoint"
+  );
+  console.log("  --os.batch-size <n>         Bulk batch size (default: 500)");
+  console.log("  --os.refresh                Use refresh=wait_for on bulk");
   console.log("  --help, -h                  Show this help message");
   console.log("");
   console.log("Examples:");
   console.log("  node cli/src/main.mjs --input ./companies.gds");
   console.log("  npm start govdoc -- --input ./companies.gds");
+  console.log(
+    "  node cli/src/main.mjs --input ./companies.gds --push --os.endpoint https://localhost:9200"
+  );
+  console.log(
+    "    --os.username admin --os.password admin --os.index govdoc-companies-000001"
+  );
   console.log("  npm start govdoc -- --company-random 10");
   console.log("");
   console.log("Interactive Mode:");
@@ -242,6 +354,33 @@ async function runCommandLineMode(args) {
     // Print summary using stats from processor
     await printSummary(stats, failures, noDocs);
 
+    // Optional: push to OpenSearch
+    if (args.push) {
+      process.stdout.write("\n📤 Pushing to OpenSearch...\n");
+      const { success, failed, errors } = await pushCompaniesToOpenSearch(
+        companies,
+        {
+          endpoint: args.os.endpoint,
+          username: args.os.username,
+          password: args.os.password,
+          index: args.os.index,
+          indexStrategy: args.os.indexStrategy,
+          insecure: args.os.insecure,
+          batchSize: args.os.batchSize,
+          refresh: args.os.refresh,
+        }
+      );
+      process.stdout.write(`✅ Indexed: ${success} | ❌ Failed: ${failed}\n`);
+      if (failed && errors.length) {
+        process.stdout.write("  First 3 errors:\n");
+        for (const e of errors.slice(0, 3)) {
+          process.stdout.write(
+            `   - [${e.index}/${e.id}] ${e.error?.type || ""} ${e.error?.reason || ""}\n`
+          );
+        }
+      }
+    }
+
     process.stdout.write(`\n🎉 Processing completed.\n`);
   } catch (error) {
     // Ensure progress bar is stopped on error
@@ -312,6 +451,40 @@ async function runInteractiveMode() {
 
     // Print summary using stats from processor
     await printSummary(stats, failures, noDocs);
+
+    // Optional: push to OpenSearch if env-driven
+    const envPush = ["1", "true", "yes"].includes(
+      (process.env.OPENSEARCH_PUSH || "").toLowerCase()
+    );
+    if (envPush) {
+      process.stdout.write("\n📤 Pushing to OpenSearch...\n");
+      const { success, failed, errors } = await pushCompaniesToOpenSearch(
+        companies,
+        {
+          endpoint: process.env.OPENSEARCH_URL,
+          username: process.env.OPENSEARCH_USERNAME,
+          password: process.env.OPENSEARCH_PASSWORD,
+          index: process.env.OPENSEARCH_INDEX || "govdoc-companies-000001",
+          indexStrategy: process.env.OPENSEARCH_INDEX_STRATEGY || "static",
+          insecure: ["1", "true", "yes"].includes(
+            (process.env.OPENSEARCH_INSECURE || "").toLowerCase()
+          ),
+          batchSize: parseInt(process.env.OPENSEARCH_BATCH_SIZE || "500", 10),
+          refresh: ["1", "true", "yes"].includes(
+            (process.env.OPENSEARCH_REFRESH || "").toLowerCase()
+          ),
+        }
+      );
+      process.stdout.write(`✅ Indexed: ${success} | ❌ Failed: ${failed}\n`);
+      if (failed && errors.length) {
+        process.stdout.write("  First 3 errors:\n");
+        for (const e of errors.slice(0, 3)) {
+          process.stdout.write(
+            `   - [${e.index}/${e.id}] ${e.error?.type || ""} ${e.error?.reason || ""}\n`
+          );
+        }
+      }
+    }
 
     process.stdout.write(`\n🎉 Processing completed.\n`);
   } catch (error) {

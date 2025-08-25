@@ -1,0 +1,99 @@
+# Docker Compose for GovDoc Scanner API
+# This file provides container orchestration for the API service
+
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: api/Dockerfile
+      # Use build cache for faster rebuilds
+      cache_from:
+        - node:22-alpine
+    image: govdoc-scanner-api:latest
+    container_name: govdoc-scanner-api
+
+    # Restart policy for production resilience
+    restart: unless-stopped
+
+    # Port mapping
+    ports:
+      - "${API_PORT:-8080}:8080"
+
+    # Environment variables
+    environment:
+      # API Configuration
+      - API_PORT=8080
+      - API_HOST=0.0.0.0
+      - API_MAX_BODY_BYTES=${API_MAX_BODY_BYTES:-1000000}
+
+      # Authentication
+      - API_KEY=${API_KEY}
+      - API_KEY_ROLE=${API_KEY_ROLE:-admin}
+
+      # OpenSearch Configuration
+      - OPENSEARCH_URL=${OPENSEARCH_URL}
+      - OPENSEARCH_USERNAME=${OPENSEARCH_USERNAME}
+      - OPENSEARCH_PASSWORD=${OPENSEARCH_PASSWORD}
+      - OPENSEARCH_INDEX=${OPENSEARCH_INDEX}
+      - OPENSEARCH_BATCH_SIZE=${OPENSEARCH_BATCH_SIZE:-500}
+      - OPENSEARCH_INSECURE=${OPENSEARCH_INSECURE:-false}
+      - API_OS_REQUEST_TIMEOUT_MS=${API_OS_REQUEST_TIMEOUT_MS:-5000}
+
+      # Logging
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+
+      # Node.js optimizations
+      - NODE_ENV=production
+      - NODE_OPTIONS=--max-old-space-size=1024
+
+    # Health check
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "import('http').then(http => { const req = http.request({hostname: 'localhost', port: 8080, path: '/health', timeout: 5000}, (res) => process.exit(res.statusCode === 200 ? 0 : 1)); req.on('error', () => process.exit(1)); req.end(); })",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+    # Resource limits for production deployment
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.5"
+        reservations:
+          memory: 256M
+          cpus: "0.25"
+
+    # Security options
+    security_opt:
+      - no-new-privileges:true
+
+    # User namespace (if supported)
+    user: "1001:1001"
+
+    # Read-only root filesystem for security (with necessary writable mounts)
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+      - /var/run:noexec,nosuid,size=50m
+
+    # Network configuration
+    networks:
+      - api-network
+      - production_opensearch-prod-net
+
+# Networks
+networks:
+  api-network:
+    driver: bridge
+    name: govdoc-api-network
+
+  # Reference external OpenSearch network
+  production_opensearch-prod-net:
+    external: true
