@@ -84,10 +84,20 @@ async function buildServer() {
                 format: "date",
                 example: "2023-11-15",
               },
-              tracked_changes_current: {
+              total_capital_amount: { type: "string", example: "50.000,00€" },
+              equity_amount: { type: "string", example: "75.000,00€" },
+              total_assets: { type: "string", example: "150.000,00€" },
+              total_liabilities: { type: "string", example: "90.000,00€" },
+              tracked_company_changes: {
+                type: "string",
+                example: "• ΠΑΠΑΔΟΠΟΥΛΟΣ ΙΩΑΝΝΗΣ appointed as Διαχειριστής",
+                nullable: true,
+              },
+              tracked_economic_changes: {
                 type: "string",
                 example:
-                  "• Company status changed to active • New representative added",
+                  "• Total capital increased from 10.000,00€ to 50.000,00€",
+                nullable: true,
               },
               representatives: {
                 type: "array",
@@ -98,22 +108,15 @@ async function buildServer() {
                     role: { type: "string", example: "CEO" },
                     tax_id: { type: "string", example: "123456789" },
                     is_active: { type: "boolean", example: true },
-                    capital_share_text: { type: "string", example: "51.5%" },
-                    capital_share_percent: {
-                      type: "number",
-                      example: 51.5,
-                      nullable: true,
-                    },
-                    capital_share_amount_eur: {
-                      type: "number",
-                      example: 25000.0,
-                      nullable: true,
-                    },
+                    capital_amount: { type: "string", example: "25.000,00€" },
+                    capital_percentage: { type: "string", example: "51,50%" },
                   },
                 },
               },
               tracked_changes_history: {
                 type: "array",
+                description:
+                  "Historical tracked changes extracted per document. company_changes = governance/structural; economic_changes = capital/ownership/economic. Fields can be null when no changes of that type were detected in that document.",
                 items: {
                   type: "object",
                   properties: {
@@ -126,9 +129,17 @@ async function buildServer() {
                       format: "date",
                       example: "2023-11-15",
                     },
-                    summary: {
+                    company_changes: {
                       type: "string",
-                      example: "New representative appointment",
+                      nullable: true,
+                      example:
+                        "• Board restructured with new director appointed",
+                    },
+                    economic_changes: {
+                      type: "string",
+                      nullable: true,
+                      example:
+                        "• Share capital increased from 10.000,00€ to 50.000,00€",
                     },
                   },
                 },
@@ -138,7 +149,7 @@ async function buildServer() {
                 description: "Original source metadata",
                 properties: {
                   source: { type: "string", example: "cli" },
-                  version: { type: "integer", example: 1 },
+                  version: { type: "integer", example: 3 },
                 },
               },
             },
@@ -154,12 +165,12 @@ async function buildServer() {
     "/openapi.json",
     {
       schema: {
-    summary: "OpenAPI specification JSON",
+        summary: "OpenAPI specification JSON",
         tags: ["default"],
         response: {
           200: {
             type: "object",
-      description: "OpenAPI 3.0 spec object",
+            description: "OpenAPI 3.0 spec object",
           },
         },
       },
@@ -205,7 +216,7 @@ async function buildServer() {
     "/",
     {
       schema: {
-  summary: "API status",
+        summary: "API status",
         tags: ["default"],
         response: {
           200: {

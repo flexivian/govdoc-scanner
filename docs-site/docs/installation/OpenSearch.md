@@ -285,7 +285,7 @@ The index template (`opensearch/shared/templates/company-index-template.json`) d
 - `company_name` (text + keyword subfield)
 - `creation_date`, `scan_date`, `document_date` (date)
 - `representatives` (nested array)
-- `tracked_changes_history` (nested array)
+- `tracked_changes_history` (nested array with `company_changes`, `economic_changes` per document)
 
 ## Query Examples
 

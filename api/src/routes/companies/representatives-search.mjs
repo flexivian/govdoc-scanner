@@ -52,6 +52,20 @@ export default async function representativesSearchRoute(fastify) {
                       description:
                         "True if match was found in tracked changes rather than structured representatives data",
                     },
+                    history_matches: {
+                      type: "array",
+                      description:
+                        "Matched historical tracked change snippets (nested docs)",
+                      items: {
+                        type: "object",
+                        properties: {
+                          file_name: { type: "string" },
+                          doc_date: { type: "string", format: "date" },
+                          company_changes: { type: "string", nullable: true },
+                          economic_changes: { type: "string", nullable: true },
+                        },
+                      },
+                    },
                     representatives: {
                       type: "array",
                       items: {
@@ -61,12 +75,9 @@ export default async function representativesSearchRoute(fastify) {
                           role: { type: "string" },
                           is_active: { type: "boolean" },
                           tax_id: { type: "string" },
-                          capital_share_percent: {
-                            type: "number",
-                            nullable: true,
-                          },
-                          capital_share_amount_eur: {
-                            type: "number",
+                          capital_amount: { type: "string", nullable: true },
+                          capital_percentage: {
+                            type: "string",
                             nullable: true,
                           },
                         },
@@ -155,40 +166,70 @@ export default async function representativesSearchRoute(fastify) {
                 "representatives.role",
                 "representatives.is_active",
                 "representatives.tax_id",
-                "representatives.capital_share_percent",
-                "representatives.capital_share_amount_eur",
+                "representatives.capital_amount",
+                "representatives.capital_percentage",
               ],
             },
           },
         });
       }
 
-      // Also search in tracked changes fields if name is provided
+      // Also search in tracked change summary fields (structure + economic)
       const shouldClauses = [];
       if (name) {
         // Search in current tracked changes - use match with very low fuzziness
-        shouldClauses.push({
-          match: {
-            tracked_changes_current: {
-              query: name,
-              fuzziness: 2,
-              minimum_should_match: "100%",
+        for (const field of [
+          "tracked_company_changes",
+          "tracked_economic_changes",
+        ]) {
+          shouldClauses.push({
+            match: {
+              [field]: {
+                query: name,
+                fuzziness: 2,
+                minimum_should_match: "100%",
+              },
             },
-          },
-        });
+          });
+        }
 
-        // Search in tracked changes history - use match with very low fuzziness
+        // Search in tracked changes history (both company_changes & economic_changes)
         shouldClauses.push({
           nested: {
             path: "tracked_changes_history",
             query: {
-              match: {
-                "tracked_changes_history.summary": {
-                  query: name,
-                  fuzziness: 2,
-                  minimum_should_match: "100%",
-                },
+              bool: {
+                should: [
+                  {
+                    match: {
+                      "tracked_changes_history.company_changes": {
+                        query: name,
+                        fuzziness: 2,
+                        minimum_should_match: "100%",
+                      },
+                    },
+                  },
+                  {
+                    match: {
+                      "tracked_changes_history.economic_changes": {
+                        query: name,
+                        fuzziness: 2,
+                        minimum_should_match: "100%",
+                      },
+                    },
+                  },
+                ],
+                minimum_should_match: 1,
               },
+            },
+            inner_hits: {
+              size: 5,
+              _source: [
+                "tracked_changes_history.file_name",
+                "tracked_changes_history.doc_date",
+                "tracked_changes_history.company_changes",
+                "tracked_changes_history.economic_changes",
+              ],
             },
           },
         });
@@ -239,15 +280,27 @@ export default async function representativesSearchRoute(fastify) {
           role: r.representatives?.role ?? r.role ?? null,
           is_active: r.representatives?.is_active ?? r.is_active ?? null,
           tax_id: r.representatives?.tax_id ?? r.tax_id ?? null,
-          capital_share_percent:
-            r.representatives?.capital_share_percent ??
-            r.capital_share_percent ??
-            null,
-          capital_share_amount_eur:
-            r.representatives?.capital_share_amount_eur ??
-            r.capital_share_amount_eur ??
+          capital_amount:
+            r.representatives?.capital_amount ?? r.capital_amount ?? null,
+          capital_percentage:
+            r.representatives?.capital_percentage ??
+            r.capital_percentage ??
             null,
         }));
+
+        // Collect history matches (nested inner hits)
+        const historyHits =
+          h.inner_hits?.tracked_changes_history?.hits?.hits?.map((ih) => {
+            const src = ih._source || {};
+            // Depending on ES version, nested fields may appear directly or under path key
+            const nested = src.tracked_changes_history || src;
+            return {
+              file_name: nested.file_name ?? null,
+              doc_date: nested.doc_date ?? null,
+              company_changes: nested.company_changes ?? null,
+              economic_changes: nested.economic_changes ?? null,
+            };
+          }) || [];
 
         // If no structured representatives found but there's a match,
         // it might be from tracked changes - include a note
@@ -258,8 +311,15 @@ export default async function representativesSearchRoute(fastify) {
         };
 
         // Add indication if match came from tracked changes
-        if (representatives.length === 0 && h._score > 0) {
+        if (
+          (representatives.length === 0 && h._score > 0) ||
+          historyHits.length > 0
+        ) {
           result.matched_in_tracked_changes = true;
+        }
+
+        if (historyHits.length > 0) {
+          result.history_matches = historyHits;
         }
 
         return result;

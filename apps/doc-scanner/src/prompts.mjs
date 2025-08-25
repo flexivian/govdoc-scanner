@@ -101,9 +101,6 @@ Extract these financial metrics when explicitly stated in the document:
 
 Format: 'X.XXX.XXX,XX€' - preserve exact Greek number formatting. Set null if not found.
 
-### OPTIONAL FINANCIAL METRIC: PRE-TAX PROFIT (for future comparison only)
-If the document explicitly states pre-tax profit (search Greek phrases: "κέρδη προ φόρων", "αποτελέσματα προ φόρων", "κέρδη προ φόρων και τόκων", "αποτέλεσμα προ φόρων"), note the exact monetary amount internally for potential future comparison. Do NOT add a new field; this value is only used later to describe changes inside tracked_economic_changes when a subsequent document provides a different figure. If this is the first document, still leave tracked_economic_changes = null.
-
 ## VALIDATION CHECKLIST
 Before finalizing each representative:
 1. Has explicit Greek corporate role (not service provider)
@@ -205,12 +202,12 @@ Documents often show capital changes in "Άρθρο 5" sections with before/afte
 - Individual holdings: "μετέχουν:" followed by numbered list
 
 **Extract the FINAL/CURRENT state only** (after all changes described in document):
+- Final totals after "μετά τα ανωτέρω" or similar phrases
 
 Search for these patterns:
 - "ποσοστό συμμέτοχής X%" (participation percentage)
 - "εταιρικά μερίδια, ονομαστικής αξίας... με ποσοστό συμμέτοχής X%"
 - "μετέχει στο εταιρικό κεφάλαιο με X ευρώ" 
-- Final totals after "μετά τα ανωτέρω" or similar phrases
 
 Rules:
 - capital_amount: monetary amount from final state (e.g., '14.918,00€')
@@ -227,11 +224,11 @@ Format: 'X.XXX.XXX,XX€' - preserve Greek number formatting
 ### STEP 5: DATA INTEGRITY VALIDATION
 
 **Before finalizing, verify:**
-1. ✓ No duplicate representatives (merge by name)
-2. ✓ Total ownership percentages don't exceed 100% (when possible to calculate)
-3. ✓ Active representatives have appropriate roles
-4. ✓ Inactive representatives marked correctly
-5. ✓ Document date updated to: ${extractedDate || "Unknown"}
+1. No duplicate representatives (merge by name)
+2. Total ownership percentages don't exceed 100% (when possible to calculate)
+3. Active representatives have appropriate roles
+4. Inactive representatives marked correctly
+5. Document date updated to: ${extractedDate || "Unknown"}
 
 ### STEP 6: TRACKED CHANGES GENERATION
 
@@ -247,20 +244,21 @@ Format: 'X.XXX.XXX,XX€' - preserve Greek number formatting
   - Role changes: "• [LASTNAME FIRSTNAME] role changed from [OLD_ROLE] to [NEW_ROLE]"
   - Address updates: "• Company address changed to [NEW_ADDRESS]"
   - Company name changes: "• Company name changed to [NEW_NAME]"
+  **BE SURE TO CHECK IF OLD_STATE = NEW_STATE. IF YES DO NOT INCLUDE THIS CHANGE**
   **DO NOT INCLUDE ANY OF THE CHANGES LISTED ON tracked_economic_changes BELOW**
 2. tracked_economic_changes (capital / ownership economics):
-  - Total capital changes: "• Total capital changed from [OLD_TOTAL] to [NEW_TOTAL]"
-  - Equity changes: "• Equity changed from [OLD_EQUITY] to [NEW_EQUITY]"
-  - Total assets changes: "• Total assets changed from [OLD_ASSETS] to [NEW_ASSETS]"
-  - Total liabilities changes: "• Total liabilities changed from [OLD_LIABILITIES] to [NEW_LIABILITIES]"
-  - Individual capital_amount changes: "• [LASTNAME FIRSTNAME] capital_amount changed from [OLD] to [NEW]"
-  - Individual capital_percentage changes: similar phrasing
+  - Total capital changes: "• Total capital changed from [OLD_AMOUNT] to [NEW_AMOUNT]"
+  - Equity changes: "• Equity changed from [OLD_AMOUNT] to [NEW_AMOUNT]"
+  - Total assets changes: "• Total assets changed from [OLD_AMOUNT] to [NEW_AMOUNT]"
+  - Total liabilities changes: "• Total liabilities changed from [OLD_AMOUNT] to [NEW_AMOUNT]"
+  - Individual capital_amount changes: "• [LASTNAME FIRSTNAME] capital_amount changed from [OLD_AMOUNT] to [NEW_AMOUNT]"
+  - Individual capital_percentage changes: "• [LASTNAME FIRSTNAME] capital_percentage changed from [OLD_AMOUNT] to [NEW_AMOUNT]"
   - Transfers: "• [FROM LASTNAME FIRSTNAME] transferred [AMOUNT/PERCENTAGE] to [TO LASTNAME FIRSTNAME]"
   - Pre-tax profit changes: "• Pre-tax profit changed from [OLD_PROFIT] to [NEW_PROFIT]" OR if only growth % given: "• Pre-tax profit growth: [PERCENTAGE] / [AMOUNT]" (include both percentage and amount when both appear together)
-  **IF OLD_AMOUNT = NEW_AMOUNT DO NOT INCLUDE THIS CHANGE**
+  **BE SURE TO CHECK IF [OLD_AMOUNT] = [NEW_AMOUNT]. IF YES DO NOT INCLUDE THIS CHANGE**
   **DO NOT INCLUDE ANY OF THE CHANGES LISTED ON tracked_company_changes ABOVE**
 
-**IF NO CHANGES ARE DETECTED OUTPUT: "No significant changes detected"**
+**IF NO CHANGES ARE DETECTED OUTPUT: "No significant changes detected". Do not give NULL or an empty string.**
 Formatting:
 - Bullets start with '•' and are separated by a single space (single string, no trailing newline characters).
 

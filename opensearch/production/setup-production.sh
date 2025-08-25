@@ -150,7 +150,7 @@ main() {
     
     if docker compose -f docker-compose.prod.yml up -d > /dev/null 2>&1; then
         echo -e "${GREEN}✓ Production Cluster started${NC}"
-        sleep 30  # Wait for cluster to stabilize
+        sleep 15  # Wait for cluster to stabilize
     else
         echo -e "${RED}✗ Failed to start OpenSearch cluster${NC}"
         exit 1
