@@ -11,14 +11,6 @@ The `opensearch/` directory provides complete OpenSearch integration with:
 - **Index templates**: Pre-configured mappings for company data
 - **Dashboard setup**: Ready-to-use visualizations and index patterns
 
-## What You Get
-
-- Searchable index of company metadata (one document per GEMI ID)
-- Nested representatives and tracked changes history
-- Keyword subfields for aggregations and exact matching
-- CLI integration with bulk push support
-- OpenSearch Dashboards for data exploration
-
 ## Prerequisites
 
 - Docker and Docker Compose
