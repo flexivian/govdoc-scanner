@@ -15,7 +15,7 @@ npm start crawler
 # Select: "Search for companies"
 # Enter company name: "ALPHA BANK"
 # Apply filters as needed
-# Results saved to apps/crawler/src/ids.txt
+# Results saved to ~/.govdoc/crawler/search-results.gds
 ```
 
 ### Direct Download by GEMI ID
@@ -81,7 +81,7 @@ npm start crawler
 Downloaded documents are organized with date prefixes for chronological processing:
 
 ```
-apps/crawler/src/downloads/
+~/.govdoc/crawler/downloads/
 ├── 123204604000/
 │   └── document_downloads/
 │       ├── 2019-09-23_90189.pdf
@@ -117,8 +117,8 @@ npm start crawler
 # Search for: "TELECOMMUNICATIONS"
 # Apply filters: Active companies only
 
-# 2. Review ids.txt results (saved in crawler src directory)
-cat apps/crawler/src/ids.txt
+# 2. Review .gds results (saved in crawler working directory)
+cat ~/.govdoc/crawler/search-results.gds
 
 # 3. Download documents for selected IDs
 npm start crawler
@@ -128,18 +128,15 @@ npm start crawler
 ### Bulk Download
 
 ```bash
-# Prepare large ID list
-cat > bulk-companies.txt << EOF
-123204604000
-144340502000
-148851015000
-152034008000
+# Prepare large ID list (JSON format)
+cat > bulk-companies.gds << EOF
+["123204604000", "144340502000", "148851015000", "152034008000"]
 EOF
 
 # Run bulk download
 npm start crawler
 # Select file option
-# Enter: bulk-companies.txt
+# Enter: bulk-companies.gds
 ```
 
 ## Error Handling
@@ -192,7 +189,7 @@ Built-in error handling includes:
 ## Tips
 
 - Use specific company names for better search results
-- Check `ids.txt` before bulk downloading
+- Check `.gds` files before bulk downloading
 - Monitor disk space for large batch downloads
 - Files are automatically named with date prefixes for chronological processing
 - Re-running downloads is safe - existing files will be automatically skipped

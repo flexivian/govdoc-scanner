@@ -12,16 +12,16 @@ The doc-scanner application processes documents (PDF, DOC, DOCX) to extract comp
 
 ```bash
 # 1. Place documents in input directory (name with date prefixes)
-mkdir -p apps/doc-scanner/src/data/input/123204604000
-cp /path/to/documents/2019-09-23_document.pdf apps/doc-scanner/src/data/input/123204604000/
-cp /path/to/documents/2020-11-03_report.pdf apps/doc-scanner/src/data/input/123204604000/
+mkdir -p ~/.govdoc/doc-scanner/input/123204604000
+cp /path/to/documents/2019-09-23_document.pdf ~/.govdoc/doc-scanner/input/123204604000/
+cp /path/to/documents/2020-11-03_report.pdf ~/.govdoc/doc-scanner/input/123204604000/
 
 # 2. Run the scanner
 npm start scanner
 # Enter GEMI ID: 123204604000
 
 # 3. Find comprehensive results in output directory
-ls apps/doc-scanner/src/data/output/123204604000/
+ls ~/.govdoc/doc-scanner/output/123204604000/
 ```
 
 ## Tracked Changes Feature
@@ -74,7 +74,7 @@ npm start scanner
 # Output: ✓ No processing needed. All documents are up to date.
 
 # Adding new document triggers incremental processing
-cp /path/to/2022-06-15_new.pdf apps/doc-scanner/src/data/input/123204604000/
+cp /path/to/2022-06-15_new.pdf ~/.govdoc/doc-scanner/input/123204604000/
 npm start scanner
 # Enter GEMI ID: 123204604000
 # Output: Found 1 new file(s) to process: 2022-06-15_new.pdf
@@ -137,8 +137,8 @@ async function processCompany(gemiId, inputDir, outputDir) {
 // Usage
 await processCompany(
   "123204604000",
-  "apps/doc-scanner/src/data/input/123204604000",
-  "apps/doc-scanner/src/data/output/123204604000"
+  "~/.govdoc/doc-scanner/input/123204604000",
+  "~/.govdoc/doc-scanner/output/123204604000"
 );
 ```
 
@@ -282,8 +282,8 @@ async function batchProcessCompanies(companiesDir, outputDir) {
 }
 
 await batchProcessCompanies(
-  "apps/doc-scanner/src/data/input",
-  "apps/doc-scanner/src/data/output"
+  "~/.govdoc/doc-scanner/input",
+  "~/.govdoc/doc-scanner/output"
 );
 ```
 
@@ -292,7 +292,7 @@ await batchProcessCompanies(
 Processed documents generate a single comprehensive metadata file:
 
 ```
-apps/doc-scanner/src/data/output/123204604000/
+~/.govdoc/doc-scanner/output/123204604000/
 └── 123204604000_final_metadata.json  # Complete company metadata merged chronologically
 ```
 

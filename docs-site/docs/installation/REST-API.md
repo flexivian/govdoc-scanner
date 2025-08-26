@@ -21,7 +21,7 @@ The REST API is a containerized Node.js application built with Fastify that:
 ### 1. Setup Environment
 
 ```bash
-cd api
+cd apps/api
 ./docker-deploy.sh setup
 ```
 
@@ -86,7 +86,7 @@ Production deployment provides enhanced security, optimized resources, and produ
 ### Quick Setup
 
 ```bash
-cd api
+cd apps/api
 ./docker-deploy.sh deploy
 ```
 
@@ -95,7 +95,7 @@ cd api
 For step-by-step control:
 
 ```bash
-cd api
+cd apps/api
 # Step 1: Setup environment (if not already done)
 ./docker-deploy.sh setup
 # Step 2: Configure production environment

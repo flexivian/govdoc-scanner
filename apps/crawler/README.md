@@ -37,20 +37,20 @@ The application operates in two ways:
     - From the main menu, choose `1. Search for companies`.
     - You will be prompted to enter a search term (e.g., ΤΡΑΠΕΖΑ).
     - Next, you can optionally provide any number of filters (e.g., Legal Type, Status, Competent Office, Dates). Press Enter to skip any filter.
-    - The tool will run the search and save all found GEMI IDs into `ids.txt` in the project root.
+    - The tool will run the search and save all found GEMI IDs into a `.gds` file in the working directory (`~/.govdoc/crawler/` by default).
 
 3.  **Download Company Documents**
     - From the main menu, choose `2. Download PDFs for companies`.
     - You can now choose to:
       - Enter a single GEMI number to download its documents.
-      - Use all the company IDs from the `ids.txt` file created in the previous step or by you.
-      - The `ids.txt` should contain 1 GEMI number per line.
+      - Use all the company IDs from the `.gds` file created in the previous step or by you.
+      - The `.gds` file should contain a JSON array of GEMI IDs.
     - The crawler will then process each company, visit its public page, and download all available PDF/DOC/DOCX files with date prefixes when available.
 
 ## Output
 
 The tool generates outputs in two locations:
 
-- `src/ids.txt`: A plain text file created in the crawler `src` directory. It contains the list of GEMI IDs that matched your search criteria, with one ID per line.
+- `~/.govdoc/crawler/search-results.gds`: A JSON file created in the working directory. It contains the list of GEMI IDs that matched your search criteria as a JSON array.
 
-- `src/downloads/{GEMI_ID}/`: For each company that is crawled, a folder named with its GEMI ID is created inside `src/downloads/`. All downloaded PDF documents for that company are saved in this folder.
+- `~/.govdoc/crawler/downloads/{GEMI_ID}/`: For each company that is crawled, a folder named with its GEMI ID is created inside the downloads directory. All downloaded PDF documents for that company are saved in this folder.

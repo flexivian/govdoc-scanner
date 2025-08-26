@@ -9,7 +9,7 @@ This directory contains all OpenSearch-related configurations for the GovDoc Sca
 1. **Start OpenSearch development cluster:**
 
 ```bash
-cd opensearch/development
+cd apps/opensearch/development
 cp .env.template .env
 # Edit .env with a strong password (8+ characters)
 docker compose up -d
@@ -72,14 +72,14 @@ Create index patterns and visualizations:
 **Shut Down Docker Container:**
 
 ```bash
-cd opensearch/development
+cd apps/opensearch/development
 docker compose down
 ```
 
 **Reset development environment:**
 
 ```bash
-cd opensearch/development
+cd apps/opensearch/development
 docker compose down --volumes --remove-orphans
 ```
 
@@ -88,7 +88,7 @@ docker compose down --volumes --remove-orphans
 ### Quick Production Setup
 
 ```bash
-cd opensearch/production
+cd apps/opensearch/production
 # Run the unified production setup script
 ./setup-production.sh
 ```
@@ -106,7 +106,7 @@ This script will automatically:
 If you prefer to run each step manually:
 
 ```bash
-cd opensearch/production
+cd apps/opensearch/production
 # Step 1: Run security setup (creates .env file automatically)
 ./scripts/setup-security.sh
 # Step 2: Start production cluster
@@ -133,14 +133,14 @@ OPENSEARCH_INSECURE=true  # Set to false when using proper certificates
 **Shut Down Docker Container:**
 
 ```bash
-cd opensearch/production
+cd apps/opensearch/production
 docker compose -f docker-compose.prod.yml down
 ```
 
 **Reset production environment:**
 
 ```bash
-cd opensearch/production
+cd apps/opensearch/production
 ./cleanup-production.sh
 ```
 

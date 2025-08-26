@@ -65,7 +65,7 @@ The crawler is a Node.js application responsible for interacting with the GEMI p
 - **Enhanced Date Extraction**: Advanced logic extracts dates from table rows and prepends them to filenames for proper chronological organization.
 - **User Interface**: An interactive command-line interface (CLI) was built using `inquirer`, allowing users to easily specify which companies to search for or which GEMI IDs to download documents for.
 - **Robust Download System**: `axios` handles HTTP downloads with retries and improved file extension detection. `greek-utils` assists with Greek-specific text; `string-similarity` suggests potential company-name matches.
-- **Outputs**: Search results are saved to `apps/crawler/src/ids.txt`. Downloads are organized under `apps/crawler/src/downloads/{GEMI_ID}/document_downloads/` with date-prefixed filenames.
+- **Outputs**: Search results are saved to `~/.govdoc/crawler/search-results.gds`. Downloads are organized under `~/.govdoc/crawler/downloads/{GEMI_ID}/document_downloads/` with date-prefixed filenames.
 
 ### Document Scanner Application
 
@@ -78,7 +78,7 @@ The doc-scanner application processes the downloaded documents to extract valuab
 - **Document Text Extraction**: The application supports multiple document formats. `mammoth` is used to extract raw text from `.docx` files, and `word-extractor` handles older `.doc` files.
 - **Unified Processing Logic**: A streamlined `processCompanyFiles(files, inputFolder, outputFolder, gemiId, model)` function generates a single comprehensive metadata file, merged chronologically. Incremental logic skips processing when no new files are detected.
 - **Environment Management**: The `dotenv` package is used to manage environment variables, keeping sensitive information like API keys out of the source code.
-- **Outputs**: When used directly, results are written to `apps/doc-scanner/src/data/output/{GEMI_ID}/{GEMI_ID}_final_metadata.json`.
+- **Outputs**: When used directly, results are written to `~/.govdoc/doc-scanner/output/{GEMI_ID}/{GEMI_ID}_final_metadata.json`.
 
 ### CLI Tool Application
 

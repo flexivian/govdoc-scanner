@@ -126,7 +126,7 @@ This automatically:
 4. Initializes security configuration with proper authentication
 5. Creates test data to verify bulk operations work
 
-**Important**: After setup completes, passwords are stored in `/apps/opensearch/production/.env`. Copy the `govdoc_ingest` password to your root `.env` file.
+**Important**: After setup completes, passwords are stored in `apps/opensearch/production/.env`. Copy the `govdoc_ingest` password to your root `.env` file.
 
 ### Manual Setup
 
