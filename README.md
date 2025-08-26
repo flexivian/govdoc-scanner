@@ -17,16 +17,15 @@ The govdoc-scanner is an open-source tool designed to convert unstructured [Î“.Î
 
 ## Current Functionality/Implementation
 
-The repository currently includes three main applications:
+The repository currently includes five main applications:
 
 - **cli**: A unified command-line interface that orchestrates the complete workflow, combining crawling and scanning with interactive prompts and automated batch processing (recommended for most users).
 - **doc-scanner**: Processes `.pdf`, `.doc` and `.docx` documents for a given GEMI company, extracting comprehensive metadata with chronological processing and intelligent representative tracking using Gemini 2.5 Flash Lite.
 - **crawler**: Scrapes the GEMI portal to search for companies using advanced filters and downloads all available public documents with enhanced date extraction, intelligent file management, and robust retry mechanisms.
+- **api**: Fastify-based REST API server providing search endpoints for companies and representatives with OpenSearch integration.
+- **opensearch**: Complete OpenSearch integration with development and production configurations for searchable data indexing.
 
-Optional integration:
-
-- **OpenSearch**: Index your results for search/analytics with OpenSearch 3.1+. Includes a ready-to-use mapping template, CLI bulk push, and comprehensive documentation for local development and production.
-- **REST API**: Fastify-based API server providing search endpoints for companies and representatives with the OpenSearch integration.
+All applications are organized under the `apps/` directory for better project structure and maintainability.
 
 All tools are implemented in Node.js and use a combination of CLI interfaces and automated scripts. The project uses npm workspaces for managing multiple applications.
 
@@ -53,6 +52,9 @@ Then, open `.env` and set:
 
 ```
 GEMINI_API_KEY=your_gemini_api_key_here
+
+# Optional: Set custom working directory (default: ~/.govdoc)
+WORKING_DIR=~/.govdoc
 ```
 
 ### Quick Start
@@ -129,7 +131,7 @@ Both modes:
 
 - Show clear progress tracking with visual indicators
 - Provide comprehensive summary when complete
-- Save output in the `output/` directory
+- Save output in organized working directories (default: `~/.govdoc/`)
 
 ### 3. Manual Workflow
 
@@ -142,7 +144,7 @@ npm start crawler
 ```
 
 - Use the interactive CLI to search for companies or download documents by GEMI ID(s)
-- Results are saved in `ids.txt` and downloaded files in `apps/crawler/src/downloads/{GEMI_ID}/`
+- Results are saved in `~/.govdoc/crawler/downloads/{GEMI_ID}/` (or custom `WORKING_DIR`)
 
 **Step 2: Process Documents**
 
@@ -150,8 +152,8 @@ npm start crawler
 npm start scanner
 ```
 
-- Place documents in `apps/doc-scanner/src/data/input/{GEMI_ID}/`
-- Output is generated in `apps/doc-scanner/src/data/output/{GEMI_ID}/`
+- Place documents in `~/.govdoc/doc-scanner/input/{GEMI_ID}/` (or custom `WORKING_DIR`)
+- Output is generated in `~/.govdoc/doc-scanner/output/{GEMI_ID}/`
 
 ### Alternative Commands
 
@@ -163,10 +165,10 @@ You can also run commands directly:
 
 ## OpenSearch + REST API integration
 
-- **Quick Setup**: Read `opensearch/README.md`
+- **Quick Setup**: Read `apps/opensearch/README.md`
 - **Detailed Guide**: [OpenSearch Installation Documentation](https://flexivian.github.io/govdoc-scanner/docs/installation/OpenSearch)
 
-- **Quick Setup**: Read `api/README.md`
+- **Quick Setup**: Read `apps/api/README.md`
 - **Detailed Guide**: [REST API Installation Documentation](https://flexivian.github.io/govdoc-scanner/docs/installation/REST-API)
 
 ## Features Offered

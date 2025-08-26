@@ -22,6 +22,6 @@ opensearch/production/config/roles_mapping.yml
 docs-site/.docusaurus/
 docs-site/build/
 
-output/*
-ids.txt
+.govdoc/
 companies.gds
+.govdoc/

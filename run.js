@@ -33,7 +33,7 @@ function showHelp() {
 function runCommand(command, args = []) {
   if (command === 'govdoc' && args.length > 0) {
     // For govdoc with arguments, run directly to pass args through
-    const child = spawn('node', ['cli/src/main.mjs', ...args], {
+    const child = spawn('node', ['apps/cli/src/main.mjs', ...args], {
       stdio: 'inherit',
       shell: true,
       cwd: process.cwd()

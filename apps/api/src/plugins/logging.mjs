@@ -1,5 +1,5 @@
 import fp from "fastify-plugin";
-import { createLogger } from "../../../shared/logging/index.mjs";
+import { createLogger } from "../../../../shared/logging/index.mjs";
 import { randomUUID } from "crypto";
 
 // Adds request-scoped logger with request id propagation.

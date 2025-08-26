@@ -13,9 +13,10 @@ import { processCompanies } from "./processor.mjs";
 import {
   validateConfig,
   validateApiKey,
-} from "../../shared/config/validator.mjs";
-import { createLogger } from "../../shared/logging/index.mjs";
-import { progressManager } from "../../shared/progress/index.mjs";
+} from "../../../shared/config/validator.mjs";
+import { createLogger } from "../../../shared/logging/index.mjs";
+import { progressManager } from "../../../shared/progress/index.mjs";
+import { initWorkingDir, getWorkingPath } from "../../../shared/workdir/index.mjs";
 
 const logger = createLogger("CLI-MAIN");
 
@@ -184,7 +185,7 @@ function parseArgs() {
 function showHelp() {
   console.log("\n🇬🇷 GovDoc Scanner CLI\n");
   console.log("Usage:");
-  console.log("  node cli/src/main.mjs [options]");
+  console.log("  node apps/cli/src/main.mjs [options]");
   console.log("  npm start govdoc [-- options]");
   console.log("");
   console.log("Options:");
@@ -212,10 +213,10 @@ function showHelp() {
   console.log("  --help, -h                  Show this help message");
   console.log("");
   console.log("Examples:");
-  console.log("  node cli/src/main.mjs --input ./companies.gds");
+  console.log("  node apps/cli/src/main.mjs --input ./companies.gds");
   console.log("  npm start govdoc -- --input ./companies.gds");
   console.log(
-    "  node cli/src/main.mjs --input ./companies.gds --push --os.endpoint https://localhost:9200"
+    "  node apps/cli/src/main.mjs --input ./companies.gds --push --os.endpoint https://localhost:9200"
   );
   console.log(
     "    --os.username admin --os.password admin --os.index govdoc-companies-000001"
@@ -224,7 +225,7 @@ function showHelp() {
   console.log("");
   console.log("Interactive Mode:");
   console.log("  Run without arguments to use interactive prompts");
-  console.log("  node cli/src/main.mjs");
+  console.log("  node apps/cli/src/main.mjs");
   console.log("  npm start govdoc");
   console.log("");
 }
@@ -338,7 +339,9 @@ async function runCommandLineMode(args) {
     // Process the companies (no confirmation in command line mode)
     console.log(`\n🚀 Starting processing of ${gemiIds.length} companies...\n`);
 
-    const outputRoot = path.join(projectRoot, "output");
+    // Initialize CLI working directory
+    await initWorkingDir('cli', ['output']);
+    const outputRoot = getWorkingPath('cli', 'output');
     const result = await processCompanies(gemiIds, outputRoot);
     const companies = result.companies;
     const stats = result.stats;
@@ -436,7 +439,9 @@ async function runInteractiveMode() {
     // 3. Process the companies
     console.log(`\n🚀 Starting processing of ${gemiIds.length} companies...\n`);
 
-    const outputRoot = path.join(projectRoot, "output");
+    // Initialize CLI working directory
+    await initWorkingDir('cli', ['output']);
+    const outputRoot = getWorkingPath('cli', 'output');
     const result = await processCompanies(gemiIds, outputRoot);
     const companies = result.companies;
     const stats = result.stats;

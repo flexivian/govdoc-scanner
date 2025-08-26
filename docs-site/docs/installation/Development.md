@@ -45,9 +45,12 @@ cp .env.example .env
 ```
 govdoc-scanner/
 ├── apps/
+│   ├── api/                # REST API server
+│   ├── cli/                # Unified CLI tool for complete workflow orchestration
+│   ├── opensearch/         # OpenSearch configuration and setup
 │   ├── crawler/            # GEMI portal scraping with enhanced date extraction
 │   └── doc-scanner/        # AI-powered document processing with chronological analysis
-├── cli/                    # Unified CLI tool for complete workflow orchestration
+├── shared/                 # Shared utilities and configuration
 ├── docs-site/              # Documentation
 └── output/                 # Generated files
 ```

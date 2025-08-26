@@ -29,7 +29,7 @@ OPENSEARCH_INDEX=govdoc-companies-000001
 3. **Create the index template:**
 
 ```bash
-curl -k -u admin:yourAdminPassword -X PUT "https://localhost:9200/_index_template/govdoc-company-template" \
+curl -k -u admin:eYTYXHS1234! -X PUT "https://localhost:9200/_index_template/govdoc-company-template" \
   -H "Content-Type: application/json" \
   -d @../shared/templates/company-index-template.json
 ```
@@ -37,17 +37,17 @@ curl -k -u admin:yourAdminPassword -X PUT "https://localhost:9200/_index_templat
 4. **Create the initial index:**
 
 ```bash
-curl -k -u admin:yourAdminPassword -X PUT "https://localhost:9200/govdoc-companies-000001"
+curl -k -u admin:eYTYXHS1234! -X PUT "https://localhost:9200/govdoc-companies-000001"
 ```
 
 **Verify setup:**
 
 ```bash
 # Check if template was created
-curl -k -u admin:yourAdminPassword "https://localhost:9200/_index_template/govdoc-company-template?pretty"
+curl -k -u admin:eYTYXHS1234! "https://localhost:9200/_index_template/govdoc-company-template?pretty"
 
 # Check index mappings
-curl -k -u admin:yourAdminPassword "https://localhost:9200/govdoc-companies-000001/_mapping?pretty"
+curl -k -u admin:eYTYXHS1234! "https://localhost:9200/govdoc-companies-000001/_mapping?pretty"
 ```
 
 5. **Test data ingestion:**

@@ -17,12 +17,14 @@ RUN addgroup -g 1001 -S nodejs && \
 
 # Copy package files for dependency installation
 COPY package*.json ./
-COPY api/package*.json ./api/
+COPY apps/api/package*.json ./apps/api/
 
-# Install dependencies with npm install for reproducible builds
-# Use --omit=dev to exclude dev dependencies and --ignore-scripts to skip postinstall (chromium)
+# Install root dependencies first (for workspaces)
 RUN npm install --omit=dev --ignore-scripts && \
     npm cache clean --force
+
+# Return to root directory
+WORKDIR /govdoc-scanner
 
 # Stage 2: Build stage (if needed for any build steps)
 FROM node:22-alpine AS builder
@@ -34,14 +36,17 @@ WORKDIR /govdoc-scanner
 
 # Copy package files
 COPY package*.json ./
-COPY api/package*.json ./api/
+COPY apps/api/package*.json ./apps/api/
 
 # Install all dependencies (including dev deps) for any build process
 # Skip postinstall script to avoid installing Chromium (not needed for API)
 RUN npm install --ignore-scripts
 
+# Return to root directory
+WORKDIR /govdoc-scanner
+
 # Copy source code
-COPY api/ .
+COPY apps/api/ ./apps/api/
 
 # If you had build steps, they would go here
 # RUN npm run build
@@ -65,6 +70,9 @@ RUN mkdir -p /govdoc-scanner
 # Set working directory
 WORKDIR /govdoc-scanner
 
+# Create data directory for persistent storage
+RUN mkdir -p /govdoc-scanner/apps/api/data
+
 # Change ownership to app user
 RUN chown -R app:nodejs /govdoc-scanner
 
@@ -75,7 +83,10 @@ COPY --from=dependencies --chown=app:nodejs /govdoc-scanner/node_modules ./node_
 COPY --chown=app:nodejs shared ./shared
 
 # Copy application source code
-COPY --chown=app:nodejs api ./api
+COPY --chown=app:nodejs apps/api ./apps/api
+
+# Switch to the API directory as working directory
+WORKDIR /govdoc-scanner/apps/api
 
 # Switch to non-root user
 USER app
@@ -103,4 +114,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 
 # Use dumb-init to handle signals properly and start the application
 ENTRYPOINT ["dumb-init", "--"]
-CMD ["node", "api/src/server.mjs"]
+CMD ["node", "src/server.mjs"]
