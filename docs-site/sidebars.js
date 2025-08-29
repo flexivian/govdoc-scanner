@@ -23,24 +23,18 @@ const sidebars = {
     "intro",
     {
       type: "category",
-      label: "Installation",
+      label: "Guides",
       items: [
-        "installation/Getting Started",
-        "installation/Development",
-        "installation/Configuration",
-        "installation/OpenSearch",
-        "installation/REST-API",
+        "guides/Getting Started",
+        "guides/Configuration",
+        "guides/Development",
+        "guides/Troubleshooting"
       ],
     },
     {
       type: "category",
-      label: "Code Examples",
-      items: [
-        "code-examples/overview",
-        "code-examples/crawler-examples",
-        "code-examples/doc-scanner-examples",
-        "code-examples/shared-infrastructure",
-      ],
+      label: "Advanced Integrations",
+      items: ["integrations/OpenSearch", "integrations/REST-API"],
     },
     {
       type: "category",

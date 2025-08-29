@@ -30,18 +30,6 @@ cp .env.example .env
 # GEMINI_API_KEY=your_gemini_api_key_here
 ```
 
-### 3. First Run
-
-Test with the interactive CLI (recommended):
-
-```bash
-npm start govdoc
-# Follow the interactive prompts to:
-# - Choose input method (file, manual, or random)
-# - Process companies with automated workflow
-# - View progress and results
-```
-
 ## Project Applications
 
 The project includes three main applications:
@@ -92,7 +80,7 @@ After processing, find results in the working directory:
 
 ```
 
-If you prefer to run each step separately(crawler -> scanner), make sure to use `LOG_LEVEL=DEBUG` for detailed output when running the separate apps:
+**Note:** If you prefer to run each step separately (crawler -> scanner), make sure to use `LOG_LEVEL=DEBUG` for detailed output when running the separate apps:
 
 ### Crawler
 
@@ -124,13 +112,10 @@ The metadata file includes:
 
 ## Next Steps
 
-- Check [Development Setup](./Development.md) for advanced configuration
-- Explore [Code Examples](../code-examples/overview.md) for usage patterns
-- Review [GSoC 2025 Overview](../gsoc/2025/overview.md) for project background
+- Explore [Configuration](./Configuration.md) for advanced setup options and customization.
+- Visit [Development Setup](./Development.md) for instructions on contributing and running the project in development mode.
+- Read the [GSoC 2025 Overview](../gsoc/2025/overview.md) to learn more about the project's background and goals.
 
-## Troubleshooting
+## Need Help?
 
-- **API Key Issues**: Ensure valid Gemini API key in `.env` file
-- **Browser Issues**: Run `npx playwright install chromium`
-- **Permissions**: Check write access to output directories
-- **Debug Mode**: Use `LOG_LEVEL=DEBUG` environment variable for detailed logging and troubleshooting
+If you encounter any issues, check out our [Troubleshooting Guide](./Troubleshooting.md) for common problems and solutions.

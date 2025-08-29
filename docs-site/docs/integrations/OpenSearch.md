@@ -216,6 +216,34 @@ Index patterns are automatically created. You can:
 - Build dashboards in **Dashboard**
 - Monitor health in **Stack Management**
 
+## Troubleshooting
+
+### OpenSearch Production Startup Issues
+
+If OpenSearch production fails to start, check the logs first:
+
+```bash
+cd apps/opensearch/production
+docker compose -f docker-compose.prod.yml logs opensearch
+```
+
+**Common Issues:**
+
+1. **Insufficient Memory**: The most common issue is insufficient RAM allocation
+   - **Solution**: Reduce memory settings from 4GB to 2GB in `docker-compose.prod.yml`:
+
+   ```yaml
+   environment:
+     - "OPENSEARCH_JAVA_OPTS=-Xms2g -Xmx2g"
+   ```
+
+2. **Port Conflicts**: Ports 9200 or 5601 already in use
+   - **Check**: `sudo netstat -tulpn | grep :9200`
+   - **Solution**: Stop conflicting services or change ports in docker-compose
+
+3. **Permission Issues**: Container cannot write to mounted volumes
+   - **Solution**: Fix ownership: `sudo chown -R 1000:1000 apps/opensearch/production/`
+
 ## Environment Differences
 
 | Feature          | Development         | Production                 |

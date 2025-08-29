@@ -1,4 +1,4 @@
-# REST API Installation & Deployment
+# REST API Integration
 
 The GovDoc Scanner REST API provides a robust interface for querying Greek company metadata from GEMI registry scans. This guide covers both development and production deployment scenarios.
 
@@ -16,7 +16,7 @@ The REST API is a containerized Node.js application built with Fastify that:
 
 - Docker and Docker Compose
 - Company data indexed in OpenSearch
-- **IMPORTANT**: You need to setup OpenSearch Production First for both Development and Production REST API environments. Check [OpenSearch Setup](./OpenSearch.md) for configuration.
+- **IMPORTANT**: You need to setup OpenSearch Production First for both Development and Production REST API environments. Check **[OpenSearch Setup](./OpenSearch.md)** for configuration.
 
 ### 1. Setup Environment
 
@@ -161,39 +161,6 @@ curl "http://localhost:8080/health"
 curl -H "X-API-Key: your-api-key" \
   "http://localhost:8080/companies/123456789000"
 
-```
-
-### Response Format
-
-All responses follow a consistent structure:
-
-```json
-{
-  "data": {
-    // Actual response data
-  },
-  "meta": {
-    "request_id": "uuid",
-    "total": 42,
-    "from": 0,
-    "size": 10
-  }
-}
-```
-
-Error responses:
-
-```json
-{
-  "error": {
-    "code": "error_code",
-    "message": "Human readable message",
-    "request_id": "uuid",
-    "details": {
-      // Optional structured info
-    }
-  }
-}
 ```
 
 ## Management Commands
