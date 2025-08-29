@@ -2,6 +2,8 @@
 
 This directory contains all OpenSearch-related configurations for the GovDoc Scanner project.
 
+**Detailed Guide**: [OpenSearch Installation Documentation](https://flexivian.github.io/govdoc-scanner/docs/installation/OpenSearch)
+
 ## Quick Start
 
 ### Development Environment
