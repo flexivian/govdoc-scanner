@@ -237,7 +237,6 @@ Error responses:
 
 - **`GET /health`**: Basic health check with OpenSearch status
 - **`GET /internal/stats`**: API performance metrics (requires auth)
-- **`GET /metrics`**: Prometheus metrics (requires auth)
 
 ## Troubleshooting
 

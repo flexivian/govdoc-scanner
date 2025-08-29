@@ -5,7 +5,6 @@ import apiConfig from "./config.mjs";
 import healthRoute from "./routes/health.mjs";
 import opensearchPlugin from "./plugins/opensearch.mjs";
 import loggingBridge from "./plugins/logging.mjs";
-import metricsPlugin from "./plugins/metrics.mjs";
 import errorHandlerPlugin from "./plugins/error-handler.mjs";
 import getCompanyRoute from "./routes/companies/get-company.mjs";
 import searchCompaniesRoute from "./routes/companies/search-companies.mjs";
@@ -154,12 +153,12 @@ async function buildServer() {
     "/openapi.json",
     {
       schema: {
-    summary: "OpenAPI specification JSON",
+        summary: "OpenAPI specification JSON",
         tags: ["default"],
         response: {
           200: {
             type: "object",
-      description: "OpenAPI 3.0 spec object",
+            description: "OpenAPI 3.0 spec object",
           },
         },
       },
@@ -170,7 +169,6 @@ async function buildServer() {
   await fastify.register(swaggerUI, { routePrefix: "/docs" });
 
   await fastify.register(loggingBridge);
-  await fastify.register(metricsPlugin);
   await fastify.register(validationPlugin);
   await fastify.register(sanitizationPlugin);
   await fastify.register(opensearchPlugin);
@@ -205,7 +203,7 @@ async function buildServer() {
     "/",
     {
       schema: {
-  summary: "API status",
+        summary: "API status",
         tags: ["default"],
         response: {
           200: {
