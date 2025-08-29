@@ -5,7 +5,6 @@ import apiConfig from "./config.mjs";
 import healthRoute from "./routes/health.mjs";
 import opensearchPlugin from "./plugins/opensearch.mjs";
 import loggingBridge from "./plugins/logging.mjs";
-import metricsPlugin from "./plugins/metrics.mjs";
 import errorHandlerPlugin from "./plugins/error-handler.mjs";
 import getCompanyRoute from "./routes/companies/get-company.mjs";
 import searchCompaniesRoute from "./routes/companies/search-companies.mjs";
@@ -24,6 +23,7 @@ async function buildServer() {
 
   // Swagger / OpenAPI basic setup
   await fastify.register(swagger, {
+    exposeRoute: true,
     openapi: {
       info: {
         title: "GovDoc Scanner API",
@@ -160,28 +160,10 @@ async function buildServer() {
       security: [{ ApiKeyAuth: [] }, { BearerAuth: [] }],
     },
   });
-  // Expose JSON at /openapi.json
-  fastify.get(
-    "/openapi.json",
-    {
-      schema: {
-        summary: "OpenAPI specification JSON",
-        tags: ["default"],
-        response: {
-          200: {
-            type: "object",
-            description: "OpenAPI 3.0 spec object",
-          },
-        },
-      },
-    },
-    async () => fastify.swagger()
-  );
 
   await fastify.register(swaggerUI, { routePrefix: "/docs" });
 
   await fastify.register(loggingBridge);
-  await fastify.register(metricsPlugin);
   await fastify.register(validationPlugin);
   await fastify.register(sanitizationPlugin);
   await fastify.register(opensearchPlugin);
@@ -211,6 +193,11 @@ async function buildServer() {
   await fastify.register(statsRoute);
   await fastify.register(indexTemplateRoute);
   await fastify.register(errorHandlerPlugin); // last so it catches route errors
+
+  // Expose OpenAPI spec
+  fastify.get("/openapi.json", async (req, reply) => {
+    return fastify.swagger();
+  });
 
   fastify.get(
     "/",
