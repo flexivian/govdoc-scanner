@@ -166,7 +166,6 @@ curl -H "Authorization: Bearer $TOKEN" "http://localhost:8080/companies"
 ### Monitoring
 
 - `GET /internal/stats` - API performance metrics
-- `GET /metrics` - Prometheus metrics (requires auth)
 
 ## User Management
 
