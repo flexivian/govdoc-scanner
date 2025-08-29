@@ -24,6 +24,10 @@ This provides detailed information about:
 - **API retry logic**: Retry attempts, delays, and failure reasons (warnings/errors)
 - **Error details**: Full stack traces and error context
 
+**Important**: Debug mode disables progress bars in the CLI application and shows logs in real-time as they occur. This makes it easier to see exactly what's happening during processing, but you won't see the usual progress bar.
+
+If you prefer to see progress bars with some logging, use `LOG_LEVEL=info` instead. Note that in info/warn/error modes, only error messages appear immediately during progress operations - other logs (info, warn, debug) are buffered and shown after the progress bar completes.
+
 ## Configuration Issues
 
 ### "GEMINI_API_KEY is required"

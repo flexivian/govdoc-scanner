@@ -3,6 +3,12 @@ import config from "../config/index.mjs";
 // Global progress manager reference
 let globalProgressManager = null;
 
+// Utility function to check if we should use progress bars
+// Returns false only for debug mode (level 0)
+export function shouldUseProgressBar() {
+  return config.logging.level !== 0; // 0 = debug mode
+}
+
 export class Logger {
   constructor(module = "SYSTEM") {
     this.module = module;

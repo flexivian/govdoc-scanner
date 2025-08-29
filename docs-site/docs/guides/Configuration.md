@@ -65,6 +65,10 @@ Controls where application outputs are stored:
 Controls logging and system behavior:
 
 - **LOG_LEVEL** (default: error): Logging level (debug, info, warn, error)
+  - **debug**: Enables detailed debugging with real-time log output (disables progress bars in CLI for immediate feedback)
+  - **info**: Standard informational logging with progress bars (info/warn logs shown after progress completes, errors shown immediately)
+  - **warn**: Warning and error messages only with progress bars (warn logs shown after progress completes, errors shown immediately)
+  - **error**: Error messages only with progress bars (errors shown immediately)
 
 ### OpenSearch Integration (Optional)
 
@@ -90,7 +94,7 @@ The application automatically validates configuration on startup and provides de
 
 For development with verbose logging:
 
-- Set `LOG_LEVEL=debug` for detailed debugging information
+- Set `LOG_LEVEL=debug` for detailed debugging information with real-time log output
 - Set `CRAWLER_HEADLESS=false` to show browser for debugging
 
 ## Need Help?

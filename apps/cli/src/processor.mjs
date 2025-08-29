@@ -8,6 +8,7 @@ import { checkExistingMetadata } from "../../doc-scanner/src/metadata-checker.mj
 import {
   createLogger,
   setGlobalProgressManager,
+  shouldUseProgressBar,
 } from "../../../shared/logging/index.mjs";
 import { progressManager } from "../../../shared/progress/index.mjs";
 
@@ -59,16 +60,24 @@ export async function processCompanies(gemiIds, outputRoot) {
   const noDocumentIds = [];
   let currentTotalOperations = gemiIds.length * 2; // crawl + potential scan each
   const progressCounter = { value: 0 }; // Use object for shared reference
+  const useProgressBar = shouldUseProgressBar();
 
   logger.info(`Starting processing of ${gemiIds.length} companies`);
 
-  // Set up progress-aware logging
-  setGlobalProgressManager(progressManager);
+  let progressBar = null;
+  if (useProgressBar) {
+    // Set up progress-aware logging
+    setGlobalProgressManager(progressManager);
 
-  // Create progress bar using new progress manager
-  const progressBar = progressManager.createBar(currentTotalOperations, {
-    format: "Progress |{bar}| {percentage}% | {value}/{total} operations",
-  });
+    // Create progress bar using new progress manager
+    progressBar = progressManager.createBar(currentTotalOperations, {
+      format: "Progress |{bar}| {percentage}% | {value}/{total} operations",
+    });
+  } else {
+    // In debug mode, don't use progress manager for logging
+    setGlobalProgressManager(null);
+    logger.debug("Debug mode: Progress bar disabled, using real-time logging");
+  }
 
   // Process each GEMI ID serially for crawling, but start scanning immediately when ready
   for (const gemiId of gemiIds) {
@@ -89,7 +98,11 @@ export async function processCompanies(gemiIds, outputRoot) {
       // 1. Run crawler for this GEMI ID (serial)
       const crawlMap = await runCrawlerSilently([gemiId], outputRoot);
       progressCounter.value++;
-      progressManager.update(progressCounter.value, `Crawled ${gemiId}`); // Crawl completed
+      if (useProgressBar) {
+        progressManager.update(progressCounter.value, `Crawled ${gemiId}`); // Crawl completed
+      } else {
+        logger.debug(`Crawled ${gemiId} (${progressCounter.value}/${currentTotalOperations})`);
+      }
 
       // Structured crawl result expected
       const entry = crawlMap[gemiId];
@@ -107,10 +120,14 @@ export async function processCompanies(gemiIds, outputRoot) {
         });
         companies.push(result);
         progressCounter.value++;
-        progressManager.update(
-          progressCounter.value,
-          `Skipped scan for ${gemiId} (crawl failed)`
-        ); // Skip scan when crawl fails
+        if (useProgressBar) {
+          progressManager.update(
+            progressCounter.value,
+            `Skipped scan for ${gemiId} (crawl failed)`
+          ); // Skip scan when crawl fails
+        } else {
+          logger.debug(`Skipped scan for ${gemiId} (crawl failed) (${progressCounter.value}/${currentTotalOperations})`);
+        }
         continue;
       }
 
@@ -131,10 +148,14 @@ export async function processCompanies(gemiIds, outputRoot) {
         noDocumentIds.push(gemiId);
         companies.push(result);
         progressCounter.value++;
-        progressManager.update(
-          progressCounter.value,
-          `No documents for ${gemiId}`
-        ); // Skip scan - no files (we still count placeholder scan op)
+        if (useProgressBar) {
+          progressManager.update(
+            progressCounter.value,
+            `No documents for ${gemiId}`
+          ); // Skip scan - no files (we still count placeholder scan op)
+        } else {
+          logger.debug(`No documents for ${gemiId} (${progressCounter.value}/${currentTotalOperations})`);
+        }
         continue;
       }
 
@@ -187,10 +208,14 @@ export async function processCompanies(gemiIds, outputRoot) {
 
         companies.push(result);
         progressCounter.value++;
-        progressManager.update(
-          progressCounter.value,
-          `${gemiId} already up to date`
-        ); // Skip scan - already up to date
+        if (useProgressBar) {
+          progressManager.update(
+            progressCounter.value,
+            `${gemiId} already up to date`
+          ); // Skip scan - already up to date
+        } else {
+          logger.debug(`${gemiId} already up to date (${progressCounter.value}/${currentTotalOperations})`);
+        }
         continue;
       }
 
@@ -258,7 +283,11 @@ export async function processCompanies(gemiIds, outputRoot) {
           }
 
           progressCounter.value++;
-          progressManager.update(progressCounter.value, `Scanned ${gemiId}`); // Scan completed
+          if (useProgressBar) {
+            progressManager.update(progressCounter.value, `Scanned ${gemiId}`); // Scan completed
+          } else {
+            logger.debug(`Scanned ${gemiId} (${progressCounter.value}/${currentTotalOperations})`);
+          }
           return result;
         })
         .catch((error) => {
@@ -269,20 +298,28 @@ export async function processCompanies(gemiIds, outputRoot) {
             message: error?.message || "Scan failed",
           });
           progressCounter.value++;
-          progressManager.update(
-            progressCounter.value,
-            `Scan failed for ${gemiId}`
-          ); // Scan failed
+          if (useProgressBar) {
+            progressManager.update(
+              progressCounter.value,
+              `Scan failed for ${gemiId}`
+            ); // Scan failed
+          } else {
+            logger.debug(`Scan failed for ${gemiId} (${progressCounter.value}/${currentTotalOperations})`);
+          }
           return result;
         });
 
       scanJobs.push(scanJob);
     } catch (error) {
       progressCounter.value++;
-      progressManager.update(
-        progressCounter.value,
-        `Crawl failed for ${gemiId}`
-      ); // Crawl attempt completed (failed)
+      if (useProgressBar) {
+        progressManager.update(
+          progressCounter.value,
+          `Crawl failed for ${gemiId}`
+        ); // Crawl attempt completed (failed)
+      } else {
+        logger.debug(`Crawl failed for ${gemiId} (${progressCounter.value}/${currentTotalOperations})`);
+      }
       result["processing-status"] = "crawl-failed";
       const code = error?.code || "crawl-error";
       failures.push({
@@ -315,7 +352,9 @@ export async function processCompanies(gemiIds, outputRoot) {
     }
   }
 
-  progressManager.stop();
+  if (useProgressBar) {
+    progressManager.stop();
+  }
   logger.info(
     `Processing completed. Success: ${companies.filter((c) => c["processing-status"] === "successful").length}/${companies.length}`
   );

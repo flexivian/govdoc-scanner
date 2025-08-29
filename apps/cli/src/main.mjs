@@ -274,11 +274,16 @@ async function main() {
  * Print processing summary with proper terminal cleanup
  */
 async function printSummary(stats, failures, noDocs = []) {
-  // Force stop and clear progress bar completely
-  progressManager.forceStop();
+  // Import shouldUseProgressBar to check if we're using progress bars
+  const { shouldUseProgressBar } = await import("../../../shared/logging/index.mjs");
+  
+  if (shouldUseProgressBar()) {
+    // Force stop and clear progress bar completely
+    progressManager.forceStop();
 
-  // Longer delay to ensure all async error logging is complete
-  await new Promise((resolve) => setTimeout(resolve, 300));
+    // Longer delay to ensure all async error logging is complete
+    await new Promise((resolve) => setTimeout(resolve, 300));
+  }
 
   const totalProcessed = stats.successful + stats.noDocuments + stats.failed;
 
@@ -387,7 +392,10 @@ async function runCommandLineMode(args) {
     process.stdout.write(`\n🎉 Processing completed.\n`);
   } catch (error) {
     // Ensure progress bar is stopped on error
-    progressManager.forceStop();
+    const { shouldUseProgressBar } = await import("../../../shared/logging/index.mjs");
+    if (shouldUseProgressBar()) {
+      progressManager.forceStop();
+    }
     console.error(`\n❌ Error: ${error.message}`);
     process.exit(1);
   }
@@ -494,16 +502,22 @@ async function runInteractiveMode() {
     process.stdout.write(`\n🎉 Processing completed.\n`);
   } catch (error) {
     // Ensure progress bar is stopped on error
-    progressManager.forceStop();
+    const { shouldUseProgressBar } = await import("../../../shared/logging/index.mjs");
+    if (shouldUseProgressBar()) {
+      progressManager.forceStop();
+    }
     console.error(`\n❌ Error: ${error.message}`);
     process.exit(1);
   }
 }
 
 // Run the CLI
-main().catch((err) => {
+main().catch(async (err) => {
   // Ensure progress bar is stopped on unexpected error
-  progressManager.forceStop();
+  const { shouldUseProgressBar } = await import("../../../shared/logging/index.mjs");
+  if (shouldUseProgressBar()) {
+    progressManager.forceStop();
+  }
   console.error("Unexpected error:", err.message);
   process.exit(1);
 });
