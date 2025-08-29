@@ -23,6 +23,7 @@ async function buildServer() {
 
   // Swagger / OpenAPI basic setup
   await fastify.register(swagger, {
+    exposeRoute: true,
     openapi: {
       info: {
         title: "GovDoc Scanner API",
@@ -148,23 +149,6 @@ async function buildServer() {
       security: [{ ApiKeyAuth: [] }, { BearerAuth: [] }],
     },
   });
-  // Expose JSON at /openapi.json
-  fastify.get(
-    "/openapi.json",
-    {
-      schema: {
-        summary: "OpenAPI specification JSON",
-        tags: ["default"],
-        response: {
-          200: {
-            type: "object",
-            description: "OpenAPI 3.0 spec object",
-          },
-        },
-      },
-    },
-    async () => fastify.swagger()
-  );
 
   await fastify.register(swaggerUI, { routePrefix: "/docs" });
 
@@ -198,6 +182,11 @@ async function buildServer() {
   await fastify.register(statsRoute);
   await fastify.register(indexTemplateRoute);
   await fastify.register(errorHandlerPlugin); // last so it catches route errors
+
+  // Expose OpenAPI spec
+  fastify.get("/openapi.json", async (req, reply) => {
+    return fastify.swagger();
+  });
 
   fastify.get(
     "/",
