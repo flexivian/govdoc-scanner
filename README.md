@@ -23,6 +23,10 @@ The repository currently includes three main applications:
 - **doc-scanner**: Processes `.pdf`, `.doc` and `.docx` documents for a given GEMI company, extracting comprehensive metadata with chronological processing and intelligent representative tracking using Gemini 2.5 Flash Lite.
 - **crawler**: Scrapes the GEMI portal to search for companies using advanced filters and downloads all available public documents with enhanced date extraction, intelligent file management, and robust retry mechanisms.
 
+Optional integration:
+
+- **OpenSearch**: Index your results for search/analytics with OpenSearch 3.1+. Includes a ready-to-use mapping template, CLI bulk push, and comprehensive documentation for local development and production.
+
 All tools are implemented in Node.js and use a combination of CLI interfaces and automated scripts. The project uses npm workspaces for managing multiple applications.
 
 ## Usage Instructions
@@ -35,6 +39,8 @@ All tools are implemented in Node.js and use a combination of CLI interfaces and
 ```sh
 node --version
 ```
+
+- **Docker & Docker Compose** (optional, for OpenSearch): Required only if using the OpenSearch integration for search and analytics.
 
 - **.env file**: Copy the example environment file and update it with your Gemini API key:
 
@@ -154,15 +160,10 @@ You can also run commands directly:
 - `npm run scanner` (same as `npm start scanner`)
 - `npm run govdoc` (same as `npm start govdoc`)
 
-## Command Summary
+## OpenSearch integration
 
-| What you want to do        | Command             |
-| -------------------------- | ------------------- |
-| **First time setup**       | `npm install`       |
-| **Interactive workflow**   | `npm start govdoc`  |
-| **Search & download only** | `npm start crawler` |
-| **Process documents only** | `npm start scanner` |
-| **Get help**               | `npm start help`    |
+- **Quick Setup**: Read `opensearch/README.md`
+- **Detailed Guide**: [OpenSearch Installation Documentation](https://flexivian.github.io/govdoc-scanner/docs/installation/OpenSearch)
 
 ## Features Offered
 
@@ -179,6 +180,7 @@ You can also run commands directly:
 - **Interactive CLI**: User-friendly command-line interfaces with guided prompts for all workflows.
 - **Multiple Input Methods**: Support for file input, manual entry, and random selection with date-based search filters.
 - **Progress Tracking**: Unified progress bar and summary for batch operations.
+- **OpenSearch Integration**: Optional integration with OpenSearch 3.1+ for full-text search, analytics, and data visualization with automated index management and bulk operations.
 
 ## Documentation
 
@@ -205,12 +207,14 @@ The documentation site will be available at `http://localhost:3000` with live re
 
 ## Reasons for Offering & Problem Solved
 
-Access to Greek public company data is hindered by the prevalence of unstructured PDF files. This project addresses the lack of transparency and the inefficiency in data utilization by converting these documents into structured, machine-readable formats.
+Access to Greek public company data is hindered by the prevalence of unstructured PDF files. This project addresses the lack of transparency and the inefficiency in data utilization by converting these documents into structured, machine-readable formats with optional full-text search capabilities.
+
 govdoc-scanner automates:
 
 - Searching for companies with complex filters
 - Downloading all available public documents
 - Extracting and structuring metadata for analysis
 - Building historical timelines for research or reporting
+- Creating searchable indexes with OpenSearch for advanced analytics
 
 This enables users to efficiently gather and analyze business data at scale, supporting transparency, due diligence, and investigative work.

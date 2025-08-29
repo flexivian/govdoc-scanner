@@ -3,6 +3,20 @@ node_modules/
 
 .env
 **/.env
+production.env
+
+# SSL certificates and private keys (security)
+*.pem
+*.key
+*.crt
+*.cert
+opensearch/production/certs/*.pem
+opensearch/development/certs/*.pem
+
+# OpenSearch security files with password hashes (security)
+opensearch/production/config/internal_users.yml
+opensearch/production/config/roles.yml
+opensearch/production/config/roles_mapping.yml
 
 # Docusaurus
 docs-site/.docusaurus/
