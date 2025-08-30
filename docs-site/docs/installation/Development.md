@@ -45,9 +45,12 @@ cp .env.example .env
 ```
 govdoc-scanner/
 ├── apps/
+│   ├── api/                # REST API server
+│   ├── cli/                # Unified CLI tool for complete workflow orchestration
+│   ├── opensearch/         # OpenSearch configuration and setup
 │   ├── crawler/            # GEMI portal scraping with enhanced date extraction
 │   └── doc-scanner/        # AI-powered document processing with chronological analysis
-├── cli/                    # Unified CLI tool for complete workflow orchestration
+├── shared/                 # Shared utilities and configuration
 ├── docs-site/              # Documentation
 └── output/                 # Generated files
 ```
@@ -75,7 +78,7 @@ npm start crawler
 # Select search option and try a simple company name
 
 # Test doc-scanner
-mkdir -p apps/doc-scanner/src/data/input/test123
+mkdir -p ~/.govdoc/doc-scanner/input/test123
 # Place a test PDF in the directory (name with date prefix: 2024-01-15_document.pdf)
 npm start scanner
 # Enter "test123" as GEMI ID

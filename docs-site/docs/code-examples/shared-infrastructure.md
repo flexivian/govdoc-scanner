@@ -11,7 +11,7 @@ Core modules shared across apps, located under `shared/`. These provide configur
 Access centralized configuration loaded from environment variables:
 
 ```javascript
-import config from "../../shared/config/index.mjs";
+import config from "../../../shared/config/index.mjs";
 
 // Access different configuration sections
 const { api, crawler, processing, logging } = config;
@@ -30,7 +30,7 @@ Validate configuration at application startup:
 import {
   validateConfig,
   validateApiKey,
-} from "../../shared/config/validator.mjs";
+} from "../../../shared/config/validator.mjs";
 
 try {
   // Validate all configuration values
@@ -58,7 +58,7 @@ try {
 Create module-specific loggers with automatic progress-aware buffering:
 
 ```javascript
-import { createLogger } from "../../shared/logging/index.mjs";
+import { createLogger } from "../../../shared/logging/index.mjs";
 
 const logger = createLogger("MY-MODULE");
 
@@ -75,9 +75,9 @@ logger.error("Error messages", optionalErrorObject);
 ### Real-world Logging Example
 
 ```javascript
-import { createLogger } from "../../shared/logging/index.mjs";
-import { progressManager } from "../../shared/progress/index.mjs";
-import { setGlobalProgressManager } from "../../shared/logging/index.mjs";
+import { createLogger } from "../../../shared/logging/index.mjs";
+import { progressManager } from "../../../shared/progress/index.mjs";
+import { setGlobalProgressManager } from "../../../shared/logging/index.mjs";
 
 // Setup logging with progress integration
 setGlobalProgressManager(progressManager);
@@ -115,7 +115,7 @@ async function processFiles(files) {
 Display progress bars with automatic log buffering:
 
 ```javascript
-import { progressManager } from "../../shared/progress/index.mjs";
+import { progressManager } from "../../../shared/progress/index.mjs";
 
 // Create and start progress bar
 const bar = progressManager.createBar(10);
@@ -135,9 +135,9 @@ progressManager.stop();
 ### Advanced Progress Management
 
 ```javascript
-import { progressManager } from "../../shared/progress/index.mjs";
-import { createLogger } from "../../shared/logging/index.mjs";
-import { setGlobalProgressManager } from "../../shared/logging/index.mjs";
+import { progressManager } from "../../../shared/progress/index.mjs";
+import { createLogger } from "../../../shared/logging/index.mjs";
+import { setGlobalProgressManager } from "../../../shared/logging/index.mjs";
 
 // Setup progress-aware logging
 setGlobalProgressManager(progressManager);
@@ -178,7 +178,7 @@ import {
   BrowserAutomationError,
   FileProcessingError,
   ValidationError,
-} from "../../shared/errors/index.mjs";
+} from "../../../shared/errors/index.mjs";
 
 // Base error with context
 throw new GovDocError("Something went wrong", "CUSTOM_CODE", { userId: 123 });
@@ -197,7 +197,7 @@ throw new ValidationError("Invalid GEMI ID format", "gemiId");
 ### Error Handling in Practice
 
 ```javascript
-import { DocumentDownloadError, createLogger } from "../../shared/index.mjs";
+import { DocumentDownloadError, createLogger } from "../../../shared/index.mjs";
 
 const logger = createLogger("DOWNLOADER");
 
@@ -236,17 +236,17 @@ async function downloadDocument(url) {
 Here's how to properly initialize and use all shared infrastructure components:
 
 ```javascript
-import config from "../../shared/config/index.mjs";
+import config from "../../../shared/config/index.mjs";
 import {
   validateConfig,
   validateApiKey,
-} from "../../shared/config/validator.mjs";
+} from "../../../shared/config/validator.mjs";
 import {
   createLogger,
   setGlobalProgressManager,
-} from "../../shared/logging/index.mjs";
-import { progressManager } from "../../shared/progress/index.mjs";
-import { GovDocError } from "../../shared/errors/index.mjs";
+} from "../../../shared/logging/index.mjs";
+import { progressManager } from "../../../shared/progress/index.mjs";
+import { GovDocError } from "../../../shared/errors/index.mjs";
 
 async function initializeApplication() {
   // 1. Validate configuration

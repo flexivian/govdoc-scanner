@@ -2,11 +2,13 @@ import fs from "fs/promises";
 import { spawn } from "child_process";
 import path from "path";
 import { fileURLToPath } from "url";
-import { createLogger } from "../../shared/logging/index.mjs";
+import { createLogger } from "../../../shared/logging/index.mjs";
+import { readGdsFile } from "../../../shared/gds/index.mjs";
+import { getWorkingPath } from "../../../shared/workdir/index.mjs";
 import {
   FileProcessingError,
   ValidationError,
-} from "../../shared/errors/index.mjs";
+} from "../../../shared/errors/index.mjs";
 
 const logger = createLogger("CLI-UTILS");
 const __filename = fileURLToPath(import.meta.url);
@@ -16,48 +18,7 @@ const __dirname = path.dirname(__filename);
  * Load and parse .gds input file (JSON format)
  */
 export async function loadInputFile(filePath) {
-  try {
-    const content = await fs.readFile(filePath, "utf-8");
-    const data = JSON.parse(content);
-
-    // Extract GEMI IDs from the input format
-    let gemiIds = [];
-    if (Array.isArray(data)) {
-      // If it's an array of IDs
-      gemiIds = data.filter((id) => /^\d+$/.test(String(id)));
-    } else if (data.companies && Array.isArray(data.companies)) {
-      // If it's an object with companies array
-      gemiIds = data.companies
-        .map((company) => company.id || company.gemi_id || company["gemi-id"])
-        .filter((id) => id && /^\d+$/.test(String(id)));
-    } else if (data.gemi_ids && Array.isArray(data.gemi_ids)) {
-      // If it has gemi_ids field
-      gemiIds = data.gemi_ids.filter((id) => /^\d+$/.test(String(id)));
-    }
-
-    if (gemiIds.length === 0) {
-      throw new ValidationError(
-        "No valid GEMI IDs found in input file",
-        "gemi_ids"
-      );
-    }
-
-    return gemiIds.map(String);
-  } catch (error) {
-    if (error.code === "ENOENT") {
-      throw new FileProcessingError(
-        `Input file not found: ${filePath}`,
-        filePath
-      );
-    }
-    if (error instanceof ValidationError) {
-      throw error; // Re-throw validation errors as-is
-    }
-    throw new FileProcessingError(
-      `Error reading input file: ${error.message}`,
-      filePath
-    );
-  }
+  return await readGdsFile(filePath);
 }
 
 /**
@@ -181,15 +142,11 @@ export async function getRandomCompanies(count) {
   try {
     await runScript(searchScriptPath, scriptArgs);
 
-    // Read the results from ids.txt in the crawler directory
-    const idsFilePath = path.join(__dirname, "../../apps/crawler/src/ids.txt");
+    // Read the results from search-results.gds in the crawler working directory
+    const gdsFilePath = getWorkingPath('crawler', 'search-results.gds');
 
     try {
-      const content = await fs.readFile(idsFilePath, "utf-8");
-      const gemiIds = content
-        .split("\n")
-        .map((id) => id.trim())
-        .filter((id) => id && /^\d+$/.test(id));
+      const gemiIds = await readGdsFile(gdsFilePath);
 
       // If we have more results than requested, randomly select the requested count
       if (gemiIds.length > count) {

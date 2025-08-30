@@ -37,7 +37,7 @@ A Node.js tool for processing Greek company documents (GEMI) to extract metadata
 3. **Create input folder structure**:
 
    ```
-   src/data/
+   ~/.govdoc/doc-scanner/
      input/
        {GEMI_ID}/           # Place source documents here
          2019-09-23_90189.pdf
@@ -107,6 +107,6 @@ The system includes intelligent processing optimization:
 
 The system generates a comprehensive metadata file:
 
-- **Location**: `apps/doc-scanner/src/data/output/[GEMI_ID]/[GEMI_ID]_final_metadata.json`
+- **Location**: `~/.govdoc/doc-scanner/output/[GEMI_ID]/[GEMI_ID]_final_metadata.json`
 - **Format**: Structured JSON with complete company information
 - **Content**: All extracted data merged chronologically with tracked changes history

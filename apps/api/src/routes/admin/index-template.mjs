@@ -59,8 +59,8 @@ export default async function indexTemplateRoute(fastify) {
       const __dirname = path.dirname(__filename);
       const templatePath = path.resolve(
         __dirname,
-        "../../../..",
-        "opensearch/shared/templates/company-index-template.json"
+        "../../../../..",
+        "apps/opensearch/shared/templates/company-index-template.json"
       );
       const raw = await fs.readFile(templatePath, "utf-8");
       const templateJson = JSON.parse(raw);

@@ -70,6 +70,16 @@ CRAWLER_HEADLESS=true                                          # Run browser in 
 OUTPUT_DIR=./output     # Directory for processed output files
 ```
 
+#### Working Directory Configuration
+
+```bash
+WORKING_DIR=~/.govdoc   # Base directory for all app outputs (default: ~/.govdoc)
+                        # Creates organized subdirectories:
+                        # ~/.govdoc/crawler/     - Downloaded documents
+                        # ~/.govdoc/doc-scanner/ - Processed document data
+                        # ~/.govdoc/cli/         - CLI output files
+```
+
 ## Components
 
 ### Configuration Management

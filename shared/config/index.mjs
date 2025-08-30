@@ -1,5 +1,6 @@
 import dotenv from "dotenv";
 import path from "path";
+import os from "os";
 import { fileURLToPath } from "url";
 
 // Always load .env from the project root
@@ -40,6 +41,12 @@ export const config = {
   },
   processing: {
     outputDir: process.env.OUTPUT_DIR || "./output",
+  },
+  workingDir: {
+    base: process.env.WORKING_DIR || path.join(projectRoot, ".govdoc"),
+    crawler: process.env.WORKING_DIR ? path.join(process.env.WORKING_DIR, "crawler") : path.join(projectRoot, ".govdoc", "crawler"),
+    docScanner: process.env.WORKING_DIR ? path.join(process.env.WORKING_DIR, "doc-scanner") : path.join(projectRoot, ".govdoc", "doc-scanner"),
+    cli: process.env.WORKING_DIR ? path.join(process.env.WORKING_DIR, "cli") : path.join(projectRoot, ".govdoc", "cli"),
   },
   logging: {
     level:

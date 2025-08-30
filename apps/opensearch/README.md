@@ -11,7 +11,7 @@ This directory contains all OpenSearch-related configurations for the GovDoc Sca
 1. **Start OpenSearch development cluster:**
 
 ```bash
-cd opensearch/development
+cd apps/opensearch/development
 cp .env.template .env
 # Edit .env with a strong password (8+ characters)
 docker compose up -d
@@ -31,7 +31,7 @@ OPENSEARCH_INDEX=govdoc-companies-000001
 3. **Create the index template:**
 
 ```bash
-curl -k -u admin:yourAdminPassword -X PUT "https://localhost:9200/_index_template/govdoc-company-template" \
+curl -k -u admin:eYTYXHS1234! -X PUT "https://localhost:9200/_index_template/govdoc-company-template" \
   -H "Content-Type: application/json" \
   -d @../shared/templates/company-index-template.json
 ```
@@ -39,17 +39,17 @@ curl -k -u admin:yourAdminPassword -X PUT "https://localhost:9200/_index_templat
 4. **Create the initial index:**
 
 ```bash
-curl -k -u admin:yourAdminPassword -X PUT "https://localhost:9200/govdoc-companies-000001"
+curl -k -u admin:eYTYXHS1234! -X PUT "https://localhost:9200/govdoc-companies-000001"
 ```
 
 **Verify setup:**
 
 ```bash
 # Check if template was created
-curl -k -u admin:yourAdminPassword "https://localhost:9200/_index_template/govdoc-company-template?pretty"
+curl -k -u admin:eYTYXHS1234! "https://localhost:9200/_index_template/govdoc-company-template?pretty"
 
 # Check index mappings
-curl -k -u admin:yourAdminPassword "https://localhost:9200/govdoc-companies-000001/_mapping?pretty"
+curl -k -u admin:eYTYXHS1234! "https://localhost:9200/govdoc-companies-000001/_mapping?pretty"
 ```
 
 5. **Test data ingestion:**
@@ -74,14 +74,14 @@ Create index patterns and visualizations:
 **Shut Down Docker Container:**
 
 ```bash
-cd opensearch/development
+cd apps/opensearch/development
 docker compose down
 ```
 
 **Reset development environment:**
 
 ```bash
-cd opensearch/development
+cd apps/opensearch/development
 docker compose down --volumes --remove-orphans
 ```
 
@@ -90,7 +90,7 @@ docker compose down --volumes --remove-orphans
 ### Quick Production Setup
 
 ```bash
-cd opensearch/production
+cd apps/opensearch/production
 # Run the unified production setup script
 ./setup-production.sh
 ```
@@ -108,7 +108,7 @@ This script will automatically:
 If you prefer to run each step manually:
 
 ```bash
-cd opensearch/production
+cd apps/opensearch/production
 # Step 1: Run security setup (creates .env file automatically)
 ./scripts/setup-security.sh
 # Step 2: Start production cluster
@@ -135,14 +135,14 @@ OPENSEARCH_INSECURE=true  # Set to false when using proper certificates
 **Shut Down Docker Container:**
 
 ```bash
-cd opensearch/production
+cd apps/opensearch/production
 docker compose -f docker-compose.prod.yml down
 ```
 
 **Reset production environment:**
 
 ```bash
-cd opensearch/production
+cd apps/opensearch/production
 ./cleanup-production.sh
 ```
 

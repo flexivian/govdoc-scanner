@@ -56,7 +56,7 @@ Controls web scraping and document downloading:
 
 Controls output and processing behavior:
 
-- **OUTPUT_DIR** (default: ./output): Directory for processed output files
+- **OUTPUT_DIR** (default: ~/.govdoc/doc-scanner/output): Directory for processed output files
 - **LOG_LEVEL** (default: error): Logging level (debug, info, warn, error)
 
 ## Configuration Validation
@@ -73,7 +73,7 @@ For development with verbose logging:
 
 - Set `LOG_LEVEL=debug` for detailed debugging information
 - Set `CRAWLER_HEADLESS=false` to show browser for debugging
-- Use `OUTPUT_DIR=./dev-output` for separate development output
+- Use `OUTPUT_DIR=~/.govdoc/dev-output` for separate development output
 
 ## Troubleshooting
 

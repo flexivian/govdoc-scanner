@@ -1,15 +1,15 @@
 import fs from "fs/promises";
 import path from "path";
 
-import { runCrawlerForGemiIds } from "../../apps/crawler/src/id_crawler.mjs";
-import { processCompanyFiles } from "../../apps/doc-scanner/src/processing-logic.mjs";
-import { getMetadataModel } from "../../apps/doc-scanner/src/gemini-config.mjs";
-import { checkExistingMetadata } from "../../apps/doc-scanner/src/metadata-checker.mjs";
+import { runCrawlerForGemiIds } from "../../crawler/src/id_crawler.mjs";
+import { processCompanyFiles } from "../../doc-scanner/src/processing-logic.mjs";
+import { getMetadataModel } from "../../doc-scanner/src/gemini-config.mjs";
+import { checkExistingMetadata } from "../../doc-scanner/src/metadata-checker.mjs";
 import {
   createLogger,
   setGlobalProgressManager,
-} from "../../shared/logging/index.mjs";
-import { progressManager } from "../../shared/progress/index.mjs";
+} from "../../../shared/logging/index.mjs";
+import { progressManager } from "../../../shared/progress/index.mjs";
 
 const logger = createLogger("CLI-PROCESSOR");
 

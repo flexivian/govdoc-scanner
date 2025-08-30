@@ -1,5 +1,5 @@
-import { buildOpenSearchClient } from "../../shared/opensearch/client.mjs";
-import { companyToDoc } from "../../shared/opensearch/transform.mjs";
+import { buildOpenSearchClient } from "../../../shared/opensearch/client.mjs";
+import { companyToDoc } from "../../../shared/opensearch/transform.mjs";
 
 function resolveIndex(company, baseIndex, strategy = "static") {
   if (strategy === "by-year") {

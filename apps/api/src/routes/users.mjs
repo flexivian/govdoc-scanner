@@ -51,7 +51,8 @@ export default async function usersRoute(fastify) {
         },
       },
     },
-    async (req) => {
+    async (req, reply) => {
+      if (!requireAdmin(req, reply)) return;
       const list = store.list();
       return { data: list, meta: { total: list.length, request_id: req.id } };
     }

@@ -4,8 +4,8 @@
 services:
   api:
     build:
-      context: ..
-      dockerfile: api/Dockerfile
+      context: ../..
+      dockerfile: apps/api/Dockerfile
       # Use build cache for faster rebuilds
       cache_from:
         - node:22-alpine
@@ -29,6 +29,9 @@ services:
       # Authentication
       - API_KEY=${API_KEY}
       - API_KEY_ROLE=${API_KEY_ROLE:-admin}
+
+      # User store configuration
+      - API_USERS_FILE=/govdoc-scanner/apps/api/data/users.json
 
       # OpenSearch Configuration
       - OPENSEARCH_URL=${OPENSEARCH_URL}
@@ -82,6 +85,8 @@ services:
     tmpfs:
       - /tmp:noexec,nosuid,size=100m
       - /var/run:noexec,nosuid,size=50m
+    volumes:
+      - api-data:/govdoc-scanner/apps/api/data:rw
 
     # Network configuration
     networks:
@@ -97,3 +102,9 @@ networks:
   # Reference external OpenSearch network
   production_opensearch-prod-net:
     external: true
+
+# Volumes for persistent data
+volumes:
+  api-data:
+    driver: local
+    name: govdoc-api-data
