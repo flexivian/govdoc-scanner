@@ -125,10 +125,7 @@ export async function getRandomCompanies(count) {
   const incorporationFinish = formatDate(randomEndDate);
 
   // Path to the search script in the crawler app
-  const searchScriptPath = path.join(
-    __dirname,
-    "../../apps/crawler/src/search.mjs"
-  );
+  const searchScriptPath = path.join(__dirname, "../../crawler/src/search.mjs");
 
   const scriptArgs = [
     "--term",
@@ -143,7 +140,7 @@ export async function getRandomCompanies(count) {
     await runScript(searchScriptPath, scriptArgs);
 
     // Read the results from search-results.gds in the crawler working directory
-    const gdsFilePath = getWorkingPath('crawler', 'search-results.gds');
+    const gdsFilePath = getWorkingPath("crawler", "search-results.gds");
 
     try {
       const gemiIds = await readGdsFile(gdsFilePath);
