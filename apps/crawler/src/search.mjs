@@ -4,6 +4,8 @@ import fs from "fs";
 import path from "path";
 import { config } from "../../../shared/config/index.mjs";
 import { createLogger } from "../../../shared/logging/index.mjs";
+import { writeGdsFile } from "../../../shared/gds/index.mjs";
+import { initWorkingDir, getWorkingPath } from "../../../shared/workdir/index.mjs";
 import { isValidGemiId } from "./utils.mjs";
 
 const logger = createLogger("SEARCH");
@@ -98,12 +100,12 @@ async function main() {
       `\nSuccessfully scraped a total of ${allResults.length} companies from all pages.`
     );
 
-    // Write results to ids.txt
-    const filePath = path.resolve("ids.txt");
+    // Initialize crawler working directory and write results to .gds file
+    await initWorkingDir('crawler');
+    const gdsFilePath = getWorkingPath('crawler', 'search-results.gds');
 
-    fs.writeFileSync(filePath, "", "utf-8"); // Clear file first
-    fs.writeFileSync(filePath, allResults.join("\n"), "utf-8");
-    logger.info("Results written to ids.txt");
+    await writeGdsFile(allResults, gdsFilePath);
+    logger.info(`Results written to ${gdsFilePath}`);
   } catch (e) {
     if (e && e.code) {
       // Already emitted structured error earlier; just ensure non-zero exit

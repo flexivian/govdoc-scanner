@@ -11,22 +11,38 @@ For detailed documentation, including setup guides, API references, contribution
 
 ## Project Overview
 
-In Greece, vital public company data is often locked in behind multiple custom templated PDF files, making it challenging for citizens, researchers, and policymakers to access and analyze this information. The current state of these documents limits transparency and hinders efficient data use. The govdoc-scanner project seeks to bridge this gap by transforming these PDFs into a structured, searchable database, thereby democratizing access to important corporate information.
+### The Problem
 
-The govdoc-scanner is an open-source tool designed to convert unstructured [Γ.Ε.ΜΗ.](https://www.businessportal.gr/) (GEMI) portal PDFs into a fully searchable database accessible via a REST API. It automates the extraction of metadata and document histories, making corporate information more accessible and useful for a wide range of users.
+In Greece, essential public company data exists in thousands of unstructured documents across the [Γ.Ε.ΜΗ. (GEMI)](https://publicity.businessportal.gr) portal. This creates significant barriers for:
+
+- **Citizens** seeking transparency in corporate activities
+- **Researchers** analyzing business trends and economic patterns
+- **Policymakers** requiring data-driven insights for legislation
+- **Journalists** investigating corporate structures and ownership
+
+The current format limits transparency and makes systematic analysis nearly impossible.
+
+### The Solution
+
+**GovDoc Scanner** is an open-source tool designed to convert unstructured GEMI portal PDFs into a fully searchable database accessible via a REST API. It automates the complete document processing pipeline with **AI-powered extraction** and **production-ready infrastructure**:
+
+- **Smart Crawling**: Automated document discovery and download from GEMI portal with advanced filtering
+- **AI Extraction**: Google Gemini 2.5 Flash processes Greek legal documents with specialized prompts
+- **Structured Data**: Comprehensive metadata extraction including representatives, ownership, and change tracking
+- **Full-Text Search**: OpenSearch integration with Greek language analyzers for powerful querying
+- **REST API**: Production-ready server with authentication, rate limiting, and comprehensive documentation
 
 ## Current Functionality/Implementation
 
-The repository currently includes three main applications:
+The repository currently includes five main applications:
 
 - **cli**: A unified command-line interface that orchestrates the complete workflow, combining crawling and scanning with interactive prompts and automated batch processing (recommended for most users).
 - **doc-scanner**: Processes `.pdf`, `.doc` and `.docx` documents for a given GEMI company, extracting comprehensive metadata with chronological processing and intelligent representative tracking using Gemini 2.5 Flash Lite.
 - **crawler**: Scrapes the GEMI portal to search for companies using advanced filters and downloads all available public documents with enhanced date extraction, intelligent file management, and robust retry mechanisms.
+- **api**: Fastify-based REST API server providing search endpoints for companies and representatives with OpenSearch integration.
+- **opensearch**: Complete OpenSearch integration with development and production configurations for searchable data indexing.
 
-Optional integration:
-
-- **OpenSearch**: Index your results for search/analytics with OpenSearch 3.1+. Includes a ready-to-use mapping template, CLI bulk push, and comprehensive documentation for local development and production.
-- **REST API**: Fastify-based API server providing search endpoints for companies and representatives with the OpenSearch integration.
+All applications are organized under the `apps/` directory for better project structure and maintainability.
 
 All tools are implemented in Node.js and use a combination of CLI interfaces and automated scripts. The project uses npm workspaces for managing multiple applications.
 
@@ -41,7 +57,7 @@ All tools are implemented in Node.js and use a combination of CLI interfaces and
 node --version
 ```
 
-- **Docker & Docker Compose** (optional, for OpenSearch): Required only if using the OpenSearch integration for search and analytics.
+- **Docker & Docker Compose** (optional, for OpenSearch and RESTAPI): Required only if using the OpenSearch integration for search and analytics.
 
 - **.env file**: Copy the example environment file and update it with your Gemini API key:
 
@@ -53,6 +69,9 @@ Then, open `.env` and set:
 
 ```
 GEMINI_API_KEY=your_gemini_api_key_here
+
+# Optional: Set custom working directory (default: ~/.govdoc)
+WORKING_DIR=~/.govdoc
 ```
 
 ### Quick Start
@@ -129,7 +148,7 @@ Both modes:
 
 - Show clear progress tracking with visual indicators
 - Provide comprehensive summary when complete
-- Save output in the `output/` directory
+- Save output in organized working directories (default: `~/.govdoc/`)
 
 ### 3. Manual Workflow
 
@@ -142,7 +161,7 @@ npm start crawler
 ```
 
 - Use the interactive CLI to search for companies or download documents by GEMI ID(s)
-- Results are saved in `ids.txt` and downloaded files in `apps/crawler/src/downloads/{GEMI_ID}/`
+- Results are saved in `~/.govdoc/crawler/downloads/{GEMI_ID}/` (or custom `WORKING_DIR`)
 
 **Step 2: Process Documents**
 
@@ -150,8 +169,8 @@ npm start crawler
 npm start scanner
 ```
 
-- Place documents in `apps/doc-scanner/src/data/input/{GEMI_ID}/`
-- Output is generated in `apps/doc-scanner/src/data/output/{GEMI_ID}/`
+- Place documents in `~/.govdoc/doc-scanner/input/{GEMI_ID}/` (or custom `WORKING_DIR`)
+- Output is generated in `~/.govdoc/doc-scanner/output/{GEMI_ID}/`
 
 ### Alternative Commands
 
@@ -163,10 +182,10 @@ You can also run commands directly:
 
 ## OpenSearch + REST API integration
 
-- **Quick Setup**: Read `opensearch/README.md`
+- **Quick Setup**: Read `apps/opensearch/README.md`
 - **Detailed Guide**: [OpenSearch Installation Documentation](https://flexivian.github.io/govdoc-scanner/docs/installation/OpenSearch)
 
-- **Quick Setup**: Read `api/README.md`
+- **Quick Setup**: Read `apps/api/README.md`
 - **Detailed Guide**: [REST API Installation Documentation](https://flexivian.github.io/govdoc-scanner/docs/installation/REST-API)
 
 ## Features Offered
@@ -208,17 +227,3 @@ npm start
 ```
 
 The documentation site will be available at `http://localhost:3000` with live reloading for development.
-
-## Reasons for Offering & Problem Solved
-
-Access to Greek public company data is hindered by the prevalence of unstructured PDF files. This project addresses the lack of transparency and the inefficiency in data utilization by converting these documents into structured, machine-readable formats with optional full-text search capabilities.
-
-govdoc-scanner automates:
-
-- Searching for companies with complex filters
-- Downloading all available public documents
-- Extracting and structuring metadata for analysis
-- Building historical timelines for research or reporting
-- Creating searchable indexes with OpenSearch for advanced analytics
-
-This enables users to efficiently gather and analyze business data at scale, supporting transparency, due diligence, and investigative work.

@@ -111,6 +111,30 @@ export const CompanyEssentialMetadata = {
         "Official registered company name in Greek (all caps), exactly as it appears in GEMI registry. Include legal form if part of the name (e.g., 'ΠΑΡΑΔΕΙΓΜΑ ΕΤΑΙΡΙΑ Α.Ε.')",
       nullable: true,
     },
+    total_capital_amount: {
+      type: "string",
+      description:
+        "Total registered capital of the company, extracted verbatim from document with Greek formatting (commas for decimals). Format: 'X.XXX.XXX,XX€'. In capital change documents, look for final amounts after phrases like 'μετά τα ανωτέρω θα διαμορφωθεί σε' or similar. Search for: 'εταιρικό κεφάλαιο', 'συνολικό κεφάλαιο', 'κεφάλαιο της εταιρείας'. Extract the FINAL total amount, not initial amounts.",
+      nullable: true,
+    },
+    equity_amount: {
+      type: "string",
+      description:
+        "Company's equity/shareholders' equity extracted verbatim from document with Greek formatting (commas for decimals). Format: 'X.XXX.XXX,XX€'. Search for exact phrases: 'Καθαρή Θέση', 'Ίδια Κεφάλαια'. Set null if not explicitly stated in the document.",
+      nullable: true,
+    },
+    total_assets: {
+      type: "string",
+      description:
+        "Total assets of the company extracted verbatim from document with Greek formatting (commas for decimals). Format: 'X.XXX.XXX,XX€'. Search for exact phrase: 'Σύνολο Ενεργητικού'. Set null if not explicitly stated in the document.",
+      nullable: true,
+    },
+    total_liabilities: {
+      type: "string",
+      description:
+        "Total liabilities of the company extracted verbatim from document with Greek formatting (commas for decimals). Format: 'X.XXX.XXX,XX€'. Search for exact phrase: 'Σύνολο Υποχρεώσεων'. Set null if not explicitly stated in the document.",
+      nullable: true,
+    },
     representatives: {
       type: "array",
       items: {
@@ -119,7 +143,7 @@ export const CompanyEssentialMetadata = {
           name: {
             type: "string",
             description:
-              "Full name of company representative in Greek format: 'ΕΠΩΝΥΜΟ ΟΝΟΜΑ' (surname first, all caps). Examples: 'ΠΑΠΑΔΟΠΟΥΛΟΣ ΙΩΑΝΝΗΣ', 'ΚΩΝΣΤΑΝΤΙΝΟΥ ΜΑΡΙΑ'. Extract exactly as written in official sections. EXCLUDE: father's/mother's names, titles, service providers (lawyers/accountants/notaries). INCLUDE ONLY: persons with explicit representative authority in corporate governance.",
+              "Full name of company representative in Greek format: 'ΕΠΩΝΥΜΟ ΟΝΟΜΑ' (surname first, all caps). Examples: 'ΠΑΠΑΔΟΠΟΥΛΟΣ ΙΩΑΝΝΗΣ', 'ΚΩΝΣΤΑΝΤΙΝΟΥ ΜΑΡΙΑ'. Extract exactly as written in official sections. EXCLUDE: father's/mother's names (patronymics like 'του ΓΕΩΡΓΙΟΥ', 'της ΜΑΡΙΑΣ'), titles, service providers (lawyers/accountants/notaries). INCLUDE ONLY: persons with explicit representative authority in corporate governance.",
             nullable: true,
           },
           role: {
@@ -140,14 +164,27 @@ export const CompanyEssentialMetadata = {
               "Greek Tax ID (ΑΦΜ, Α.Φ.Μ.) of the representative - a 9-digit number. Only include if explicitly mentioned in the document.",
             nullable: true,
           },
-          capital_share: {
+          capital_amount: {
             type: "string",
             description:
-              "Ownership stake in company extracted verbatim from document. Format patterns: 'X.XXX,XX Ευρώ / XX%' (amount with percentage), 'XX%' (percentage only), or 'X.XXX,XX Ευρώ' (amount only). Search for exact phrases: 'ποσοστό στα κέρδη και στις ζημίες X%', 'μετέχει στο εταιρικό κεφάλαιο με X ευρώ', 'εταιρικό μερίδιο X%'. Extract precise numerical values with Greek formatting (commas for decimals). Set null if person transferred all shares or has no ownership mentioned.",
+              "Capital amount owned by the representative in the company, extracted verbatim from document with Greek formatting (commas for decimals). Format: 'X.XXX,XX€'. Search for exact phrases: 'μετέχει στο εταιρικό κεφάλαιο με X€', 'κεφάλαιο X€'. Set null if no monetary amount is specified or person transferred all shares.",
+            nullable: true,
+          },
+          capital_percentage: {
+            type: "string",
+            description:
+              "Percentage ownership stake of the representative in the company, extracted verbatim from document. Format: 'XX%' or 'XX,XX%'. Search for exact phrases: 'ποσοστό στα κέρδη και στις ζημίες X%', 'εταιρικό μερίδιο X%', 'ποσοστό συμμετοχής X%'. Extract precise numerical values with Greek formatting (commas for decimals). Set null if no percentage is specified or person transferred all shares.",
             nullable: true,
           },
         },
-        required: ["name", "role", "is_active", "tax_id", "capital_share"],
+        required: [
+          "name",
+          "role",
+          "is_active",
+          "tax_id",
+          "capital_amount",
+          "capital_percentage",
+        ],
       },
       description:
         "Company representatives array with strict inclusion criteria. INCLUDE ONLY: persons with explicit corporate governance roles (Διαχειριστής, Ομόρρυθμος/Ετερόρρυθμος εταίρος, ΔΣ members, executives) who have legal authority in company management or ownership. EXCLUDE: service providers (δικηγόροι/lawyers, λογιστές/accountants, συμβολαιογράφοι/notaries), witnesses (μάρτυρες), GEMI officials, historical references. Prioritize accuracy over completeness - when uncertain about representative status, exclude the person.",
@@ -197,10 +234,16 @@ export const CompanyEssentialMetadata = {
         "Date when the GEMI document was issued/registered, in YYYY-MM-DD format. This should match the document's official date, not the filename date if they differ.",
       nullable: true,
     },
-    tracked_changes: {
+    tracked_company_changes: {
       type: "string",
       description:
-        "Summary of key changes from the previous document state, formatted as a bulleted list. Include only significant changes such as: representative appointments/departures, role changes, ownership transfers, address updates, company name changes, or capital modifications. Example: '• ΠΑΠΑΔΟΠΟΥΛΟΣ ΙΩΑΝΝΗΣ appointed as Διαχειριστής • ΚΩΝΣΤΑΝΤΙΝΟΥ ΜΑΡΙΑ increased ownership to 45% • Company address changed to ΛΕΩΦΟΡΟΣ ΚΗΦΙΣΙΑΣ 200, ΑΘΗΝΑ'. Leave null for initial document extraction when no comparison exists.",
+        "Summary of key company structure changes from the previous document state, formatted as a bulleted list. Include only significant changes such as: representative appointments/departures, role changes, ownership transfers, address updates, or company name changes. Example: '• ΠΑΠΑΔΟΠΟΥΛΟΣ ΙΩΑΝΝΗΣ appointed as Διαχειριστής • ΚΩΝΣΤΑΝΤΙΝΟΥ ΜΑΡΙΑ role changed from Εταίρος to Διαχειριστής • Company address changed to ΛΕΩΦΟΡΟΣ ΚΗΦΙΣΙΑΣ 200, ΑΘΗΝΑ'. Leave null for initial document extraction when no comparison exists.",
+      nullable: true,
+    },
+    tracked_economic_changes: {
+      type: "string",
+      description:
+        "Summary of key economic/financial changes from the previous document state, formatted as a bulleted list. Include only significant changes such as: total capital amount changes, representative capital changes, or pre-tax profit growth figures. Example: '• Total capital increased from 10.000,00€ to 50.000,00€ • ΠΑΠΑΔΟΠΟΥΛΟΣ ΙΩΑΝΝΗΣ capital increased from 5.000,00€ to 25.000,00€ • Pre-tax profit growth: 15%/8000€'. Leave null for initial document extraction when no comparison exists.",
       nullable: true,
     },
   },
@@ -208,6 +251,10 @@ export const CompanyEssentialMetadata = {
     "gemi_id",
     "company_tax_id",
     "company_name",
+    "total_capital_amount",
+    "equity_amount",
+    "total_assets",
+    "total_liabilities",
     "representatives",
     "registered_address",
     "company_type",
@@ -216,11 +263,17 @@ export const CompanyEssentialMetadata = {
     "city",
     "postal_code",
     "document_date",
+    "tracked_company_changes",
+    "tracked_economic_changes",
   ],
   propertyOrdering: [
     "gemi_id",
     "company_tax_id",
     "company_name",
+    "total_capital_amount",
+    "equity_amount",
+    "total_assets",
+    "total_liabilities",
     "representatives",
     "registered_address",
     "company_type",
@@ -229,6 +282,7 @@ export const CompanyEssentialMetadata = {
     "city",
     "postal_code",
     "document_date",
-    "tracked_changes",
+    "tracked_company_changes",
+    "tracked_economic_changes",
   ],
 };
