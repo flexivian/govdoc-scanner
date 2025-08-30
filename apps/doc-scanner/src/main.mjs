@@ -9,6 +9,7 @@ import { processCompanyFiles } from "./processing-logic.mjs";
 import { checkExistingMetadata } from "./metadata-checker.mjs";
 import { exit } from "process";
 import { createLogger } from "../../../shared/logging/index.mjs";
+import { initWorkingDir, getWorkingPath } from "../../../shared/workdir/index.mjs";
 
 const logger = createLogger("DOC-SCANNER");
 
@@ -26,8 +27,11 @@ async function promptForGemiId(rl) {
 }
 
 // Validate and prepare input/output folders
-function prepareFolders(gemiId) {
-  const inputFolder = path.resolve(__dirname, "data/input", gemiId);
+async function prepareFolders(gemiId) {
+  // Initialize doc-scanner working directory with input and output subdirs
+  await initWorkingDir('docScanner', ['input', 'output']);
+  
+  const inputFolder = getWorkingPath('docScanner', 'input', gemiId);
   if (!fs.existsSync(inputFolder)) {
     logger.error(
       `Input folder ${inputFolder} does not exist. Please ensure the folder is created and contains the files to process.`
@@ -35,7 +39,7 @@ function prepareFolders(gemiId) {
     exit(1);
   }
 
-  const outputFolder = path.resolve(__dirname, "data/output", gemiId);
+  const outputFolder = getWorkingPath('docScanner', 'output', gemiId);
   if (!fs.existsSync(outputFolder)) {
     fs.mkdirSync(outputFolder, { recursive: true });
   }
@@ -74,7 +78,7 @@ async function main() {
       exit(1);
     }
     const gemiId = await promptForGemiId(rl);
-    const { inputFolder, outputFolder } = prepareFolders(gemiId);
+    const { inputFolder, outputFolder } = await prepareFolders(gemiId);
     const files = getFilesToProcess(inputFolder);
 
     logger.info(`Found ${files.length} files in input folder...`);

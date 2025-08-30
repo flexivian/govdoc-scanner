@@ -6,12 +6,10 @@
     "start": "node run.js",
     "crawler": "node apps/crawler/src/ui.mjs",
     "scanner": "node apps/doc-scanner/src/main.mjs",
-    "govdoc": "node cli/src/main.mjs"
+    "govdoc": "node apps/cli/src/main.mjs"
   },
   "workspaces": [
-    "apps/*",
-    "cli",
-    "api"
+    "apps/*"
   ],
   "dependencies": {
     "@opensearch-project/opensearch": "^3.5.1",
