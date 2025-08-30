@@ -57,10 +57,9 @@ GovDoc Scanner follows a **modern monorepo architecture** with five specialized 
 
 ## Getting Started
 
-Ready to process Greek company documents? Choose your path:
+Ready to process Greek company documents? Go ahead:
 
-- **[Installation Guide](./installation/Getting%20Started.md)**: System requirements and setup
-- **[Development Setup](./installation/Development.md)**: Contributing and customization
+- **[Getting Started Guide](./guides/Getting%20Started.md)**
 
 ## Something Missing? {#something-missing}
 

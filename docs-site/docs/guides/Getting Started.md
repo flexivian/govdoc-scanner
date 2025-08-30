@@ -8,7 +8,19 @@ This page provides instructions for setting up and running the GovDoc Scanner pr
 
 ## Prerequisites
 
-- **Node.js**: v18.x or newer (recommended: v20.x)
+- **Node.js**: v18.x or newer (recommended: v20.x) - [Download from nodejs.org](https://nodejs.org/) or install via package manager:
+
+  ```bash
+  # Ubuntu/Debian
+  sudo apt install nodejs npm
+
+  # macOS (Homebrew)
+  brew install node
+
+  # Windows (Chocolatey)
+  choco install nodejs
+  ```
+
 - **Git**: For cloning the repository
 - **Gemini API Key**: Required for AI-powered document processing ([Get one here](https://aistudio.google.com/app/apikey))
 

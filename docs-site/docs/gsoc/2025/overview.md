@@ -68,7 +68,7 @@ The project was developed through a series of iterative pull requests, each addi
 - **[PR #9](https://github.com/flexivian/govdoc-scanner/pull/9)**: Docusaurus Setup - Established comprehensive documentation infrastructure
 - **[PR #10](https://github.com/flexivian/govdoc-scanner/pull/10)**: GitHub Pages deployment for documentation - Made documentation publicly accessible
 - **[PR #35](https://github.com/flexivian/govdoc-scanner/pull/35)**: Docs Updates - Comprehensive documentation updates and improvements
-- **[PR #46](https://github.com/flexivian/govdoc-scanner/pull/46)**: Final GSoC Doc Updates - Comprehensive documentation refinement with removal of code examples, addition of troubleshooting guides, and complete documentation overhaul for project completion
+- **[PR #46](https://github.com/flexivian/govdoc-scanner/pull/46)**: Final GSoC Doc Updates
 
 ### UI/UX & Visual Improvements (PR #29)
 
@@ -129,7 +129,6 @@ All development is tracked on [GitHub Issues](https://github.com/flexivian/govdo
 **Quick Links:**
 
 - **[Complete Documentation](https://flexivian.github.io/govdoc-scanner/)** - Comprehensive guides and API references
-- **[Getting Started Guide](../../installation/Getting%20Started.md)** - Basic usage and setup instructions
-- **[Development Setup](../../installation/Development.md)** - Environment configuration for contributors
+- **[Getting Started Guide](../../guides/Getting%20Started.md)** - Basic usage and setup instructions
 
 **Repository:** [github.com/flexivian/govdoc-scanner](https://github.com/flexivian/govdoc-scanner)
