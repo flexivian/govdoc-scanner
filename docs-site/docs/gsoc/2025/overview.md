@@ -44,21 +44,12 @@ The project was developed through a series of iterative pull requests, each addi
 - **[PR #26](https://github.com/flexivian/govdoc-scanner/pull/26)**: App updates - Enhanced functionality across all applications
 - **[PR #27](https://github.com/flexivian/govdoc-scanner/pull/27)**: CLI Tool - Removal of NX - Streamlined the CLI tool and removed NX dependency for better maintainability
 
-### Documentation & Project Management (PRs #9, #10, #35)
-
-- **[PR #9](https://github.com/flexivian/govdoc-scanner/pull/9)**: Docusaurus Setup - Established comprehensive documentation infrastructure
-- **[PR #10](https://github.com/flexivian/govdoc-scanner/pull/10)**: GitHub Pages deployment for documentation - Made documentation publicly accessible
-- **[PR #35](https://github.com/flexivian/govdoc-scanner/pull/35)**: Docs Updates - Comprehensive documentation updates and improvements
-
-### UI/UX & Visual Improvements (PR #29)
-
-- **[PR #29](https://github.com/flexivian/govdoc-scanner/pull/29)**: Logo and homepage images - Added branding and visual elements to improve user experience
-
 ### Advanced Features & Bug Fixes (PRs #30, #31)
 
 - **[PR #30](https://github.com/flexivian/govdoc-scanner/pull/30)**: Tracked changes feature - Implemented change tracking capabilities for better workflow management
 - **[PR #31](https://github.com/flexivian/govdoc-scanner/pull/31)**: Handle fenced JSON responses and enforce raw JSON output - Fixed JSON parsing issues and improved data consistency
 - **[PR #44](https://github.com/flexivian/govdoc-scanner/pull/44)**: Metadata enhancements - Enhanced metadata extraction with separate tracking for company changes and economic changes, new fields for financial data, and improved representative ownership tracking with capital amounts and percentages
+- **[PR #47](https://github.com/flexivian/govdoc-scanner/pull/47)**: Real-Time Logging in Debug Mode - Enhanced debugging capabilities with real-time log output when LOG_LEVEL=debug in CLI application, disabling progress bars for better development experience
 
 ### Infrastructure & Error Handling (PRs #32, #33, #34)
 
@@ -71,6 +62,17 @@ The project was developed through a series of iterative pull requests, each addi
 
 - **[PR #41](https://github.com/flexivian/govdoc-scanner/pull/41)**: Production OpenSearch Setup - Complete production-ready OpenSearch deployment with security, monitoring, and backup features including one-command setup, SSL certificates, user management, and health monitoring
 - **[PR #43](https://github.com/flexivian/govdoc-scanner/pull/43)**: Rest API Setup - Production-ready REST API service with Fastify server, OpenSearch integration, Swagger documentation, authentication, rate limiting, and containerized deployment
+
+### Documentation & Project Management (PRs #9, #10, #35)
+
+- **[PR #9](https://github.com/flexivian/govdoc-scanner/pull/9)**: Docusaurus Setup - Established comprehensive documentation infrastructure
+- **[PR #10](https://github.com/flexivian/govdoc-scanner/pull/10)**: GitHub Pages deployment for documentation - Made documentation publicly accessible
+- **[PR #35](https://github.com/flexivian/govdoc-scanner/pull/35)**: Docs Updates - Comprehensive documentation updates and improvements
+- **[PR #46](https://github.com/flexivian/govdoc-scanner/pull/46)**: Final GSoC Doc Updates
+
+### UI/UX & Visual Improvements (PR #29)
+
+- **[PR #29](https://github.com/flexivian/govdoc-scanner/pull/29)**: Logo and homepage images - Added branding and visual elements to improve user experience
 
 ## Technical Implementation
 
@@ -127,7 +129,6 @@ All development is tracked on [GitHub Issues](https://github.com/flexivian/govdo
 **Quick Links:**
 
 - **[Complete Documentation](https://flexivian.github.io/govdoc-scanner/)** - Comprehensive guides and API references
-- **[Getting Started Guide](../../installation/Getting%20Started.md)** - Basic usage and setup instructions
-- **[Development Setup](../../installation/Development.md)** - Environment configuration for contributors
+- **[Getting Started Guide](../../guides/Getting%20Started.md)** - Basic usage and setup instructions
 
 **Repository:** [github.com/flexivian/govdoc-scanner](https://github.com/flexivian/govdoc-scanner)
