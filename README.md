@@ -26,6 +26,7 @@ The repository currently includes three main applications:
 Optional integration:
 
 - **OpenSearch**: Index your results for search/analytics with OpenSearch 3.1+. Includes a ready-to-use mapping template, CLI bulk push, and comprehensive documentation for local development and production.
+- **REST API**: Fastify-based API server providing search endpoints for companies and representatives with the OpenSearch integration.
 
 All tools are implemented in Node.js and use a combination of CLI interfaces and automated scripts. The project uses npm workspaces for managing multiple applications.
 
@@ -160,10 +161,13 @@ You can also run commands directly:
 - `npm run scanner` (same as `npm start scanner`)
 - `npm run govdoc` (same as `npm start govdoc`)
 
-## OpenSearch integration
+## OpenSearch + REST API integration
 
 - **Quick Setup**: Read `opensearch/README.md`
 - **Detailed Guide**: [OpenSearch Installation Documentation](https://flexivian.github.io/govdoc-scanner/docs/installation/OpenSearch)
+
+- **Quick Setup**: Read `api/README.md`
+- **Detailed Guide**: [REST API Installation Documentation](https://flexivian.github.io/govdoc-scanner/docs/installation/REST-API)
 
 ## Features Offered
 

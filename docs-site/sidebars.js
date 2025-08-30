@@ -29,6 +29,7 @@ const sidebars = {
         "installation/Development",
         "installation/Configuration",
         "installation/OpenSearch",
+        "installation/REST-API",
       ],
     },
     {
