@@ -28,7 +28,7 @@ ls apps/doc-scanner/src/data/output/123204604000/
 
 The scanner automatically detects and summarizes significant changes between document versions:
 
-### Example Output with Tracked Changes
+### Example Output with Tracked Changes (Updated Schema)
 
 ```json
 {
@@ -36,13 +36,23 @@ The scanner automatically detects and summarizes significant changes between doc
     "company-name": "ΠΑΡΑΔΕΙΓΜΑ ΑΕ",
     "metadata": {
       "current-snapshot": {
-        "tracked_changes": "• ΠΑΠΑΔΟΠΟΥΛΟΣ ΙΩΑΝΝΗΣ appointed as Διαχειριστής • ΚΩΝΣΤΑΝΤΙΝΟΥ ΜΑΡΙΑ increased ownership to 45%"
+        "tracked_company_changes": "• ΠΑΠΑΔΟΠΟΥΛΟΣ ΙΩΑΝΝΗΣ appointed as Διαχειριστής",
+        "tracked_economic_changes": "• ΚΩΝΣΤΑΝΤΙΝΟΥ ΜΑΡΙΑ increased ownership to 45%"
       }
     },
     "tracked-changes": {
-      "2019-09-23_initial.pdf": "Initial company registration document",
-      "2020-11-03_amendment.pdf": "• ΠΑΠΑΔΟΠΟΥΛΟΣ ΙΩΑΝΝΗΣ appointed as Διαχειριστής",
-      "2021-12-13_transfer.pdf": "• ΚΩΝΣΤΑΝΤΙΝΟΥ ΜΑΡΙΑ increased ownership to 45% • Company address changed to ΛΕΩΦΟΡΟΣ ΚΗΦΙΣΙΑΣ 200"
+      "2019-09-23_initial.pdf": {
+        "company_changes": "Initial company registration document",
+        "economic_changes": null
+      },
+      "2020-11-03_amendment.pdf": {
+        "company_changes": "• ΠΑΠΑΔΟΠΟΥΛΟΣ ΙΩΑΝΝΗΣ appointed as Διαχειριστής",
+        "economic_changes": null
+      },
+      "2021-12-13_transfer.pdf": {
+        "company_changes": "• Company address changed to ΛΕΩΦΟΡΟΣ ΚΗΦΙΣΙΑΣ 200",
+        "economic_changes": "• ΚΩΝΣΤΑΝΤΙΝΟΥ ΜΑΡΙΑ increased ownership to 45%"
+      }
     }
   }
 }
@@ -308,9 +318,14 @@ Each processed company produces comprehensive JSON with enhanced schema:
         "gemi_id": "123204604000",
         "company_tax_id": "123456789",
         "company_name": "ALPHA BANK AE",
+        "total_capital_amount": null,
+        "equity_amount": null,
+        "total_assets": null,
+        "total_liabilities": null
         "representatives": [
           {
-            "capital_share": "50,000.00 Ευρώ / 50%",
+            "capital_amount": "50.000,00€",
+            "capital_percentage": "50%",
             "is_active": true,
             "name": "ΠΑΠΑΔΟΠΟΥΛΟΣ ΙΩΑΝΝΗΣ",
             "role": "Διαχειριστής",
@@ -323,7 +338,9 @@ Each processed company produces comprehensive JSON with enhanced schema:
         "region": null,
         "city": "Athens",
         "postal_code": "10564",
-        "document_date": "2019-09-23"
+        "document_date": "2019-09-23",
+        "tracked_company_changes": null,
+        "tracked_economic_changes": null,
       }
     }
   }
