@@ -10,13 +10,13 @@ sidebar_position: 1
 
 In Greece, vital public company data is often locked in unstructured PDF files, making it challenging for citizens,
 researchers, and policymakers to access and analyze this information. The current state of these documents limits
-transparency and hinders efficient data use. The Flexible GovDoc Scanner project seeks to bridge this gap by
-transforming these PDFs into a structured, searchable database, thereby democratizing access to important corporate
+transparency and hinders efficient data use. The **Flexible GovDoc Scanner** project seeks to bridge this gap by
+transforming these PDFs into a structured and searchable database, thereby democratizing access to important corporate
 information.
 
 ### What I am Making:
 
-The Flexible GovDoc Scanner is an open-source tool designed to convert unstructured GEMI portal PDFs into a fully
+The Flexible GovDoc Scanner is an open-source tool designed to convert unstructured [GEMI portal](https://www.businessportal.gr/) PDFs into a fully
 searchable database accessible via a REST API. The solution comprises the following steps:
 
 - **Fetch**: Systematically retrieve documents from Greece’s official Open Data Portal, ensuring full compliance
