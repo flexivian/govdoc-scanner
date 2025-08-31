@@ -52,7 +52,7 @@ govdoc-scanner/
 │   └── doc-scanner/        # AI-powered document processing with chronological analysis
 ├── shared/                 # Shared utilities and configuration
 ├── docs-site/              # Documentation
-└── output/                 # Generated files
+└── .govdoc/                # Generated files
 ```
 
 ## Development Workflow
@@ -136,9 +136,6 @@ git push origin feature/your-feature-name
 - Test changes with real GEMI data
 - Update documentation for new features
 
-## Troubleshooting
+## Need Help?
 
-**Playwright Issues**: Run `npx playwright install chromium`
-**Permission Errors**: Check directory permissions for input/output folders
-**API Failures**: Verify Gemini API key and quota
-**Memory Issues**: Process fewer companies/documents per run (split into smaller batches)
+If you encounter any development issues, check out our [Troubleshooting Guide](./Troubleshooting.md) for common problems and solutions.

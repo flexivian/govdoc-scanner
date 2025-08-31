@@ -4,36 +4,62 @@ sidebar_position: 1
 
 # What is GovDoc Scanner?
 
-## Project Overview
+### The Problem
 
-### Problem Statement:
+In Greece, essential public company data exists in thousands of unstructured documents across the [Γ.Ε.ΜΗ. (GEMI)](https://publicity.businessportal.gr) portal. This creates significant barriers for:
 
-In Greece, vital public company data is often locked in unstructured PDF files, making it challenging for citizens,
-researchers, and policymakers to access and analyze this information. The current state of these documents limits
-transparency and hinders efficient data use. The Flexible GovDoc Scanner project seeks to bridge this gap by
-transforming these PDFs into a structured, searchable database, thereby democratizing access to important corporate
-information.
+- **Citizens** seeking transparency in corporate activities
+- **Researchers** analyzing business trends and economic patterns
+- **Policymakers** requiring data-driven insights for legislation
+- **Journalists** investigating corporate structures and ownership
 
-### What I am Making:
+The current format limits transparency and makes systematic analysis nearly impossible.
 
-The Flexible GovDoc Scanner is an open-source tool designed to convert unstructured GEMI portal PDFs into a fully
-searchable database accessible via a REST API. The solution comprises the following steps:
+### The Solution
 
-- **Fetch**: Systematically retrieve documents from Greece’s official Open Data Portal, ensuring full compliance
-  with legal and ethical standards.
-- **Extract**: Leverage Google Gemini's generative AI capabilities to accurately extract metadata and text from the documents, eliminating the need for traditional OCR.
-- **Organize**: Index and store the extracted data in OpenSearch, taking advantage of its built-in language
-  analyzers for Greek text and fast querying capabilities.
-- **Share**: Develop a robust REST API that allows users to query the database by various parameters such as
-  company name, incorporation date, and key individuals, with features like pagination, filtering, and rate
-  limiting.
+**GovDoc Scanner** is an open-source tool designed to convert unstructured GEMI portal PDFs into a fully searchable database accessible via a REST API. It automates the complete document processing pipeline with **AI-powered extraction** and **production-ready infrastructure**:
 
-## Tools Used
+- **Smart Crawling**: Automated document discovery and download from GEMI portal with advanced filtering
+- **AI Extraction**: Google Gemini 2.5 Flash processes Greek legal documents with specialized prompts
+- **Structured Data**: Comprehensive metadata extraction including representatives, ownership, and change tracking
+- **Full-Text Search**: OpenSearch integration with Greek language analyzers for powerful querying
+- **REST API**: Production-ready server with authentication, rate limiting, and comprehensive documentation
 
-- **Node.js**: The runtime environment for all scripts and applications.
-- **NPM Workspaces**: Modern monorepo management for organizing multiple applications and shared dependencies.
-- **Google Gemini**: Used for its generative AI capabilities in document processing and metadata extraction.
-- **Unified CLI Tool**: Interactive and command-line interfaces for seamless workflow orchestration.
+## Architecture & Components
+
+GovDoc Scanner follows a **modern monorepo architecture** with five specialized applications:
+
+### Core Applications
+
+- **`cli`**: A unified command-line interface that orchestrates the complete workflow, combining crawling and scanning with interactive prompts and automated batch processing (recommended for most users).
+- **`doc-scanner`**: Processes `.pdf`, `.doc` and `.docx` documents for a given GEMI company, extracting comprehensive metadata with chronological processing and intelligent representative tracking using Gemini 2.5 Flash Lite.
+- **`crawler`**: Scrapes the GEMI portal to search for companies using advanced filters and downloads all available public documents with enhanced date extraction, intelligent file management, and robust retry mechanisms.
+- **`api`**: Fastify-based REST API server providing search endpoints for companies and representatives with OpenSearch integration.
+- **`opensearch`**: Complete OpenSearch integration with development and production configurations for searchable data indexing.
+
+## Technology Stack
+
+**Core Technologies:**
+
+- **Node.js v20+**: Modern JavaScript runtime with ES modules
+- **Google Gemini 2.5 Flash**: Specialized AI for Greek legal document processing
+- **OpenSearch 3.1+**: Full-text search with Greek language analyzers
+- **Fastify**: High-performance web framework with built-in validation
+- **Playwright**: Robust web automation for document crawling
+- **Docker**: Containerized deployment and development environments
+
+**Development & Operations:**
+
+- **NPM Workspaces**: Monorepo management for multiple applications
+- **ESLint & Prettier**: Code quality and formatting standards
+- **Docusaurus**: Documentation site with live reloading
+- **GitHub Actions**: Automated testing and deployment workflows
+
+## Getting Started
+
+Ready to process Greek company documents? Go ahead:
+
+- **[Getting Started Guide](./guides/Getting%20Started.md)**
 
 ## Something Missing? {#something-missing}
 

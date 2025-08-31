@@ -52,18 +52,37 @@ Controls web scraping and document downloading:
 - **CRAWLER_HEADLESS** (default: true): Run browser in headless mode (true/false)
 - **CRAWLER_MAX_RETRIES** (default: 3, range: 1-10): Maximum retry attempts for downloads
 
-### Processing Configuration
+### Working Directory Configuration
 
-Controls output and processing behavior:
+Controls where application outputs are stored:
 
-- **OUTPUT_DIR** (default: ~/.govdoc/doc-scanner/output): Directory for processed output files
+- **WORKING_DIR** (default: ./.govdoc): Base directory for all app outputs
+  - Creates organized subdirectories: `.govdoc/crawler/`, `.govdoc/doc-scanner/`, `.govdoc/cli/`
+  - Use absolute path or ~ for home directory if desired
+
+### System Configuration
+
+Controls logging and system behavior:
+
 - **LOG_LEVEL** (default: error): Logging level (debug, info, warn, error)
+
+### OpenSearch Integration (Optional)
+
+Controls data indexing and search functionality:
+
+- **OPENSEARCH_PUSH** (default: false): Enable pushing data to OpenSearch
+- **OPENSEARCH_URL**: OpenSearch endpoint URL
+- **OPENSEARCH_USERNAME**: OpenSearch username
+- **OPENSEARCH_PASSWORD**: OpenSearch password
+- **OPENSEARCH_INDEX**: OpenSearch index name
+- **OPENSEARCH_INSECURE** (default: false): Allow insecure SSL connections
+- **OPENSEARCH_BATCH_SIZE** (default: 500): Batch size for bulk operations
+- **OPENSEARCH_INDEX_STRATEGY** (default: static): Index strategy (static/dynamic)
+- **OPENSEARCH_REFRESH** (default: false): Force refresh after operations
 
 ## Configuration Validation
 
 The application automatically validates configuration on startup and provides detailed error messages for invalid or missing values. It also tests API connectivity with the configured Gemini API key.
-
-See [Shared Infrastructure Examples](../code-examples/shared-infrastructure.md) for code examples on how to use configuration validation in your applications.
 
 ## Common Configuration Scenarios
 
@@ -73,28 +92,7 @@ For development with verbose logging:
 
 - Set `LOG_LEVEL=debug` for detailed debugging information
 - Set `CRAWLER_HEADLESS=false` to show browser for debugging
-- Use `OUTPUT_DIR=~/.govdoc/dev-output` for separate development output
 
-## Troubleshooting
+## Need Help?
 
-### Common Issues
-
-**"GEMINI_API_KEY is required"**
-
-- Ensure `.env` file exists in project root
-- Verify API key is set correctly
-- Check API key is valid at [Google AI Studio](https://aistudio.google.com/app/apikey)
-
-**"Configuration validation failed"**
-
-- Check numeric values are within valid ranges
-- Verify URL formats are correct
-- Ensure boolean values are "true" or "false"
-
-**"API validation failed"**
-
-- Test API key manually at Google AI Studio
-- Check internet connectivity
-- Verify API quotas and billing status
-
-For code examples on configuration testing and validation, see [Shared Infrastructure Examples](../code-examples/shared-infrastructure.md).
+If you encounter any configuration issues, check out our [Troubleshooting Guide](./Troubleshooting.md) for common problems and solutions.

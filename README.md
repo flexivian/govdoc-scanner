@@ -11,9 +11,26 @@ For detailed documentation, including setup guides, API references, contribution
 
 ## Project Overview
 
-In Greece, vital public company data is often locked in behind multiple custom templated PDF files, making it challenging for citizens, researchers, and policymakers to access and analyze this information. The current state of these documents limits transparency and hinders efficient data use. The govdoc-scanner project seeks to bridge this gap by transforming these PDFs into a structured, searchable database, thereby democratizing access to important corporate information.
+### The Problem
 
-The govdoc-scanner is an open-source tool designed to convert unstructured [Γ.Ε.ΜΗ.](https://www.businessportal.gr/) (GEMI) portal PDFs into a fully searchable database accessible via a REST API. It automates the extraction of metadata and document histories, making corporate information more accessible and useful for a wide range of users.
+In Greece, essential public company data exists in thousands of unstructured documents across the [Γ.Ε.ΜΗ. (GEMI)](https://publicity.businessportal.gr) portal. This creates significant barriers for:
+
+- **Citizens** seeking transparency in corporate activities
+- **Researchers** analyzing business trends and economic patterns
+- **Policymakers** requiring data-driven insights for legislation
+- **Journalists** investigating corporate structures and ownership
+
+The current format limits transparency and makes systematic analysis nearly impossible.
+
+### The Solution
+
+**GovDoc Scanner** is an open-source tool designed to convert unstructured GEMI portal PDFs into a fully searchable database accessible via a REST API. It automates the complete document processing pipeline with **AI-powered extraction** and **production-ready infrastructure**:
+
+- **Smart Crawling**: Automated document discovery and download from GEMI portal with advanced filtering
+- **AI Extraction**: Google Gemini 2.5 Flash processes Greek legal documents with specialized prompts
+- **Structured Data**: Comprehensive metadata extraction including representatives, ownership, and change tracking
+- **Full-Text Search**: OpenSearch integration with Greek language analyzers for powerful querying
+- **REST API**: Production-ready server with authentication, rate limiting, and comprehensive documentation
 
 ## Current Functionality/Implementation
 
@@ -40,7 +57,7 @@ All tools are implemented in Node.js and use a combination of CLI interfaces and
 node --version
 ```
 
-- **Docker & Docker Compose** (optional, for OpenSearch): Required only if using the OpenSearch integration for search and analytics.
+- **Docker & Docker Compose** (optional, for OpenSearch and RESTAPI): Required only if using the OpenSearch integration for search and analytics.
 
 - **.env file**: Copy the example environment file and update it with your Gemini API key:
 
@@ -210,17 +227,3 @@ npm start
 ```
 
 The documentation site will be available at `http://localhost:3000` with live reloading for development.
-
-## Reasons for Offering & Problem Solved
-
-Access to Greek public company data is hindered by the prevalence of unstructured PDF files. This project addresses the lack of transparency and the inefficiency in data utilization by converting these documents into structured, machine-readable formats with optional full-text search capabilities.
-
-govdoc-scanner automates:
-
-- Searching for companies with complex filters
-- Downloading all available public documents
-- Extracting and structuring metadata for analysis
-- Building historical timelines for research or reporting
-- Creating searchable indexes with OpenSearch for advanced analytics
-
-This enables users to efficiently gather and analyze business data at scale, supporting transparency, due diligence, and investigative work.
