@@ -16,11 +16,11 @@ GovDoc Scanner transforms unstructured Greek GEMI portal documents (PDF/DOC/DOCX
 
 **Core Goals Achieved:**
 
-- **Automated Document Crawling**: Robust [`Playwright`](apps/crawler/src/ui.mjs:1)-powered crawler with advanced company search filters, intelligent date extraction, and organized document downloads
-- **AI-Powered Document Processing**: Advanced pipeline using [`Google Gemini 2.5 Flash Lite`](apps/doc-scanner/src/gemini-config.mjs:1) for metadata extraction, chronological processing, and Greek legal document analysis
-- **Unified CLI Orchestration**: Complete [`command-line interface`](apps/cli/src/main.mjs:1) with interactive prompts, batch processing, progress tracking, and comprehensive error handling
-- **Production Infrastructure**: [`OpenSearch integration`](apps/opensearch/README.md:1) with [`REST API server`](apps/api/README.md:1) for scalable data access and search capabilities
-- **Comprehensive Documentation**: [`Docusaurus-powered documentation site`](docs-site/README.md:1) with installation guides, code examples, and development instructions
+- **Automated Document Crawling**: Robust `Playwright` powered crawler with advanced company search filters, intelligent date extraction, and organized document downloads
+- **AI-Powered Document Processing**: Advanced pipeline using `Google Gemini 2.5 Flash Lite` for metadata extraction, chronological processing, and Greek legal document analysis
+- **Unified CLI Orchestration**: Complete `command-line interface` with interactive prompts, batch processing, progress tracking, and comprehensive error handling
+- **Production Infrastructure**: `OpenSearch integration` with `REST API server` for scalable data access and search capabilities
+- **Comprehensive Documentation**: `Docusaurus-powered documentation site` with installation guides, code examples, and development instructions
 
 ## Development Progress Through Pull Requests
 
