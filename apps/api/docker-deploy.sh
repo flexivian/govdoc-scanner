@@ -88,24 +88,24 @@ build_image() {
     
     print_status "Building Docker image for $env_type..."
     
-    # Change to parent directory for build context
-    cd ..
+    # Change to project root for build context
+    cd ../..
     
     if [[ "$env_type" == "production" ]]; then
         docker build -t govdoc-scanner-api:latest \
                      -t govdoc-scanner-api:$(date +%Y%m%d-%H%M%S) \
                      --target production \
-                     -f api/Dockerfile \
+                     -f apps/api/Dockerfile \
                      .
     else
         docker build -t govdoc-scanner-api:dev \
                      --target production \
-                     -f api/Dockerfile \
+                     -f apps/api/Dockerfile \
                      .
     fi
     
     # Return to api directory
-    cd api
+    cd apps/api
     
     if [[ $? -eq 0 ]]; then
         print_success "Docker image built successfully"

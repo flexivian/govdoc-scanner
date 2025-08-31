@@ -60,7 +60,7 @@ npm start govdoc
 # - File input, manual entry, or random selection
 # - Automated crawling and document processing
 # - Progress tracking and comprehensive summaries
-# - Output saved to ./output/ at project root
+# - Output saved to ~/.govdoc/cli/output/
 ```
 
 **Command line mode for automation:**
@@ -76,6 +76,22 @@ npm start govdoc -- --company-random 10
 npm start govdoc -- --help
 ```
 
+## Output Structure
+
+After processing, find results in the working directory:
+
+```
+~/.govdoc/
+├── cli/
+    └── output/
+        ├── 123204604000/
+        │   ├── 123204604000_final_metadata.json  # Comprehensive company metadata with tracked changes
+        │   └── document_downloads/
+        │       └── *.pdf, *.docx files
+        └── govdoc-output.json  # Summary
+
+```
+
 If you prefer to run each step separately(crawler -> scanner), make sure to use `LOG_LEVEL=DEBUG` for detailed output when running the separate apps:
 
 ### Crawler
@@ -83,7 +99,7 @@ If you prefer to run each step separately(crawler -> scanner), make sure to use 
 ```bash
 npm start crawler
 # Search for companies or download by GEMI ID
-# Results saved to apps/crawler/src/downloads/ and ids.txt to apps/crawler/src/ids.txt
+# Results saved to ~/.govdoc/crawler/downloads/ and search results to ~/.govdoc/crawler/search-results.gds
 ```
 
 ### Doc-Scanner
@@ -91,25 +107,12 @@ npm start crawler
 ```bash
 npm start scanner
 # Process documents from input directory
-# Requires manual document placement in apps/doc-scanner/src/data/input/
+# Requires manual document placement in ~/.govdoc/doc-scanner/input/
 # Important: Name files with date prefixes (YYYY-MM-DD) for chronological processing
 # Features:
 #   - Intelligent processing: skips documents that are already up to date
 #   - Change tracking: automatically summarizes significant changes between versions
 #   - Comprehensive metadata with representative tracking and ownership history
-```
-
-## Output Structure
-
-After processing, find results in:
-
-```
-output/
-├── 123204604000/
-│   ├── 123204604000_final_metadata.json  # Comprehensive company metadata with tracked changes
-│   └── document_downloads/
-│       └── *.pdf, *.docx files
-└── govdoc-output.json  # Summary
 ```
 
 The metadata file includes:

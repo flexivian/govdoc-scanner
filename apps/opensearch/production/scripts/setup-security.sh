@@ -68,12 +68,12 @@ if ! command -v node &> /dev/null; then
 fi
 
 # Check if we're in the project root with bcryptjs installed
-cd ../.. # Go to project root to access node_modules
+cd ../../.. # Go to project root to access node_modules
 if ! node -e "require('bcryptjs')" &> /dev/null 2>&1; then
     echo -e "${YELLOW}Installing bcryptjs for password hashing...${NC}"
     npm install bcryptjs > /dev/null 2>&1
 fi
-cd opensearch/production # Return to production directory
+cd apps/opensearch/production # Return to production directory
 
 # Run the password hashing script
 if node scripts/hash-passwords.mjs; then

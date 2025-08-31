@@ -93,16 +93,19 @@ async function processCompanies(inputFilePath) {
 
 ### Output Structure
 
-After processing, you'll find results in the `output/` directory:
+After processing, you'll find results in the `~/.govdoc/` directory:
 
 ```
-output/
-├── 123204604000/
-│   ├── 123204604000_final_metadata.json  # Comprehensive company metadata
-│   └── document_downloads/
-│       ├── 2019-09-23_90189.pdf
-│       └── 2020-11-03_2334237.pdf
-└── govdoc-output.json  # Summary of all processed companies
+~/.govdoc/
+├── cli/
+│   └── govdoc-output.json  # Summary of all processed companies
+└── doc-scanner/
+    └── output/
+        └── 123204604000/
+            ├── 123204604000_final_metadata.json  # Comprehensive company metadata
+            └── document_downloads/
+                ├── 2019-09-23_90189.pdf
+                └── 2020-11-03_2334237.pdf
 ```
 
 ## Individual Applications

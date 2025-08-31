@@ -4,7 +4,7 @@ This guide shows how to set up and use OpenSearch 3.1+ with govdoc-scanner for s
 
 ## Overview
 
-The `opensearch/` directory provides complete OpenSearch integration with:
+The `apps/opensearch/` directory provides complete OpenSearch integration with:
 
 - **Development environment**: Quick local setup for testing
 - **Production environment**: Secure, scalable deployment with authentication
@@ -23,7 +23,7 @@ For local development and testing:
 ### 1. Start Development Cluster
 
 ```bash
-cd opensearch/development
+cd apps/opensearch/development
 cp .env.template .env
 # Edit .env with a strong password (8+ characters)
 docker compose up -d
@@ -47,7 +47,7 @@ OPENSEARCH_INDEX=govdoc-companies-000001
 ```bash
 curl -k -u admin:yourAdminPassword -X PUT "https://localhost:9200/_index_template/govdoc-company-template" \
   -H "Content-Type: application/json" \
-  -d @opensearch/shared/templates/company-index-template.json
+  -d @apps/opensearch/shared/templates/company-index-template.json
 ```
 
 ### 4. Create Initial Index
@@ -88,14 +88,14 @@ Create index patterns manually:
 **Shut Down Docker Container:**
 
 ```bash
-cd opensearch/development
+cd apps/opensearch/development
 docker compose down
 ```
 
 **Reset development environment:**
 
 ```bash
-cd opensearch/development
+cd apps/opensearch/development
 docker compose down --volumes --remove-orphans
 ```
 
@@ -106,7 +106,7 @@ For production deployments with security and monitoring:
 ### Quick Setup
 
 ```bash
-cd opensearch/production
+cd apps/opensearch/production
 ./setup-production.sh
 ```
 
@@ -118,14 +118,14 @@ This automatically:
 4. Initializes security configuration with proper authentication
 5. Creates test data to verify bulk operations work
 
-**Important**: After setup completes, passwords are stored in `/opensearch/production/.env`. Copy the `govdoc_ingest` password to your root `.env` file.
+**Important**: After setup completes, passwords are stored in `apps/opensearch/production/.env`. Copy the `govdoc_ingest` password to your root `.env` file.
 
 ### Manual Setup
 
 For step-by-step control:
 
 ```bash
-cd opensearch/production
+cd apps/opensearch/production
 # Step 1: Run security setup (creates .env file automatically)
 ./scripts/setup-security.sh
 # Step 2: Start production cluster
@@ -154,14 +154,14 @@ OPENSEARCH_INSECURE=true  # Set to false when using proper certificates
 **Shut Down Docker Container:**
 
 ```bash
-cd opensearch/production
+cd apps/opensearch/production
 docker compose -f docker-compose.prod.yml down
 ```
 
 **Reset production environment:**
 
 ```bash
-cd opensearch/production
+cd apps/opensearch/production
 ./cleanup-production.sh
 ```
 
@@ -172,7 +172,7 @@ cd opensearch/production
 Check cluster health and status:
 
 ```bash
-cd opensearch/production
+cd apps/opensearch/production
 ./scripts/health-check.sh
 ```
 
@@ -190,7 +190,7 @@ This script monitors:
 Create backups of your data:
 
 ```bash
-cd opensearch/production
+cd apps/opensearch/production
 ./scripts/backup.sh
 ```
 
@@ -261,7 +261,7 @@ npm start govdoc -- --input ./companies.gds \
 
 ## Data Model
 
-The index template (`opensearch/shared/templates/company-index-template.json`) defines:
+The index template (`apps/opensearch/shared/templates/company-index-template.json`) defines:
 
 - **Index pattern**: `govdoc-companies-*`
 - **Dynamic mapping**: false (unknown fields rejected)
@@ -330,7 +330,7 @@ curl -k -u admin:yourPassword -X POST "https://localhost:9200/govdoc-companies-0
 ## Directory Structure
 
 ```
-opensearch/
+apps/opensearch/
 ├── README.md                           # Quick start guide
 ├── development/                        # Development environment
 │   ├── docker-compose.yml              # Dev Docker Compose

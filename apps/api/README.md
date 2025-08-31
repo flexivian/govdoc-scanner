@@ -9,7 +9,7 @@ REST API for querying Greek company metadata from GEMI registry scans.
 **Ensure OpenSearch Production is running first:**
 
 ```bash
-cd ../opensearch/production
+cd apps/opensearch/production
 ./setup-production.sh
 ```
 
@@ -20,7 +20,7 @@ For development and testing with OpenSearch integration:
 ### Quick Development Setup
 
 ```bash
-cd api
+cd apps/api
 # Setup environment file
 ./docker-deploy.sh setup
 # Edit .env with your configuration (use govdoc_ingest credentials)
@@ -55,7 +55,7 @@ For production deployment with enhanced security and performance:
 ### Quick Production Setup
 
 ```bash
-cd api
+cd apps/api
 # Setup environment file (if not done)
 ./docker-deploy.sh setup
 # Edit .env with production configuration
