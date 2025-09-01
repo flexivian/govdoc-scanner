@@ -274,6 +274,9 @@ export async function processCompanyFiles(
         const { data, mimeType } = await prepareFileData(filePath, fileName);
         const filePart = { inlineData: { data, mimeType } };
 
+        let geminiStartTime = Date.now();
+        let geminiEndTime;
+
         if (!hasExistingMetadata && i === 0) {
           // Extract initial metadata from the first document (only if no existing metadata)
           cumulativeMetadata = await extractInitialMetadata(
@@ -281,6 +284,7 @@ export async function processCompanyFiles(
             fileName,
             metadataModel
           );
+          geminiEndTime = Date.now();
 
           const extractedDate = extractDateFromFilename(fileName);
           if (extractedDate) {
@@ -302,6 +306,7 @@ export async function processCompanyFiles(
             cumulativeMetadata,
             metadataModel
           );
+          geminiEndTime = Date.now();
 
           // Store tracked changes if they exist
           if (
@@ -326,7 +331,8 @@ export async function processCompanyFiles(
           companyName = cumulativeMetadata.company_name; // Company name may change
         }
 
-        logger.info(`Successfully processed: ${fileName}`);
+        const geminiTimeMs = geminiEndTime - geminiStartTime;
+        logger.info(`Successfully processed: ${fileName} (${geminiTimeMs}ms)`);
       } catch (err) {
         logger.error(`Error processing ${fileName}`, err);
       }

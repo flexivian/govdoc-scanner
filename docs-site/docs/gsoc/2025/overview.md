@@ -21,21 +21,21 @@ The current format limits transparency and makes systematic analysis nearly impo
 
 ## The Solution
 
-**GovDoc Scanner** is an open-source tool designed to convert unstructured GEMI portal PDFs into a fully searchable database accessible via a REST API. The GSoC 2025 project successfully delivered a complete implementation that automates the entire document processing pipeline with **AI-powered extraction** and **production-ready infrastructure**.
+**GovDoc Scanner** is an open-source tool designed to convert unstructured GEMI portal documents into a fully searchable database accessible via a REST API. This GSoC 2025 project successfully delivered a complete implementation that automates the entire document processing pipeline with **AI-powered extraction** and **production-ready infrastructure**.
 
 ### Core Components Delivered
 
 - **Automated Document Crawling**: Robust `Playwright` powered crawler with advanced company search filters, intelligent date extraction, and organized document downloads from the GEMI portal
 - **AI-Powered Document Processing**: Advanced pipeline using `Google Gemini 2.5 Flash Lite` for metadata extraction, chronological processing, and specialized Greek legal document analysis
 - **Unified CLI Orchestration**: Complete `command-line interface` with interactive prompts, batch processing, progress tracking, and comprehensive error handling that combines all workflow components
-- **Production Infrastructure**: Full `OpenSearch integration` with production-ready `REST API server` featuring authentication, rate limiting, and comprehensive Swagger documentation for scalable data access
-- **Comprehensive Documentation**: Complete `Docusaurus-powered documentation site` with installation guides, code examples, development instructions, and API references
+- **Production Infrastructure**: Full `OpenSearch integration` with production-ready `REST API server` featuring authentication, rate limiting, and comprehensive Swagger documentation.
+- **Comprehensive Documentation**: Complete `Docusaurus-powered documentation site` with installation guides, development instructions, and API references
 
 ## Development Progress Through Pull Requests
 
 The project was developed through a series of iterative pull requests, each adding significant functionality and improvements:
 
-### Core Infrastructure & Setup (PRs #3, #6, #7, #8)
+### Core Infrastructure & Setup (PRs #3, #6, #7, #8, #26, #27)
 
 - **[PR #3](https://github.com/flexivian/govdoc-scanner/pull/3)**: Implementation of a batch document processing pipeline for metadata extraction and contextual history generation using Gemini
 - **[PR #6](https://github.com/flexivian/govdoc-scanner/pull/6)**: Pipeline for company search and document download
@@ -44,14 +44,14 @@ The project was developed through a series of iterative pull requests, each addi
 - **[PR #26](https://github.com/flexivian/govdoc-scanner/pull/26)**: App updates - Enhanced functionality across all applications
 - **[PR #27](https://github.com/flexivian/govdoc-scanner/pull/27)**: CLI Tool - Removal of NX - Streamlined the CLI tool and removed NX dependency for better maintainability
 
-### Advanced Features & Bug Fixes (PRs #30, #31)
+### Advanced Features & Bug Fixes (PRs #30, #31, #44, #47)
 
 - **[PR #30](https://github.com/flexivian/govdoc-scanner/pull/30)**: Tracked changes feature - Implemented change tracking capabilities for better workflow management
 - **[PR #31](https://github.com/flexivian/govdoc-scanner/pull/31)**: Handle fenced JSON responses and enforce raw JSON output - Fixed JSON parsing issues and improved data consistency
 - **[PR #44](https://github.com/flexivian/govdoc-scanner/pull/44)**: Metadata enhancements - Enhanced metadata extraction with separate tracking for company changes and economic changes, new fields for financial data, and improved representative ownership tracking with capital amounts and percentages
 - **[PR #47](https://github.com/flexivian/govdoc-scanner/pull/47)**: Real-Time Logging in Debug Mode - Enhanced debugging capabilities with real-time log output when LOG_LEVEL=debug in CLI application, disabling progress bars for better development experience
 
-### Infrastructure & Error Handling (PRs #32, #33, #34)
+### Infrastructure & Error Handling (PRs #32, #33, #34, #45)
 
 - **[PR #32](https://github.com/flexivian/govdoc-scanner/pull/32)**: Structured Errors, API Key Validation & UX Cleanup - Implemented comprehensive error handling and improved user experience
 - **[PR #33](https://github.com/flexivian/govdoc-scanner/pull/33)**: Config Management - Added centralized configuration management system
@@ -63,7 +63,7 @@ The project was developed through a series of iterative pull requests, each addi
 - **[PR #41](https://github.com/flexivian/govdoc-scanner/pull/41)**: Production OpenSearch Setup - Complete production-ready OpenSearch deployment with security, monitoring, and backup features including one-command setup, SSL certificates, user management, and health monitoring
 - **[PR #43](https://github.com/flexivian/govdoc-scanner/pull/43)**: Rest API Setup - Production-ready REST API service with Fastify server, OpenSearch integration, Swagger documentation, authentication, rate limiting, and containerized deployment
 
-### Documentation & Project Management (PRs #9, #10, #35)
+### Documentation & Project Management (PRs #9, #10, #35, #46)
 
 - **[PR #9](https://github.com/flexivian/govdoc-scanner/pull/9)**: Docusaurus Setup - Established comprehensive documentation infrastructure
 - **[PR #10](https://github.com/flexivian/govdoc-scanner/pull/10)**: GitHub Pages deployment for documentation - Made documentation publicly accessible
@@ -103,7 +103,7 @@ apps/
 **Production-Ready Infrastructure:**
 
 - **Zero-downtime deployment**: Opensearch and REST API docker containerization with health checks and graceful shutdowns
-- **Security first**: OpenSearch with TLS encryption, RBAC user management, and dedicated service accounts
+- **Security first**: OpenSearch with TLS encryption, user management, and dedicated service accounts
 - **Scalable data pipeline**: Batch processing with configurable chunk sizes and retry mechanisms
 - **Monitoring & observability**: Health check endpoints, backup automation, and cluster monitoring
 
@@ -128,7 +128,7 @@ All development is tracked on [GitHub Issues](https://github.com/flexivian/govdo
 
 **Quick Links:**
 
-- **[Complete Documentation](https://flexivian.github.io/govdoc-scanner/)** - Comprehensive guides and API references
-- **[Getting Started Guide](../../guides/Getting%20Started.md)** - Basic usage and setup instructions
+- **[Complete Documentation](../../intro.md)**
+- **[Getting Started Guide](../../guides/Getting%20Started.md)**
 
 **Repository:** [github.com/flexivian/govdoc-scanner](https://github.com/flexivian/govdoc-scanner)
