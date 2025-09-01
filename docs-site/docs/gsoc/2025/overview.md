@@ -21,15 +21,15 @@ The current format limits transparency and makes systematic analysis nearly impo
 
 ## The Solution
 
-**GovDoc Scanner** is an open-source tool designed to convert unstructured GEMI portal documents into a fully searchable database accessible via a REST API. The GSoC 2025 project successfully delivered a complete implementation that automates the entire document processing pipeline with **AI-powered extraction** and **production-ready infrastructure**.
+**GovDoc Scanner** is an open-source tool designed to convert unstructured GEMI portal documents into a fully searchable database accessible via a REST API. This GSoC 2025 project successfully delivered a complete implementation that automates the entire document processing pipeline with **AI-powered extraction** and **production-ready infrastructure**.
 
 ### Core Components Delivered
 
 - **Automated Document Crawling**: Robust `Playwright` powered crawler with advanced company search filters, intelligent date extraction, and organized document downloads from the GEMI portal
 - **AI-Powered Document Processing**: Advanced pipeline using `Google Gemini 2.5 Flash Lite` for metadata extraction, chronological processing, and specialized Greek legal document analysis
 - **Unified CLI Orchestration**: Complete `command-line interface` with interactive prompts, batch processing, progress tracking, and comprehensive error handling that combines all workflow components
-- **Production Infrastructure**: Full `OpenSearch integration` with production-ready `REST API server` featuring authentication, rate limiting, and comprehensive Swagger documentation for scalable data access
-- **Comprehensive Documentation**: Complete `Docusaurus-powered documentation site` with installation guides, code examples, development instructions, and API references
+- **Production Infrastructure**: Full `OpenSearch integration` with production-ready `REST API server` featuring authentication, rate limiting, and comprehensive Swagger documentation.
+- **Comprehensive Documentation**: Complete `Docusaurus-powered documentation site` with installation guides, development instructions, and API references
 
 ## Development Progress Through Pull Requests
 
