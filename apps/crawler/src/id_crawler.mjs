@@ -6,6 +6,8 @@ import { fileURLToPath } from "url";
 import axios from "axios";
 import { config } from "../../../shared/config/index.mjs";
 import { createLogger } from "../../../shared/logging/index.mjs";
+import { readGdsFile } from "../../../shared/gds/index.mjs";
+import { initWorkingDir, getWorkingPath } from "../../../shared/workdir/index.mjs";
 import {
   calculateHash,
   downloadFileBuffer,
@@ -401,11 +403,7 @@ async function main() {
       return;
     }
     try {
-      const fileContent = fs.readFileSync(filePath, "utf-8");
-      gemiIds = fileContent
-        .split("\n")
-        .map((id) => id.trim())
-        .filter((id) => isValidGemiId(id));
+      gemiIds = await readGdsFile(filePath);
       logger.info(`Loaded ${gemiIds.length} valid GEMI IDs from ${filePath}`);
     } catch (e) {
       logger.error(`Error reading or parsing ${filePath}`, e);
@@ -421,7 +419,11 @@ async function main() {
     return;
   }
 
-  await runCrawlerForGemiIds(gemiIds, path.join(__dirname, "downloads"));
+  // Initialize crawler working directory
+  await initWorkingDir('crawler', ['downloads']);
+  const downloadsDir = getWorkingPath('crawler', 'downloads');
+  
+  await runCrawlerForGemiIds(gemiIds, downloadsDir);
 }
 
 // Check if the script is being run directly

@@ -2,24 +2,34 @@
 sidebar_position: 1
 ---
 
-# GSoC 2025 Project Overview: GovDoc Scanner
+# GSoC 2025 Project: GovDoc Scanner
 
 **Mentors**: Giannis E. Skitsas, Vasilis Christopoulos
 
 **Assignee**: Eftihis Drakakis
 
-## Abstract
+## The Problem
 
-The GovDoc Scanner project tackles the challenge of accessing and using public company data from the Greek GEMI portal, where information is typically locked in unstructured PDF/DOC/DOCX files. The project delivers a suite of tools that: crawl and download documents, process them using AI (Gemini Flash), and produce structured, searchable metadata with chronological tracking. Outputs are organized per company and consolidated for batch runs, improving transparency and accessibility of public corporate information in Greece.
+In Greece, essential public company data exists in thousands of unstructured documents across the [Γ.Ε.ΜΗ. (GEMI)](https://publicity.businessportal.gr) portal. This creates significant barriers for:
 
-## Main goals for GSoC 2025
+- **Citizens** seeking transparency in corporate activities
+- **Researchers** analyzing business trends and economic patterns
+- **Policymakers** requiring data-driven insights for legislation
+- **Journalists** investigating corporate structures and ownership
 
-The primary objectives for this project were:
+The current format limits transparency and makes systematic analysis nearly impossible.
 
-- **Automated Document Crawling**: Develop a robust crawler to navigate the GEMI portal, search for companies using various filters, and download all associated public documents with enhanced date extraction for proper organization.
-- **Intelligent Document Processing**: Create an advanced document processing pipeline that can handle different file formats (PDF, DOCX, DOC), extract text, and use Google's Gemini 2.5 Flash Lite to extract comprehensive structured metadata with chronological processing and representative tracking.
-- **End-to-End CLI Tool**: Build a unified command-line interface to orchestrate the entire workflow, from crawling and downloading to processing and storing the data, complete with interactive prompts, automated batch processing, progress tracking and error handling.
-- **Comprehensive Documentation**: Establish a documentation site to provide clear instructions for installation, usage, and development, ensuring the project is accessible to a wide audience.
+## The Solution
+
+**GovDoc Scanner** is an open-source tool designed to convert unstructured GEMI portal PDFs into a fully searchable database accessible via a REST API. The GSoC 2025 project successfully delivered a complete implementation that automates the entire document processing pipeline with **AI-powered extraction** and **production-ready infrastructure**.
+
+### Core Components Delivered
+
+- **Automated Document Crawling**: Robust `Playwright` powered crawler with advanced company search filters, intelligent date extraction, and organized document downloads from the GEMI portal
+- **AI-Powered Document Processing**: Advanced pipeline using `Google Gemini 2.5 Flash Lite` for metadata extraction, chronological processing, and specialized Greek legal document analysis
+- **Unified CLI Orchestration**: Complete `command-line interface` with interactive prompts, batch processing, progress tracking, and comprehensive error handling that combines all workflow components
+- **Production Infrastructure**: Full `OpenSearch integration` with production-ready `REST API server` featuring authentication, rate limiting, and comprehensive Swagger documentation for scalable data access
+- **Comprehensive Documentation**: Complete `Docusaurus-powered documentation site` with installation guides, code examples, development instructions, and API references
 
 ## Development Progress Through Pull Requests
 
@@ -34,137 +44,91 @@ The project was developed through a series of iterative pull requests, each addi
 - **[PR #26](https://github.com/flexivian/govdoc-scanner/pull/26)**: App updates - Enhanced functionality across all applications
 - **[PR #27](https://github.com/flexivian/govdoc-scanner/pull/27)**: CLI Tool - Removal of NX - Streamlined the CLI tool and removed NX dependency for better maintainability
 
-### Documentation & Project Management (PRs #9, #10, #35)
-
-- **[PR #9](https://github.com/flexivian/govdoc-scanner/pull/9)**: Docusaurus Setup - Established comprehensive documentation infrastructure
-- **[PR #10](https://github.com/flexivian/govdoc-scanner/pull/10)**: GitHub Pages deployment for documentation - Made documentation publicly accessible
-- **[PR #35](https://github.com/flexivian/govdoc-scanner/pull/35)**: Docs Updates - Comprehensive documentation updates and improvements
-
-### UI/UX & Visual Improvements (PR #29)
-
-- **[PR #29](https://github.com/flexivian/govdoc-scanner/pull/29)**: Logo and homepage images - Added branding and visual elements to improve user experience
-
 ### Advanced Features & Bug Fixes (PRs #30, #31)
 
 - **[PR #30](https://github.com/flexivian/govdoc-scanner/pull/30)**: Tracked changes feature - Implemented change tracking capabilities for better workflow management
 - **[PR #31](https://github.com/flexivian/govdoc-scanner/pull/31)**: Handle fenced JSON responses and enforce raw JSON output - Fixed JSON parsing issues and improved data consistency
+- **[PR #44](https://github.com/flexivian/govdoc-scanner/pull/44)**: Metadata enhancements - Enhanced metadata extraction with separate tracking for company changes and economic changes, new fields for financial data, and improved representative ownership tracking with capital amounts and percentages
+- **[PR #47](https://github.com/flexivian/govdoc-scanner/pull/47)**: Real-Time Logging in Debug Mode - Enhanced debugging capabilities with real-time log output when LOG_LEVEL=debug in CLI application, disabling progress bars for better development experience
 
 ### Infrastructure & Error Handling (PRs #32, #33, #34)
 
 - **[PR #32](https://github.com/flexivian/govdoc-scanner/pull/32)**: Structured Errors, API Key Validation & UX Cleanup - Implemented comprehensive error handling and improved user experience
 - **[PR #33](https://github.com/flexivian/govdoc-scanner/pull/33)**: Config Management - Added centralized configuration management system
 - **[PR #34](https://github.com/flexivian/govdoc-scanner/pull/34)**: Unified Error Handling & Logging System - Advanced error handling and logging infrastructure
+- **[PR #45](https://github.com/flexivian/govdoc-scanner/pull/45)**: Structural Refactor - Project restructuring with migration of core applications to `apps/` directory and introduction of configurable `WORKING_DIR` environment variable for unified output management
 
-## Implementation
+### Production Infrastructure & REST API (PRs #41, #43)
 
-### Crawler Application
+- **[PR #41](https://github.com/flexivian/govdoc-scanner/pull/41)**: Production OpenSearch Setup - Complete production-ready OpenSearch deployment with security, monitoring, and backup features including one-command setup, SSL certificates, user management, and health monitoring
+- **[PR #43](https://github.com/flexivian/govdoc-scanner/pull/43)**: Rest API Setup - Production-ready REST API service with Fastify server, OpenSearch integration, Swagger documentation, authentication, rate limiting, and containerized deployment
 
-The crawler is a Node.js application responsible for interacting with the GEMI portal.
+### Documentation & Project Management (PRs #9, #10, #35)
 
-- **Web Scraping and Automation**: `Playwright` powers browser automation (forms, navigation, downloads). `Cheerio` parses portal HTML to extract links and relevant information.
-- **Enhanced Date Extraction**: Advanced logic extracts dates from table rows and prepends them to filenames for proper chronological organization.
-- **User Interface**: An interactive command-line interface (CLI) was built using `inquirer`, allowing users to easily specify which companies to search for or which GEMI IDs to download documents for.
-- **Robust Download System**: `axios` handles HTTP downloads with retries and improved file extension detection. `greek-utils` assists with Greek-specific text; `string-similarity` suggests potential company-name matches.
-- **Outputs**: Search results are saved to `apps/crawler/src/ids.txt`. Downloads are organized under `apps/crawler/src/downloads/{GEMI_ID}/document_downloads/` with date-prefixed filenames.
+- **[PR #9](https://github.com/flexivian/govdoc-scanner/pull/9)**: Docusaurus Setup - Established comprehensive documentation infrastructure
+- **[PR #10](https://github.com/flexivian/govdoc-scanner/pull/10)**: GitHub Pages deployment for documentation - Made documentation publicly accessible
+- **[PR #35](https://github.com/flexivian/govdoc-scanner/pull/35)**: Docs Updates - Comprehensive documentation updates and improvements
+- **[PR #46](https://github.com/flexivian/govdoc-scanner/pull/46)**: Final GSoC Doc Updates
 
-### Document Scanner Application
+### UI/UX & Visual Improvements (PR #29)
 
-The doc-scanner application processes the downloaded documents to extract valuable information using advanced AI capabilities.
+- **[PR #29](https://github.com/flexivian/govdoc-scanner/pull/29)**: Logo and homepage images - Added branding and visual elements to improve user experience
 
-- **Advanced AI-Powered Analysis**: The scanner uses `@google/generative-ai` with Google's Gemini 2.5 Flash Lite, enabling specialized analysis of Greek legal documents with prompts for representative identification and Greek corporate terminology.
-- **Chronological Processing**: Documents are automatically sorted by date based on filename prefixes, ensuring proper chronological processing to track company evolution over time.
-- **Intelligent Metadata Schema**: Expanded schema includes comprehensive company information, detailed representative data (active status, tax IDs, capital shares), and refined field descriptions with duplicate prevention logic.
-- **Modular Prompt Architecture**: Specialized prompts are extracted into a dedicated prompts.mjs file, implementing advanced instructions for Greek legal terminology, representative identification, and ownership analysis.
-- **Document Text Extraction**: The application supports multiple document formats. `mammoth` is used to extract raw text from `.docx` files, and `word-extractor` handles older `.doc` files.
-- **Unified Processing Logic**: A streamlined `processCompanyFiles(files, inputFolder, outputFolder, gemiId, model)` function generates a single comprehensive metadata file, merged chronologically. Incremental logic skips processing when no new files are detected.
-- **Environment Management**: The `dotenv` package is used to manage environment variables, keeping sensitive information like API keys out of the source code.
-- **Outputs**: When used directly, results are written to `apps/doc-scanner/src/data/output/{GEMI_ID}/{GEMI_ID}_final_metadata.json`.
+## Technical Implementation
 
-### CLI Tool Application
+### Architecture Overview
 
-The CLI tool serves as a unified interface that orchestrates the complete workflow, combining both crawler and doc-scanner functionality.
+The project follows a **monorepo structure** with `NPM workspaces` managing five specialized applications under the `apps/` directory, supported by shared infrastructure libraries:
 
-- **Interactive Mode**: User-friendly prompts guide users through input methods (file input, manual GEMI ID entry, or random selection) with step-by-step workflow automation.
-- **Command-Line Mode**: Non-interactive automation support for batch processing and CI/CD integration with comprehensive argument parsing and error handling.
-- **Workflow Orchestration**: Seamlessly coordinates the crawler and doc-scanner applications, handling file transfer between components and maintaining processing state.
-- **Progress Tracking**: Real-time progress bars and comprehensive summaries with integrated logging system.
-- **Advanced Infrastructure**:
-  - Integrated configuration validation and API key verification
-  - Structured error handling with detailed logging and graceful failure recovery
-  - Centralized logging system with progress-aware buffering
-- **Usage**: Pass arguments using npm’s "--" separator, for example: `npm start govdoc -- --input ./companies.gds`.
-- **Outputs**: Batch outputs are saved under `./output/{GEMI_ID}/` with `{GEMI_ID}_final_metadata.json` and downloaded documents, plus a consolidated `./output/govdoc-output.json` summary.
+**Application Structure:**
 
-### Shared Infrastructure & Monorepo
+```
+apps/
+├── crawler/          # Playwright automation for GEMI portal
+├── doc-scanner/      # AI document processing pipeline
+├── cli/              # Unified command-line interface
+├── api/              # Fastify REST API server
+└── opensearch/       # Search infrastructure setup
+```
 
-- **NPM Workspaces**: The entire project is managed as a monorepo using NPM workspaces. This simplifies the management of the different applications (`crawler`, `doc-scanner`, `cli`) and shared dependencies, enabling consistent development practices across all components.
-- **Shared Modules**: Common infrastructure is centralized under `shared/` including:
-  - **Configuration Management**: Centralized environment-aware configuration loading and validation
-  - **Logging System**: Module-specific loggers with automatic progress-aware buffering
-  - **Progress Management**: Real-time progress bars with integrated log buffering
-  - **Error Handling**: Structured error classes for consistent error management across applications
-- **Browser Automation**: `playwright` is used for browser automation within the crawler.
-- **Development Tools**: Unified error handling, logging, and progress tracking across all applications.
+### Technical Innovation
 
-## Future Roadmap & TODOs
+**AI-Powered Greek Legal Processing:**
 
-The following enhancements are planned for the GovDoc Scanner project as part of ongoing development:
+- Custom prompts engineered for Greek corporate document structures (ΦΕΚ, ΓΕΜΗ formats)
+- Chronological document sorting with intelligent date extraction from multiple formats
+- Representative role identification using Greek legal terminology and ownership patterns
+- Change detection comparing document versions for company evolution tracking
 
-### Infrastructure & Deployment
+**Production-Ready Infrastructure:**
 
-- **#18 - Identify Cloud Hosting Strategy and Provide Target Architecture Diagram**
-  - Design scalable cloud infrastructure for production deployment
-  - Create architectural diagrams for system components
-  - Define hosting requirements and cost estimates
+- **Zero-downtime deployment**: Opensearch and REST API docker containerization with health checks and graceful shutdowns
+- **Security first**: OpenSearch with TLS encryption, RBAC user management, and dedicated service accounts
+- **Scalable data pipeline**: Batch processing with configurable chunk sizes and retry mechanisms
+- **Monitoring & observability**: Health check endpoints, backup automation, and cluster monitoring
 
-### Backend Development
+## Future Development Roadmap
 
-- **#13 - Store Company Metadata Output in OpenSearch Database**
-  - Implement OpenSearch integration for structured data storage
-  - Design efficient indexing strategies for company metadata
-  - Enable full-text search capabilities across company data
+### Planned Enhancements:
 
-- **#14 - Implement REST API Server for Company Metadata Querying and Access Management**
-  - Build RESTful API endpoints for data access
-  - Implement authentication and authorization
-  - Create rate limiting and usage monitoring
+## Production Infrastructure
 
-- **#15 - Implement Backoffice for User, Throttling, Whitelist, and IP Management**
-  - Develop administrative interface for user management
-  - Create tools for API throttling and access control
-  - Build monitoring dashboards for system health
+- **Cloud Deployment Strategy**: Scalable cloud architecture with cost optimization and monitoring
+- **Administrative Backoffice**: User management, API throttling, access control, and system health dashboards
+- **Automated Crawling**: Scheduled crawling operations with administrative control and progress monitoring
 
-### Advanced Features
+## Advanced AI Integration
 
-- **#16 - Implement Crawling Feature for Admin from Backoffice**
-  - Enable administrative control of crawling operations
-  - Schedule automated crawling tasks
-  - Provide crawling status and progress monitoring
+- **Model Context Protocol (MCP) Server**: Enhanced AI capabilities with model switching and optimization
+- **Advanced Analytics**: Pattern recognition and trend analysis across corporate data
 
-- **#17 - Implement MCP Server and Showcase**
-  - Develop Model Context Protocol (MCP) server integration
-  - Create showcases demonstrating advanced AI capabilities
-  - Enable seamless AI model switching and optimization
+All development is tracked on [GitHub Issues](https://github.com/flexivian/govdoc-scanner/issues) with community contributions welcome.
 
-### Documentation & Outreach
+## Getting Started
 
-- **#21 - Finalize Documentation, GSoC Delivery URL/Page, and README**
-  - Complete comprehensive project documentation
-  - Create project delivery pages and demos
-  - Update README with latest features and usage instructions
+**Quick Links:**
 
-- **#20 - Make Social Buzz (Medium Article, LinkedIn Post, FB Post)**
-  - Write technical articles about the project
-  - Create social media content for project promotion
-  - Share project achievements and use cases
+- **[Complete Documentation](https://flexivian.github.io/govdoc-scanner/)** - Comprehensive guides and API references
+- **[Getting Started Guide](../../guides/Getting%20Started.md)** - Basic usage and setup instructions
 
-All issues are tracked on GitHub and contributions are welcome from the community.
-
-## Repository
-
-The repository for this project can be found [here](https://github.com/flexivian/govdoc-scanner).
-
-## Quick Start
-
-- **Development**: Setup the development environment as described in the [Development](../../installation/Development.md) guide.
-- **Getting Started**: Basic usage instructions are available in the [Getting Started](../../installation/Getting%20Started.md) guide.
+**Repository:** [github.com/flexivian/govdoc-scanner](https://github.com/flexivian/govdoc-scanner)

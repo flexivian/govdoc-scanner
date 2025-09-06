@@ -16,7 +16,7 @@ import {
   economicActivities,
 } from "./filter_choices.mjs";
 
-const RESULTS_FILE = "ids.txt";
+const RESULTS_FILE = "search-results.gds";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -238,7 +238,7 @@ async function promptForSearch() {
 
   try {
     await runScript(path.join(__dirname, "search.mjs"), scriptArgs);
-    console.log(`\nResults are saved in ${RESULTS_FILE}.`);
+    console.log(`\nResults are saved in the crawler working directory as ${RESULTS_FILE}.`);
   } catch (error) {
     console.error("\nAn error occurred during the search process.");
   }
@@ -284,15 +284,19 @@ async function promptForCrawl() {
       console.error("\nAn error occurred during the crawl process.");
     }
   } else if (crawlChoice === "file") {
-    if (!fs.existsSync(RESULTS_FILE)) {
-      console.error(`\n❌ Error: ${RESULTS_FILE} not found.`);
+    // Check for results file in the crawler working directory
+    const { getWorkingPath } = await import("../../../shared/workdir/index.mjs");
+    const resultsPath = getWorkingPath('crawler', RESULTS_FILE);
+    
+    if (!fs.existsSync(resultsPath)) {
+      console.error(`\n❌ Error: ${RESULTS_FILE} not found in crawler working directory.`);
       console.log("Please run a search first to generate the file.");
       return;
     }
     try {
       await runScript(path.join(__dirname, "id_crawler.mjs"), [
         "--file",
-        RESULTS_FILE,
+        resultsPath,
       ]);
     } catch (error) {
       console.error(
